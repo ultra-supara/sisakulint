@@ -1,0 +1,12 @@
+/sisakulint
+/sisakulint.exe
+/.testtimestamp
+/.staticchecktimestamp
+/env.sh
+/.github/sisakulint.yaml
+/.github/sisakulint.yml
+/corpus
+/crashers
+/man/sisakulint.1
+/man/sisakulint.1.html
+/sisakulint-workflow-ast
