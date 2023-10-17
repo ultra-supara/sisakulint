@@ -1,0 +1,40 @@
+run:
+  deadline: 5m
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+linters:
+  disable-all: true
+  enable:
+    - decorder
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - goconst
+    - gofmt
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - logrlint
+    - makezero
+    - misspell
+    - nilerr
+    - noctx
+    - paralleltest
+    - prealloc
+    - reassign
+    - staticcheck
+    - tenv
+    - tparallel
+    - typecheck
+    - unconvert
+    - unused
+    - usestdlibvars
+    - whitespace
+linters-settings:
+  misspell:
+    locale: US
