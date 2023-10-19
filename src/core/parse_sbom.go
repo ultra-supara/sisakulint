@@ -123,9 +123,9 @@ func (project *parser) parseScheduleEvent(pos *analysis.Position, node *yaml.Nod
 	return &analysis.ScheduledEvent{Cron: cron, Pos: pos}
 }
 
-func (project *parser) missingExpression(node *yaml.Node, expecting string) {
+/* func (project *parser) missingExpression(node *yaml.Node, expecting string) {
 	project.errorf(node, "expected single ${{...}} or %s but found empty string", expecting)
-}
+} */
 
 func (project *parser) parseExpression(node *yaml.Node, expecting string) *analysis.String {
 	/* if !isExprAssigned(node.Value) {

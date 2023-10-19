@@ -183,7 +183,8 @@ func (l *Linter) log(args ...interface{}) {
 	if l.loggingLevel < LogLevelDetailedOutput {
 		return
 	}
-	fmt.Fprint(l.logOutput, "verbose(詳細): ")
+	//verbose
+	fmt.Fprint(l.logOutput, "sisaku:🤔")
 	fmt.Fprintln(l.logOutput, args...)
 }
 
