@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/ultra-supara/sisakulint/src/analysis"
+	"github.com/ultra-supara/sisakulint/src/ast"
 	"gopkg.in/yaml.v3"
 )
 
@@ -13,8 +13,8 @@ type parser struct {
 	errors []*LintingError
 }
 
-func (project *parser) parse(node *yaml.Node) *analysis.Workflow {
-	workflow := &analysis.Workflow{}
+func (project *parser) parse(node *yaml.Node) *ast.Workflow {
+	workflow := &ast.Workflow{}
 
 	if node.Line == 0 {
 		node.Line = 1
@@ -107,7 +107,7 @@ func handleYamlError(err error) []*LintingError {
 //Parse : byteで与えられたソースをworkflowの構文木に解析する
 //入力を解析しながら検出されたエラーを全部返す:解析を途中でやめない
 //parserはエラーがあっても最後まで解析をしてエラーとなる部分をファイルから全部抽出する
-func Parse(sourceContent []byte) (*analysis.Workflow, []*LintingError) {
+func Parse(sourceContent []byte) (*ast.Workflow, []*LintingError) {
 	var node yaml.Node
 	if err := yaml.Unmarshal(sourceContent, &node); err != nil {
 		return nil, handleYamlError(err)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/src/analysis"
+	"github.com/ultra-supara/sisakulint/src/ast"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,7 +23,7 @@ func (project *parser) parseMapping(sec string, node *yaml.Node, allowEmpty bool
 		return nil
 	}
 
-	mappings := make(map[string]*analysis.Position,len(node.Content)/2)
+	mappings := make(map[string]*ast.Position,len(node.Content)/2)
 	m := make([]workflowKeyValue, 0, len(node.Content)/2)
 	for i := 0; i < len(node.Content); i += 2 {
 		key := project.parseString(node.Content[i], false)
@@ -54,40 +54,40 @@ func (project *parser) parseMapping(sec string, node *yaml.Node, allowEmpty bool
 	return m
 }
 
-func (project *parser) parseString(node *yaml.Node, allowEmpty bool) *analysis.String {
+func (project *parser) parseString(node *yaml.Node, allowEmpty bool) *ast.String {
 	if !project.checkString(node, allowEmpty) {
-		return &analysis.String{Value:"", Quoted:false, Pos:positionAt(node)}
+		return &ast.String{Value:"", Quoted:false, Pos:positionAt(node)}
 	}
 	return newString(node)
 }
 
 //*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
-func (project *parser) parseEvents(pos *analysis.Position, node *yaml.Node) []analysis.Event{
+func (project *parser) parseEvents(pos *ast.Position, node *yaml.Node) []ast.Event{
 	switch node.Kind {
 		case yaml.ScalarNode:
 			switch node.Value {
 				case "workflow_dispatch":
-					return []analysis.Event{
-						&analysis.WorkflowDispatchEvent{Pos: positionAt(node)},
+					return []ast.Event{
+						&ast.WorkflowDispatchEvent{Pos: positionAt(node)},
 					}
 				case "repository_dispatch":
-					return []analysis.Event{
-						&analysis.RepositoryDispatchEvent{Pos: positionAt(node)},
+					return []ast.Event{
+						&ast.RepositoryDispatchEvent{Pos: positionAt(node)},
 					}
 				case "schedule":
 					project.errorAt(pos, "schedule event is not supported")
-					return []analysis.Event{}
+					return []ast.Event{}
 				case "workflow_call":
-					return []analysis.Event{
-						&analysis.WorkflowCallEvent{Pos: positionAt(node)},
+					return []ast.Event{
+						&ast.WorkflowCallEvent{Pos: positionAt(node)},
 					}
 				default:
 					hi := project.parseString(node, false)
 					if hi.Value == "" {
-						return []analysis.Event{}
+						return []ast.Event{}
 					}
-					return []analysis.Event{
-						&analysis.WebhookEvent{
+					return []ast.Event{
+						&ast.WebhookEvent{
 							Hook: hi,
 							Pos: positionAt(node),
 						},
@@ -95,7 +95,7 @@ func (project *parser) parseEvents(pos *analysis.Position, node *yaml.Node) []an
 			}
 		case yaml.MappingNode:
 			kvs := project.parseSectionMapping("on", node, false, true)
-			ret := make([]analysis.Event, 0, len(kvs))
+			ret := make([]ast.Event, 0, len(kvs))
 
 			for _, kv := range kvs {
 				pos := kv.key.Pos
@@ -123,7 +123,7 @@ func (project *parser) parseEvents(pos *analysis.Position, node *yaml.Node) []an
 				return ret
 		case yaml.SequenceNode:
 			project.checkNotEmpty("on", len(node.Content), node)
-			ret := make([]analysis.Event, 0, len(node.Content))
+			ret := make([]ast.Event, 0, len(node.Content))
 
 			for _, c := range node.Content {
 				if s := project.parseString(c, false); s != nil {
@@ -135,13 +135,13 @@ func (project *parser) parseEvents(pos *analysis.Position, node *yaml.Node) []an
 
 						//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
 						case "workflow_dispatch":
-							ret = append(ret, &analysis.WorkflowDispatchEvent{Pos: positionAt(c)})
+							ret = append(ret, &ast.WorkflowDispatchEvent{Pos: positionAt(c)})
 
 						//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
 						case "workflow_call":
-							ret = append(ret, &analysis.WorkflowCallEvent{Pos: positionAt(c)})
+							ret = append(ret, &ast.WorkflowCallEvent{Pos: positionAt(c)})
 						default:
-							ret = append(ret, &analysis.WebhookEvent{Hook: s, Pos: positionAt(c)})
+							ret = append(ret, &ast.WebhookEvent{Hook: s, Pos: positionAt(c)})
 					}
 				}
 			}
@@ -153,16 +153,16 @@ func (project *parser) parseEvents(pos *analysis.Position, node *yaml.Node) []an
 }
 
 //*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
-func (project *parser) parsePermissions(pos *analysis.Position, node *yaml.Node) *analysis.Permissions {
-	ret := &analysis.Permissions{Pos: pos}
+func (project *parser) parsePermissions(pos *ast.Position, node *yaml.Node) *ast.Permissions {
+	ret := &ast.Permissions{Pos: pos}
 
 	if node.Kind == yaml.ScalarNode {
 		ret.All = project.parseString(node, false)
 	} else {
 		msg := project.parseSectionMapping("permissions", node, true, false)
-		scopes := make(map[string]*analysis.PermissionScope, len(msg))
+		scopes := make(map[string]*ast.PermissionScope, len(msg))
 		for _, kv := range msg {
-			scopes[kv.id] = &analysis.PermissionScope{
+			scopes[kv.id] = &ast.PermissionScope{
 				Name:  kv.key,
 				Value: project.parseString(kv.val, false),
 			}
@@ -173,35 +173,35 @@ func (project *parser) parsePermissions(pos *analysis.Position, node *yaml.Node)
 }
 
 //*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#env
-func (project *parser) parseEnv(node *yaml.Node) *analysis.Env {
+func (project *parser) parseEnv(node *yaml.Node) *ast.Env {
 	if node.Kind == yaml.ScalarNode {
-		return &analysis.Env{
+		return &ast.Env{
 			Expression: project.parseExpression(node, "mapping value for env"),
 		}
 	}
 
 	m := project.parseMapping("env", node, false, false)
-	vars := make(map[string]*analysis.EnvVar, len(m))
+	vars := make(map[string]*ast.EnvVar, len(m))
 
 	for _, kv := range m {
-		vars[kv.id] = &analysis.EnvVar{
+		vars[kv.id] = &ast.EnvVar{
 			Name:  kv.key,
 			Value: project.parseString(kv.val, true),
 		}
 	}
-	return &analysis.Env{Vars: vars}
+	return &ast.Env{Vars: vars}
 }
 
 //*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaults
-func (project *parser) parseDefaults(pos *analysis.Position, node *yaml.Node) *analysis.Defaults {
-	ret := &analysis.Defaults{Pos: pos}
+func (project *parser) parseDefaults(pos *ast.Position, node *yaml.Node) *ast.Defaults {
+	ret := &ast.Defaults{Pos: pos}
 
 	for _, kv := range project.parseSectionMapping("defaults", node, false, true) {
 		if kv.id != "run" {
 			project.unexpectedKey(kv.key, "defaults", []string{"run"})
 			continue
 		}
-		ret.Run = &analysis.DefaultsRun{Pos: kv.key.Pos}
+		ret.Run = &ast.DefaultsRun{Pos: kv.key.Pos}
 
 		for _, kv := range project.parseSectionMapping("run", kv.val, false, true) {
 			switch kv.id {
@@ -221,8 +221,8 @@ func (project *parser) parseDefaults(pos *analysis.Position, node *yaml.Node) *a
 }
 
 //*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
-func (project *parser) parseConcurrency(pos *analysis.Position, node *yaml.Node) *analysis.Concurrency {
-	ret := &analysis.Concurrency{Pos: pos}
+func (project *parser) parseConcurrency(pos *ast.Position, node *yaml.Node) *ast.Concurrency {
+	ret := &ast.Concurrency{Pos: pos}
 
 	if node.Kind == yaml.ScalarNode {
 		ret.Group = project.parseString(node, false)
@@ -247,9 +247,9 @@ func (project *parser) parseConcurrency(pos *analysis.Position, node *yaml.Node)
 }
 
 //*https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_id
-func (project *parser) parseJob(id *analysis.String, n *yaml.Node) *analysis.Job {
-	ret := &analysis.Job{ID: id, Pos: id.Pos}
-	call := &analysis.WorkflowCall{}
+func (project *parser) parseJob(id *ast.String, n *yaml.Node) *ast.Job {
+	ret := &ast.Job{ID: id, Pos: id.Pos}
+	call := &ast.WorkflowCall{}
 
 	// Only below keys are allowed on reusable workflow call
 	//*https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
@@ -264,8 +264,8 @@ func (project *parser) parseJob(id *analysis.String, n *yaml.Node) *analysis.Job
 	//   - jobs.<job_id>.permissions
 
 	//*https://docs.github.com/en/actions/using-workflows/reusing-workflows#supported-keywords-for-jobs-that-call-a-reusable-workflow
-	var stepsOnlyKey *analysis.String
-	var callOnlyKey *analysis.String
+	var stepsOnlyKey *ast.String
+	var callOnlyKey *ast.String
 
 	for _, keyvalue := range project.parseMapping(fmt.Sprintf("%q job", id.Value), n, false, true) {
 		key, value := keyvalue.key, keyvalue.val
@@ -275,7 +275,7 @@ func (project *parser) parseJob(id *analysis.String, n *yaml.Node) *analysis.Job
 		case "needs":
 			if value.Kind == yaml.ScalarNode {
 				// needs: job1
-				ret.Needs = []*analysis.String{project.parseString(value, false)}
+				ret.Needs = []*ast.String{project.parseString(value, false)}
 			} else {
 				// needs: [job1, job2]
 				ret.Needs = project.parseStringSequence("needs", value, false, false)
@@ -317,9 +317,9 @@ func (project *parser) parseJob(id *analysis.String, n *yaml.Node) *analysis.Job
 			stepsOnlyKey = key
 		case "services":
 			services := project.parseSectionMapping("services", value, false, false) // XXX: Is the key case-insensitive?
-			ret.Services = make(map[string]*analysis.Service, len(services))
+			ret.Services = make(map[string]*ast.Service, len(services))
 			for _, s := range services {
-				ret.Services[s.id] = &analysis.Service{
+				ret.Services[s.id] = &ast.Service{
 					Name:      s.key,
 					Container: project.parseContainer("services", s.key.Pos, s.val),
 				}
@@ -329,9 +329,9 @@ func (project *parser) parseJob(id *analysis.String, n *yaml.Node) *analysis.Job
 			callOnlyKey = key
 		case "with":
 			with := project.parseSectionMapping("with", value, false, false)
-			call.Inputs = make(map[string]*analysis.WorkflowCallInput, len(with))
+			call.Inputs = make(map[string]*ast.WorkflowCallInput, len(with))
 			for _, i := range with {
-				call.Inputs[i.id] = &analysis.WorkflowCallInput{
+				call.Inputs[i.id] = &ast.WorkflowCallInput{
 					Name:  i.key,
 					Value: project.parseString(i.val, true),
 				}
@@ -347,9 +347,9 @@ func (project *parser) parseJob(id *analysis.String, n *yaml.Node) *analysis.Job
 				}
 			} else {
 				secrets := project.parseSectionMapping("secrets", value, false, false)
-				call.Secrets = make(map[string]*analysis.WorkflowCallSecret, len(secrets))
+				call.Secrets = make(map[string]*ast.WorkflowCallSecret, len(secrets))
 				for _, s := range secrets {
-					call.Secrets[s.id] = &analysis.WorkflowCallSecret{
+					call.Secrets[s.id] = &ast.WorkflowCallSecret{
 						Name:  s.key,
 						Value: project.parseString(s.val, true),
 					}
@@ -413,16 +413,16 @@ func (project *parser) parseJob(id *analysis.String, n *yaml.Node) *analysis.Job
 }
 
 //*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobs
-func (project *parser) parseJobs(node *yaml.Node) map[string]*analysis.Job {
+func (project *parser) parseJobs(node *yaml.Node) map[string]*ast.Job {
 	jobs := project.parseSectionMapping("jobs", node, false, false)
-	ret := make(map[string]*analysis.Job, len(jobs))
+	ret := make(map[string]*ast.Job, len(jobs))
 	for _, kv := range jobs {
 		ret[kv.id] = project.parseJob(kv.key, kv.val)
 	}
 	return ret
 }
 
-func (project *parser) unexpectedKey(str *analysis.String, sec string, expected []string) {
+func (project *parser) unexpectedKey(str *ast.String, sec string, expected []string) {
 	l := len(expected)
 	var msg string
 	if l == 1 {

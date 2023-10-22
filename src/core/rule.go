@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ultra-supara/sisakulint/src/analysis"
+	"github.com/ultra-supara/sisakulint/src/ast"
 )
 
 //BaseRuleはruleの基本構造体
@@ -22,13 +22,13 @@ func CreateBaseRule(name string, desc string) BaseRule {
 }
 
 //Errorはソースの位置とエラーメッセージから新しいエラーを作成してrule instanceに追加する
-func (rule *BaseRule) Error(position *analysis.Position, msg string) {
+func (rule *BaseRule) Error(position *ast.Position, msg string) {
 	err := NewError(position, rule.RuleName, msg)
 	rule.ruleErrors = append(rule.ruleErrors, err)
 }
 
 //Errorf
-func (rule *BaseRule) Errorf(position *analysis.Position, format string, args ...interface{}) {
+func (rule *BaseRule) Errorf(position *ast.Position, format string, args ...interface{}) {
 	err := FormattedError(position, rule.RuleName, format, args...)
 	rule.ruleErrors = append(rule.ruleErrors, err)
 }

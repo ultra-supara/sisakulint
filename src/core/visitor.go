@@ -5,16 +5,16 @@ import (
 	"io"
 	"time"
 
-	"github.com/ultra-supara/sisakulint/src/analysis"
+	"github.com/ultra-supara/sisakulint/src/ast"
 )
 
 //TreeVisitorはworkflowのsyntax'streeをトラバースするためのinterface
 type TreeVisitor interface {
-	VisitStep(node *analysis.Step) error
-	VisitJobPre(node *analysis.Job) error
-	VisitJobPost(node *analysis.Job) error
-	VisitWorkflowPre(node *analysis.Workflow) error
-	VisitWorkflowPost(node *analysis.Workflow) error
+	VisitStep(node *ast.Step) error
+	VisitJobPre(node *ast.Job) error
+	VisitJobPost(node *ast.Job) error
+	VisitWorkflowPre(node *ast.Workflow) error
+	VisitWorkflowPost(node *ast.Workflow) error
 }
 
 //SyntaxTreeVisitorはworkflowのsyntax'streeをトラバースするためのinterface
@@ -47,7 +47,7 @@ func (s *SyntaxTreeVisitor) logreportElapsedTime(task string, startTime time.Tim
 }
 
 //visits given syntax tree in depth-first order
-func (s *SyntaxTreeVisitor) VisitTree(node *analysis.Workflow) error {
+func (s *SyntaxTreeVisitor) VisitTree(node *ast.Workflow) error {
 	var startTime time.Time
 	if s.debugW != nil {
 		startTime = time.Now()
@@ -90,7 +90,7 @@ func (s *SyntaxTreeVisitor) VisitTree(node *analysis.Workflow) error {
 }
 
 //visitJobはjobを訪問する
-func (s *SyntaxTreeVisitor) visitJob(node *analysis.Job) error {
+func (s *SyntaxTreeVisitor) visitJob(node *ast.Job) error {
 	var startTime time.Time
 	if s.debugW != nil {
 		startTime = time.Now()
@@ -134,7 +134,7 @@ func (s *SyntaxTreeVisitor) visitJob(node *analysis.Job) error {
 }
 
 //visitStepはstepを訪問する
-func (s *SyntaxTreeVisitor) visitStep(node *analysis.Step) error {
+func (s *SyntaxTreeVisitor) visitStep(node *ast.Step) error {
 	var startTime time.Time
 	if s.debugW != nil {
 		startTime = time.Now()

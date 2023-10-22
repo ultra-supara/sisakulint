@@ -12,7 +12,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-runewidth"
-	"github.com/ultra-supara/sisakulint/src/analysis"
+	"github.com/ultra-supara/sisakulint/src/ast"
 )
 
 //コンソール出力時における色付けのための定数
@@ -45,7 +45,7 @@ func (e *LintingError) String() string {
 	return e.Error()
 }
 
-func NewError(position *analysis.Position, errorType string, message string) *LintingError {
+func NewError(position *ast.Position, errorType string, message string) *LintingError {
 	return &LintingError{
 		Description: message,
 		LineNumber: position.Line,
@@ -54,7 +54,7 @@ func NewError(position *analysis.Position, errorType string, message string) *Li
 	}
 }
 
-func FormattedError(position *analysis.Position, errorType string, format string, args ...interface{}) *LintingError {
+func FormattedError(position *ast.Position, errorType string, format string, args ...interface{}) *LintingError {
 	return &LintingError{
 		Description: fmt.Sprintf(format, args...),
 		LineNumber: position.Line,
@@ -293,7 +293,7 @@ func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 	})
 	t, err := template.New("error formatter").Funcs(funcMap).Parse(unescapeBackslash(format))
 	if err != nil {
-		return nil, fmt.Errorf("failed to analysis %q the specified format: %w", format, err)
+		return nil, fmt.Errorf("failed to ast %q the specified format: %w", format, err)
 	}
 	return &ErrorFormatter{t, ruleTemplates}, nil
 }
