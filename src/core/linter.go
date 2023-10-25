@@ -205,9 +205,9 @@ func (l *Linter) debugWriter() io.Writer {
 	return l.logOutput
 }
 
-//GenerateDefaultConfigは、指定されたディレクトリにデフォルトの設定ファイルを生成する
-/* func (l *Linter) GenerateDefaultConfig(dir string) error {
-	l.log("generating default configuration file...", dir)
+//GenerateDefaultConfigは、-init指定の時に、指定されたディレクトリにデフォルトの configファイルを生成する
+func (l *Linter) GenerateDefaultConfig(dir string) error {
+	l.log("generating default config file...", dir)
 
 	project, err := l.projectInformation.GetProjectForPath(dir)
 	if err != nil {
@@ -217,7 +217,7 @@ func (l *Linter) debugWriter() io.Writer {
 		return errors.New("project not found, Make sure the current project is initialized as a Git repository and the \".github/workflows\" directory exists")
 	}
 
-	configPath := filepath.Join(project.RootDirectory(), ".github", "sisakulint.yaml")
+	configPath := filepath.Join(project.RootDirectory(), ".github", "sisaku.yaml")
 	if _, err := os.Stat(configPath); err == nil {
 		return fmt.Errorf("config file already exists: %q", configPath)
 	}
@@ -228,7 +228,7 @@ func (l *Linter) debugWriter() io.Writer {
 
 	fmt.Fprintf(l.errorOutput, "generated default config file: %q\n", configPath)
 	return nil
-} */
+}
 
 //LintRepositoryは、指定されたディレクトリのリポジトリをリントする
 func (l *Linter) LintRepository(dir string) ([]*LintingError, error) {
@@ -488,21 +488,20 @@ func (l *Linter) validate(
 		dbg :=l.debugWriter()
 
 		rules := []Rule{
-			/* MatrixRule(),
-			CredentialsRule(),
-			ShellNameRule(),
-			RunnerLabelRule(),
+			//MatrixRule(),
+			//CredentialsRule(),
+			/*RunnerLabelRule(),
 			EventsRule(),
 			JobDependenciesRule(),
 			ActionRule(localActions),*/
 			EnvironmentVariableRule(),
 			IDRule(),
-			/*GlobPatternRule(),
+			/* GlobPatternRule(),
 			PermissionsRule(),
 			WorkflowCallRule(path, localReusableWorkflows),
-			ExpressionRule(localActions, localReusableWorkflows),
+			ExpressionRule(localActions, localReusableWorkflows), */
 			DeprecatedCommandsRule(),
-			ConditionalRule(), */
+			//ConditionalRule(),
 		}
 
 		v := NewSyntaxTreeVisitor()
