@@ -21,6 +21,7 @@ var (
 	GreenStyle = color.New(color.FgGreen)
 	YellowStyle = color.New(color.FgYellow)
 	GrayStyle = color.New(color.FgHiBlack)
+	OrangeStyle = color.New(color.FgHiYellow)
 )
 
 //LintingErrorはsisakulintにおけるlinting errorの詳細を表す構造体
@@ -113,13 +114,13 @@ func (a ByRuleTemplateField) Swap(i, j int) {
 //ソースコードのスニペットのindicatorと一緒に表示
 //sourceがnilな場合はスニペットは表示しない
 func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
-	printColored(output, YellowStyle, e.FilePath)
+	printColored(output, GreenStyle, e.FilePath)
 	printColored(output, GrayStyle, ":")
 	fmt.Fprint(output, e.LineNumber)
 	printColored(output, GrayStyle, ":")
 	fmt.Fprint(output, e.ColNumber)
 	printColored(output, GrayStyle, ": ")
-	printColored(output, BoldStyle, e.Description)
+	printColored(output, OrangeStyle, e.Description)
 	printColored(output, GrayStyle, fmt.Sprintf(" [%s]\n", e.Type))
 
 	if len(sourceContent) == 0 || e.LineNumber == 0 {
@@ -131,12 +132,12 @@ func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 		return
 	}
 
-	lineHeader := fmt.Sprintf("%d | ", e.LineNumber)
+	lineHeader := fmt.Sprintf("%d 👈|", e.LineNumber)
 	padding := strings.Repeat(" ", len(lineHeader) - 2)
 	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, lineContent))
-	printColored(output, GrayStyle, fmt.Sprintf("%s %s", padding, lineHeader))
+	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, lineHeader))
 	fmt.Fprintln(output,lineContent)
-	printColored(output, GrayStyle, fmt.Sprintf("%s %s", padding, strings.Repeat(" ", e.ColNumber - 1)))
+	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, strings.Repeat(" ", e.ColNumber - 1)))
 	printColored(output, GreenStyle, e.determineIndicator(lineContent))
 }
 
@@ -179,7 +180,7 @@ func (e *LintingError) determineIndicator(lineContent string) string {
 	}
 
 	spaceWidth := runewidth.StringWidth(lineContent[:startPos])
-	return fmt.Sprintf("%s%s", strings.Repeat(" ", spaceWidth), strings.Repeat("-", underlineWidth))
+	return fmt.Sprintf("%s^%s", strings.Repeat(" ", spaceWidth), strings.Repeat("~", underlineWidth))
 }
 
 type ByRuleErrorPosition []*LintingError
@@ -275,7 +276,6 @@ func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 			return builder.String(), nil
 		},
 
-		//TODO:
 		"replace": func(str string , oldnew ...string) string {
 			return strings.NewReplacer(oldnew...).Replace(str)
 		},

@@ -184,7 +184,7 @@ func (l *Linter) log(args ...interface{}) {
 		return
 	}
 	//verbose
-	fmt.Fprint(l.logOutput, "sisaku:🤔")
+	fmt.Fprint(l.logOutput, "[sisaku:🤔] ")
 	fmt.Fprintln(l.logOutput, args...)
 }
 
@@ -285,13 +285,13 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 		return l.LintFile(filepaths[0], project)
 	}
 
-	l.log("linting", fileCount, "get started linting workflows...files")
+	l.log("linting", fileCount, "getting started linting workflows...files")
 
 	currentDir := l.currentWorkingDirectory
 	proc := NewConcurrentExecutor(runtime.NumCPU()) //process.go
 	debugLog := l.debugWriter()
 	actionCacheFactory := NewLocalActionsMetadataCacheFactory(debugLog) //metadata.go
-	reusableWorkflowCacheFactory := NewLocalReusableWorkflowCacheFactory(currentDir, debugLog) //reusing-workflow.go
+	reusableWorkflowCacheFactory := NewLocalReusableWorkflowCacheFactory(currentDir, debugLog)
 
 	type workspace struct {
 		path string
