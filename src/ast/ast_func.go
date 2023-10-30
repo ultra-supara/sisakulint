@@ -214,6 +214,19 @@ func (s *RawYAMLString) String() string {
 	return strconv.Quote(s.Value)
 }
 
+// ContainsExpression は組み合わせセクションに少なくとも一つの式ノードが含まれているかどうかを返します。
+func (cs *MatrixCombinations) ContainsExpression() bool {
+	if cs.Expression != nil {
+		return true
+	}
+	for _, c := range cs.Combinations {
+		if c.Expression != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // FindWorkflowCallEvent : workflow_call event nodeがあった場合そのノードを返す
 func (w *Workflow) FindWorkflowCallEvent() (*WorkflowCallEvent, bool) {
 	for _, e := range w.On {
