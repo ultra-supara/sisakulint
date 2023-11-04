@@ -18,16 +18,16 @@ $ chmod a+x sisakulint
 $ mv sisakulint $HOME/bin/
 ```
 
-# Project Name
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build Status](https://github.com/username/repository/actions/workflows/build.yml/badge.svg)
 ![Test Status](https://github.com/username/repository/actions/workflows/test.yml/badge.svg)
 
 Brief description of the project. Explain what it does and the problem it solves.
 
-## Features
+## Links
 
-- Feature 1
-- Feature 2
-- Feature 3
+- [user document](https://www.notion.so/ultra-supara/sisakulint-user-document-d3f28d427cf9456dbe3c0f063a7d3baf?pvs=4)
+- [developer document](https://www.notion.so/ultra-supara/sisakulint-c18505b443254ee5a3e5e3751b810a33?pvs=4)
+
+- slides
+- video
