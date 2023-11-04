@@ -55,14 +55,16 @@ type LinterOptions struct {
 	// OutputColorOptionは、エラー出力の色付けのオプション
 	//それぞれの列挙値については、ColorOptionKindのドキュメントを参照
 	OutputColorOption OutputColorBehavior
-	// IsOneLineOutputEnabledは、1行出力が有効であるかどうかを示すflag, 出力をプログラムから読み取る際に便利なはず
-	IsOneLineOutputEnabled bool
+	// BoilerplateGenerationは、boilerplateを生成するためのディレクトリパス
+	BoilerplateGeneration string
 	// ShellcheckExecutableは、shellcheckを実行するための実行可能ファイル
 	ShellcheckExecutable string
 	// ErrorIgnorePatternsは、エラーをフィルタリングするための正規表現のリスト
 	ErrorIgnorePatterns []string
 	// ConfigurationFilePathは、設定ファイルのパス
 	ConfigurationFilePath string
+	// BoilerplateFilePathは、boilerplateファイルのパス
+	BoilerplateFilePath string
 	// CustomErrorMessageFormatは、エラーメッセージをフォーマットするためのカスタムテンプレート
 	CustomErrorMessageFormat string
 	// StdinInputFileNameは、標準入力から読み込む際のファイル名
@@ -83,14 +85,14 @@ type Linter struct {
 	logOutput io.Writer
 	// loggingLevelは、Linterのログレベルを示す
 	loggingLevel LogLevel
-	// oneLineOutputEnabledは、エラー出力を1行ごとにするかどうかのflag
-	oneLineOutputEnabled bool
 	// shellcheckExecutableは、shellcheckの実行可能ファイルのパスまたは名前
 	shellcheckExecutablePath string
 	// errorIgnorePatternsは、エラーを無視するための正規表現パターンのリスト
 	errorIgnorePatterns []*regexp.Regexp
-	// defaultConfigurationは、sisakulintのデフォルトの設定を保持する構造体
+	// defaultConfigurationは、sisakulintの default config を表す
 	defaultConfiguration *Config
+	// boilerplateGenerationは、boilerplateを生成する
+	boilerplateGeneration *Boiler
 	// errorFormatterは、エラーメッセージをカスタムフォーマットで出力するためのformatter
 	errorFormatter *ErrorFormatter
 	// currentWorkingDirectoryは、現在の作業ディレクトリのパス
@@ -135,6 +137,15 @@ func NewLinter(errorOutput io.Writer, options *LinterOptions) (*Linter, error) {
 		}
 		config = con
 	}
+	//boilerplateファイルの読み込み
+	var boiler *Boiler
+	if options.BoilerplateFilePath != "" {
+		d, err := ReadBoiler(options.BoilerplateFilePath)
+		if err != nil {
+			return nil, err
+		}
+		boiler = d
+	}
 
 	ignorePatterns := make([]*regexp.Regexp, len(options.ErrorIgnorePatterns))
 	for i, pattern := range options.ErrorIgnorePatterns {
@@ -168,10 +179,10 @@ func NewLinter(errorOutput io.Writer, options *LinterOptions) (*Linter, error) {
 			errorOutput,
 			logOutput,
 			logLevel,
-			options.IsOneLineOutputEnabled,
 			options.ShellcheckExecutable,
 			ignorePatterns,
 			config,
+			boiler,
 			errorFormatter,
 			workDir,
 			options.OnCheckRulesModified,
@@ -227,6 +238,31 @@ func (l *Linter) GenerateDefaultConfig(dir string) error {
 	}
 
 	fmt.Fprintf(l.errorOutput, "generated default config file: %q\n", configPath)
+	return nil
+}
+
+//GenerateBoilerplateは、-boilerplate指定の時に、指定されたディレクトリにデフォルトの configファイルを生成する
+func (l *Linter) GenerateBoilerplate(dir string) error {
+	l.log("generating boilerplate file...", dir)
+
+	project, err := l.projectInformation.GetProjectForPath(dir)
+	if err != nil {
+		return err
+	}
+	if project == nil {
+		return errors.New("project not found, Make sure the current project is initialized as a Git repository and the \".github/workflows\" directory exists")
+	}
+
+	configPath := filepath.Join(project.RootDirectory(), ".github", "boilerplate.yaml")
+	if _, err := os.Stat(configPath); err == nil {
+		return fmt.Errorf("config file already exists: %q", configPath)
+	}
+
+	if err := writeDefaultBoilerplateFile(configPath); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(l.errorOutput, "generated boilerplate file: %q\n", configPath)
 	return nil
 }
 
@@ -501,7 +537,7 @@ func (l *Linter) validate(
 			WorkflowCallRule(path, localReusableWorkflows),
 			ExpressionRule(localActions, localReusableWorkflows), */
 			DeprecatedCommandsRule(),
-			//ConditionalRule(),
+			NewConditionalRule(),
 		}
 
 		v := NewSyntaxTreeVisitor()
@@ -574,9 +610,6 @@ func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError,
 
 //displayErrorsは、指定されたエラーを出力する
 func (l *Linter) displayErrors(errors []*LintingError, source []byte) {
-	if l.oneLineOutputEnabled {
-		source = nil
-	}
 	for _, err := range errors {
 		err.DisplayError(l.errorOutput, source)
 	}

@@ -13,6 +13,7 @@ import (
 type Project struct {
 	root   string
 	config *Config
+	boiler *Boiler
 }
 
 func getAbsolutePath(path string) string {
@@ -45,7 +46,11 @@ func NewProject(root string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Project{root: root, config: c}, nil
+	d, err := loadBoiler(root)
+	if err != nil {
+		return nil, err
+	}
+	return &Project{root: root, config: c, boiler: d}, nil
 }
 
 //githubプロジェクトのルートディレクトリを返す
