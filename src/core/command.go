@@ -105,7 +105,6 @@ func (cmd *Command) Main(args []string) int {
 	var ignorePats ignorePatternFlags
 	var initConfig bool
 	var generateBoilerplate bool
-	var opa bool
 
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(cmd.Stderr)
@@ -115,7 +114,7 @@ func (cmd *Command) Main(args []string) int {
 	flags.StringVar(&linterOpts.CustomErrorMessageFormat, "format", "", "Custom template to format error messages in Go template syntax.")
 	flags.StringVar(&linterOpts.ConfigurationFilePath, "config-file", "", "File path to config file")
 	flags.BoolVar(&initConfig, "init", false, "Generate default config file at .github/sisaku.yaml in current project")
-	flags.BoolVar(&opa, "opa", false, "Enable Open Policy Agent (OPA) rules evaluation. When set, the tool will use OPA for additional policy checks or custom rule evaluations.")
+	//flags.BoolVar(&opa, "opa", false, "Enable Open Policy Agent (OPA) rules evaluation. When set, the tool will use OPA for additional policy checks or custom rule evaluations.")
 	//flags.BoolVar(&disableColor, "never-color", false, "Disable colorful output")
 	flags.BoolVar(&linterOpts.IsVerboseOutputEnabled, "verbose", false, "Enable verbose output")
 	flags.BoolVar(&linterOpts.IsDebugOutputEnabled, "debug", false, "Enable debug output (for development)")
