@@ -6,21 +6,19 @@ Run the following commands:
 
 ```
 # Linux
-$ wget https://gist.github.com/ultra-supara/sisakulint/download/build-x86_64-unknown-linux-gnu.zip -O sisakulint.zip
-$ unzip sisakulint.zip
-$ chmod a+x ./sisakulint
+$ git clone https://github.com/ultra-supara/sisakulint.git
+$ cd sisakulint/cmd/sisakulint
+$ go build -o sisakulint main.go
 $ mv ./sisakulint /usr/local/bin/sisakulint
-
-# macOS
-$ wget https://gist.github.com/ultra-supara/sisakulint/download/build-x86_64-apple-darwin.zip -O sisakulint.zip
-$ unzip sisakulint.zip
-$ chmod a+x sisakulint
-$ mv sisakulint $HOME/bin/
 ```
 
-
-![Build Status](https://github.com/username/repository/actions/workflows/build.yml/badge.svg)
-![Test Status](https://github.com/username/repository/actions/workflows/test.yml/badge.svg)
+```
+# macOS
+$ git clone https://github.com/ultra-supara/sisakulint.git
+$ cd sisakulint/cmd/sisakulint
+$ go build -o sisakulint main.go
+$ mv sisakulint $HOME/bin/
+```
 
 Brief description of the project. Explain what it does and the problem it solves.
 
@@ -30,4 +28,5 @@ Brief description of the project. Explain what it does and the problem it solves
 - [developer document](https://www.notion.so/ultra-supara/sisakulint-c18505b443254ee5a3e5e3751b810a33?pvs=4)
 
 - slides
+- poster
 - video
