@@ -315,7 +315,6 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 	fileCount := len(filepaths)
 	switch fileCount {
 	case 0:
-		//return nil, errors.New("no yaml files found")
 		return []*LintingError{}, nil
 	case 1:
 		return l.LintFile(filepaths[0], project)
@@ -334,6 +333,7 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 		errors []*LintingError
 		source []byte
 	}
+
 	workspaces := make([]workspace, len(filepaths))
 	for i, pa := range filepaths {
 		//workspaces = append(workspaces, workspace{path: pa})
@@ -346,7 +346,6 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 		localProject := project
 		if localProject == nil {
 			// このメソッドはl.projectInformationの状態を変更するため、並行して呼び出せない。
-			// goroutineを開始する前に、プロジェクトのインスタンスを解決してください。
 			projectForPath, err := l.projectInformation.GetProjectForPath(ws.path)
 			if err != nil {
 				return nil, err
@@ -524,18 +523,18 @@ func (l *Linter) validate(
 		dbg :=l.debugWriter()
 
 		rules := []Rule{
-			//MatrixRule(),
-			//CredentialsRule(),
-			/*RunnerLabelRule(),
-			EventsRule(),
-			JobDependenciesRule(),
-			ActionRule(localActions),*/
+			// MatrixRule(),
+			// CredentialsRule(),
+			// RunnerLabelRule(),
+			// EventsRule(),
+			// JobDependenciesRule(),
+			// ActionRule(localActions),
 			EnvironmentVariableRule(),
 			IDRule(),
-			/* GlobPatternRule(),
-			PermissionsRule(),
-			WorkflowCallRule(path, localReusableWorkflows),
-			ExpressionRule(localActions, localReusableWorkflows), */
+			// GlobPatternRule(),
+			// PermissionsRule(),
+			// WorkflowCallRule(path, localReusableWorkflows),
+			ExpressionRule(localActions, localReusableWorkflow),
 			DeprecatedCommandsRule(),
 			NewConditionalRule(),
 		}
