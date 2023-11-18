@@ -66,46 +66,42 @@ func writeDefaultBoilerplateFile(path string) error {
 name: sisakulint CI
 
 on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'master'
+    tags:
+      - 'v*'
   pull_request:
-    types:[opened, synchronize, reopened]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+    branches:
+      - 'master'
 
 jobs:
-  build:
+  docker:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-      - name: run a one-line script
-        run: echo sisakuint
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          docker login ghcr.io -u ${{ secrets.CI_USER }} -p ${{ secrets.CI_TOKEN }}
-          docker pull ghcr.io/test-repo/docker-images/awscdk:X.XX.X
-          docker run --rm -v $(pwd)/cicd/pipelines:/work --entrypoint npm \
-                    ghcr.io/test-repo/docker-images/awscdk:X.XX.X \
-                    install
-	  - name: Extract metadata (tags, labels) for Docker
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      -
+        name: Docker meta
         id: meta
-        uses: docker/metadata-action@57396166ad8aefe3975023995947635806a0e6ea
+        uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-	  - name: Build and push Docker image
-        uses: docker/build-push-action@c56af957549335886410d6867f20e78cfd7debc5
+          images: name/app
+      -
+        name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 	`)
