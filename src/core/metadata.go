@@ -137,7 +137,6 @@ func (c *LocalActionsMetadataCache) writeCache(key string, val *ActionMetadata) 
 // LocalActionCacheは、アクションが見つからなかったことをキャッシュします。最初の検索時には、
 // アクションが見つからなかったというエラーを返します。しかし、2回目の検索では、結果がnilであってもエラーは返されません。
 // この振る舞いは、同じエラーを複数の場所から繰り返し報告するのを防ぐためです。
-// このメソッドを呼び出すことはthread-safe
 func (c * LocalActionsMetadataCache) FindMetadata(spec string) (*ActionMetadata, error) {
 	if c.proj ==nil || !strings.HasPrefix(spec, "./") {
 		return nil, nil
