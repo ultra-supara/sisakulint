@@ -44,17 +44,16 @@ func (s *String) ContainsExpression() bool {
 // 例: if: ${{ env.foo == '{"foo": {"bar": true}}' }}
 // 上記の例では、式全体が割り当てられていますが、JSON文字列内に "}}" が含まれているため、
 // strings.Count(s.Value, "}}") == 1 という条件だけでは不十分です。
-func isExprAssigned(s string) bool {
+func IsExprAssigned(s string) bool {
 	v := strings.TrimSpace(s)
 	return strings.HasPrefix(v, "${{") &&
 		strings.HasSuffix(v, "}}") &&
 		strings.Count(v, "${{") == 1
 }
 
-
 // IsExpressionAssigned は文字列が単一の式に割り当てられているかどうかを返します。
 func (s *String) IsExpressionAssigned() bool {
-	return isExprAssigned(s.Value)
+	return IsExprAssigned(s.Value)
 }
 
 // String は Boolに対応する String の文字列表現を返します。
