@@ -22,6 +22,7 @@ var (
 	YellowStyle = color.New(color.FgYellow)
 	GrayStyle = color.New(color.FgHiBlack)
 	OrangeStyle = color.New(color.FgHiYellow)
+	RedStyle = color.New(color.FgRed)
 )
 
 //LintingErrorはsisakulintにおけるlinting errorの詳細を表す構造体
@@ -134,8 +135,7 @@ func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 
 	lineHeader := fmt.Sprintf("%d 👈|", e.LineNumber)
 	padding := strings.Repeat(" ", len(lineHeader) - 2)
-	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, lineContent))
-	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, lineHeader))
+	printColored(output, GrayStyle, fmt.Sprintf("%s %s", padding, lineHeader))
 	fmt.Fprintln(output,lineContent)
 	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, strings.Repeat(" ", e.ColNumber - 1)))
 	printColored(output, GreenStyle, e.determineIndicator(lineContent))
