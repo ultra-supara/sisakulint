@@ -122,7 +122,7 @@ func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 	fmt.Fprint(output, e.ColNumber)
 	printColored(output, GrayStyle, ": ")
 	printColored(output, OrangeStyle, e.Description)
-	printColored(output, GrayStyle, fmt.Sprintf(" [%s]\n", e.Type))
+	printColored(output, RedStyle, fmt.Sprintf(" [%s]\n", e.Type))
 
 	if len(sourceContent) == 0 || e.LineNumber == 0 {
 		return
