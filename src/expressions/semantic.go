@@ -532,7 +532,7 @@ func (sema *ExprSemanticsChecker) checkObjectDeref(n *ObjectDerefNode) ExprType 
 			} else if et.Mapped != nil {
 				elem = et.Mapped
 			} else if et.IsStrict() {
-				sema.errorf(n, "The property %q is not defined in the object type %s as an element of a filtered array", n.Property, et.String())
+				sema.errorf(n, "property %q is not defined in the object %s type as an element of a filtered array", n.Property, et.String())
 			}
 			return &ArrayType{elem, true}
 		default:
@@ -542,7 +542,6 @@ func (sema *ExprSemanticsChecker) checkObjectDeref(n *ObjectDerefNode) ExprType 
 				n.Property,
 				ty.Elem.String(),
 			)
-
 			return UnknownType{}
 		}
 	default:
@@ -556,7 +555,7 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 	if strings.HasPrefix(n.Property, "github_") {
 		sema.errorf(
 			n,
-			"The configuration variable name %q must not start with the 'GITHUB_' prefix (case insensitive). Please refer to the naming conventions at https://docs.github.com/en/actions/learn-github-actions/variables#naming-conventions-for-configuration-variables for more information.",
+			"The configuration variable name %q should not start with the 'GITHUB_' prefix (case insensitive). Please refer to the naming conventions at https://docs.github.com/en/actions/learn-github-actions/variables#naming-conventions-for-configuration-variables for more information.",
 			n.Property,
 		)
 		return
@@ -646,9 +645,9 @@ func (sema *ExprSemanticsChecker) checkArrayDeref(n *ArrayDerefNode) ExprType {
 
 func (sema *ExprSemanticsChecker) checkIndexAccess(n *IndexAccessNode) ExprType {
 	// UntrustedInputCheckerが正しく機能するためには、インデックスはオペランドよりも前に訪問する必要があります。
-	//たとえば、foo[aaa.bbb].bar のようなネストが式内にある場合でも、ネストはトップダウンの順序で発生します。
-	//プロパティ/インデックスのアクセスチェックはボトムアップの順序で行われます。
-	//したがって、ネストしたindex nodeをオペランドの前に訪問する限り、インデックスは再帰的に最初にチェックされます。
+	// たとえば、foo[aaa.bbb].bar のようなネストが式内にある場合でも、ネストはトップダウンの順序で発生します。
+	// プロパティ/インデックスのアクセスチェックはボトムアップの順序で行われます。
+	// したがって、ネストしたindex nodeをオペランドの前に訪問する限り、インデックスは再帰的に最初にチェックされます。
 
 	idx := sema.check(n.Index)
 
