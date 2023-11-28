@@ -532,11 +532,21 @@ func (l *Linter) validate(
 			EnvironmentVariableRule(),
 			IDRule(),
 			// GlobPatternRule(),
-			// PermissionsRule(),
+			PermissionsRule(),
 			// WorkflowCallRule(path, localReusableWorkflows),
 			ExpressionRule(localActions, localReusableWorkflow),
 			DeprecatedCommandsRule(),
 			NewConditionalRule(),
+		}
+		if l.shellcheckExecutablePath != "" {
+			r, err := ShellCheckRule(l.shellcheckExecutablePath, proc)
+			if err != nil {
+				rules = append(rules, r)
+			} else {
+				l.log("disabling shellcheck rule because shellcheck executable not found", err)
+			}
+		} else {
+			l.log("disabling shellcheck rule because shellcheck command name was not found")
 		}
 
 		v := NewSyntaxTreeVisitor()
