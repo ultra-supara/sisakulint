@@ -164,7 +164,7 @@ func (u *UntiChecker) end() {
 		err := errorfAtExpr(
 			u.start,
 			"Object filter extracts potentially untrusted properties %s. Avoid using the value directly in inline scripts. Instead, pass the value through an environment variable. See https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions for more details.",
-			sortedQuotes(inputs),
+			SortedQuotes(inputs),
 		)
 		u.errs = append(u.errs, err)
 	}

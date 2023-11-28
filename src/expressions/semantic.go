@@ -489,7 +489,7 @@ func (sema *ExprSemanticsChecker) checkVariable(n *VariableNode) ExprType {
 		for n := range sema.vars {
 			ss = append(ss, n)
 		}
-		sema.errorf(n, "undefined variable %q. available variables are %s", n.Token().Value, sortedQuotes(ss))
+		sema.errorf(n, "undefined variable %q. available variables are %s", n.Token().Value, SortedQuotes(ss))
 		return UnknownType{}
 	}
 
@@ -596,7 +596,7 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
     	n,
     	"The configuration variable %q is undefined. The defined configuration variables in sisaku.yaml are: %s",
     	n.Property,
-    	sortedQuotes(sema.configVars),
+    	SortedQuotes(sema.configVars),
 	)
 }
 
@@ -789,7 +789,7 @@ func (sema *ExprSemanticsChecker) checkFuncCall(n *FuncCallNode) ExprType {
 		for n := range sema.funcs {
 			ss = append(ss, n)
 		}
-		sema.errorf(n, "undefined function %q. available functions are %s", n.Callee, sortedQuotes(ss))
+		sema.errorf(n, "undefined function %q. available functions are %s", n.Callee, SortedQuotes(ss))
 		return UnknownType{}
 	}
 
