@@ -57,9 +57,13 @@ func (rule *PermissionRule) checkPermissions(p *ast.Permissions) {
 	if p.All != nil {
 		switch p.All.Value {
 		case "write-all", "read-all":
-			rule.Errorf(p.All.Pos, "write-all is widedly scoped for all the scopes. use \"write\" or \"read\" for each scope", p.All.Value)
+			rule.Errorf(
+				p.All.Pos,
+				"The 'write-all' scope is too broad, covering all available scopes. Please specify 'write' or 'read' for each individual scope instead. plaese see https://github.com/suzuki-shunsuke/ghalint/blob/main/docs/policies/003.md",
+				p.All.Value,
+				)
 		default:
-			rule.Errorf(p.All.Pos, "%q is invalid for permission for all the scopes. available values are \"read-all\" and \"write-all\"", p.All.Value)
+			rule.Errorf(p.All.Pos, "%q is invalid for permission for all the scopes.", p.All.Value)
 		}
 		return
 	}
@@ -77,7 +81,12 @@ func (rule *PermissionRule) checkPermissions(p *ast.Permissions) {
 		case "read", "write", "none":
 			// OK
 		default:
-			rule.Errorf(p.Value.Pos, "%q is invalid for permission of scope %q. available values are \"read\", \"write\" or \"none\"", p.Value.Value, n)
+			rule.Errorf(
+				p.Value.Pos,
+				"The value %q is not a valid permission for the scope %q. Only 'read', 'write', or 'none' are acceptable values.",
+				p.Value.Value,
+				n,
+			)
 		}
 	}
 }
