@@ -58,8 +58,8 @@ func quotes(ss []string) string {
     return b.Build()
 }
 
-// sortedQuotes は文字列のスライスをソートして引用符で囲んだ文字列に変換します。
-func sortedQuotes(ss []string) string {
+// SortedQuotes は文字列のスライスをソートして引用符で囲んだ文字列に変換します。
+func SortedQuotes(ss []string) string {
     sort.Strings(ss)
     return quotes(ss)
 }
