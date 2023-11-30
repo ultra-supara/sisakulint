@@ -511,9 +511,9 @@ func (sema *ExprSemanticsChecker) checkObjectDeref(n *ObjectDerefNode) ExprType 
 			}
 			return ty.Mapped
 		}
-		if ty.IsStrict() {
+		/* if ty.IsStrict() {
 			sema.errorf(n, "property %q is not defined in object type %s", n.Property, ty.String())
-		}
+		} */
 		return UnknownType{}
 	case *ArrayType:
 		if !ty.Deref {
@@ -675,9 +675,9 @@ func (sema *ExprSemanticsChecker) checkIndexAccess(n *IndexAccessNode) ExprType 
 				if ty.Mapped != nil {
 					return ty.Mapped
 				}
-				if ty.IsStrict() {
+				/* if ty.IsStrict() {
 					sema.errorf(n, "property %q is not defined in object type %s", lit.Value, ty.String())
-				}
+				} */
 			}
 			if ty.Mapped != nil {
 				return ty.Mapped
@@ -702,7 +702,7 @@ func checkFuncSignature(n *FuncCallNode, sig *FuncSignature, args []ExprType) *E
 		}
 		return errorfAtExpr(
 			n,
-			"number of arguments is wrong. function %q takes %s%d parameters but %d arguments are given",
+			"number of arguments is wrong. function %q takes %s %d parameters but %d arguments are given",
 			sig.String(),
 			atLeast,
 			lp,
