@@ -1,3 +1,4 @@
+// TODO: Rule!
 // build対象外のテンプレートファイル
 package core
 
