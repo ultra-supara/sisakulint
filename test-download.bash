@@ -1,0 +1,77 @@
+#!/bin/bash
+
+set -o pipefail
+set -e
+
+if [ ! -d .git ]; then
+    echo 'This script must be run from root of repository' >&2
+    exit 1
+fi
+
+set -x
+
+script="$(pwd)/download.bash"
+temp_dir="$(mktemp -d)"
+trap 'popd && rm -rf $temp_dir' EXIT
+pushd "$temp_dir"
+
+# Normal cases
+set -e
+
+# No arguments
+out="$(bash "$script")"
+if [ -n "$GITHUB_ACTION" ]; then
+    if [[ "$out" != *"executable="* ]]; then
+        echo "'executable' step output is not set: '${out}'" >&2
+    fi
+fi
+out="$(./sisakulint -version)"
+if [[ "$out" != *'installed by downloading from release page'* ]]; then
+    echo "Output from ./sisakulint -version is unexpected: '${out}'" >&2
+    exit 1
+fi
+rm -f ./sisakulint
+
+# Specify only version
+bash "$script" '1.6.3'
+out="$(./sisakulint -version | head -n 1)"
+if [[ "$out" != '1.6.3' ]]; then
+    echo "Unexpected version: '${out}'" 1>&2
+    exit 1
+fi
+rm -f ./sisakulint
+
+# Specify only a download directory
+mkdir ./test1
+bash "$script" latest ./test1
+out="$(./test1/sisakulint -version)"
+if [[ "$out" != *'installed by downloading from release page'* ]]; then
+    echo "Output from ./sisakulint -version is unexpected: '${out}'" >&2
+    exit 1
+fi
+rm -rf ./test1
+
+# Specify both version and a download directory
+mkdir ./test2
+bash "$script" '1.6.3' ./test2
+out="$(./test2/sisakulint -version | head -n 1)"
+if [[ "$out" != '1.6.3' ]]; then
+    echo "Unexpected version: '${out}'" 1>&2
+    exit 1
+fi
+rm -rf ./test2
+
+# Error cases
+set +e
+
+if bash "$script" 'v1.6.3'; then
+    echo "Invalid version at the first argument did not cause any error" >&2
+fi
+if bash "$script" './this/dir/does/not/exist'; then
+    echo "Directory which does not exist at the first argument did not cause any error" >&2
+fi
+if bash "$script" '999999999999999999.9.9'; then
+    echo "Unknown version at the first argument did not cause any error" >&2
+fi
+
+echo 'SUCCESS'
