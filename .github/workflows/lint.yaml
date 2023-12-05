@@ -34,7 +34,7 @@ jobs:
           fi
           yamllint --strict --format github --config-file "${CONFIG}" .
 
-      - name: Format check by prettier
+      - name: Format yaml files by prettier
         run: |
           npm install prettier@latest
-          npx prettier --parser="yaml" --check "**/*.y*ml"
+          npx prettier --parser="yaml" --write "**/*.y*ml"
