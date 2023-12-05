@@ -1,0 +1,46 @@
+release:
+  draft: false
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - <<: &build_defaults
+      main: ./cmd/sisakulint
+      ldflags: -s -w -X github.com/ultra-supara/sisakulint.version={{.Version}} -X "github.com/ultra-supara/sisakulint.installedFrom=installed from {{.Tag}}"
+      env:
+        - CGO_ENABLED=0
+    id: macos
+    goos: [darwin]
+    goarch: [amd64, arm64]
+
+  - <<: *build_defaults
+    id: linux
+    goos: [linux]
+    goarch: [arm, amd64, arm64]
+
+archives:
+  - <<: &archives_defaults
+      files:
+        - README.md
+    id: nix
+    builds: [macos, linux, freebsd]
+    format: tar.gz
+
+brews:
+  - name: sisakulint
+    folder: HomebrewFormula
+    commit_author:
+      name: "github-actions[bot]"
+      email: "41898282+github-actions[bot]@users.noreply.github.com"
+    homepage: https://github.com/ultra-supara/sisakulint
+    description: Support tools for GitHub Actions workflow files
+    download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
+    install: |
+      bin.install "sisakulint"
+    test: |
+      system "#{bin}/sisakulint -version"
+
+changelog:
+  skip: true

@@ -12,7 +12,7 @@ jobs:
           go-version: "1.21.3"
       - name: Check Go sources are formatted
         run: |
-          diffs="$(gofmt -d ./*.go ./cmd/sisakulint/*.go)"
+          diffs="$(gofmt -d ./src/core/*.go ./cmd/sisakulint/*.go)"
           if [[ "$diffs" != "" ]]; then
             echo "$diffs" >&2
             exit 1
@@ -23,7 +23,7 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - run: make lint SKIP_GO_GENERATE=true
       - name: Lint bash scripts
-        run: shellcheck ./script/download-sisakulint.bash
+        run: shellcheck ./download.bash
   docker:
     name: Dockerfile
     runs-on: ubuntu-latest
