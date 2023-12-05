@@ -10,7 +10,7 @@ jobs:
       # actions-timeline must be run as the very first step before other steps such as `actions/checkout`.
       # This is to ensure it collects information from all jobs.
       - name: Setup actions-timeline
-        uses: Kesin11/actions-timeline@v1
+        uses: Kesin11/actions-timeline@v2
         with:
           # Use PAT if needed: ${{ secrets.MY_PAT }}
           # By default, it uses ${{ github.token }}, so it's usually optional.
