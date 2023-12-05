@@ -1,0 +1,23 @@
+name: Download sisakulint
+on:
+  push:
+    paths:
+      - download.bash
+      - test-download.bash
+  pull_request:
+    paths:
+      - download.bash
+      - test-download.bash
+  workflow_dispatch:
+
+jobs:
+  download:
+    name: Test Download sisakulint
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./test-download.bash
+        shell: bash
