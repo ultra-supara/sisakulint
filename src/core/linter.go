@@ -524,7 +524,7 @@ func (l *Linter) validate(
 
 		rules := []Rule{
 			// MatrixRule(),
-			CredentialsRule(),
+			// CredentialsRule(),
 			// RunnerLabelRule(),
 			// EventsRule(),
 			// JobDependenciesRule(),
@@ -533,12 +533,12 @@ func (l *Linter) validate(
 			IDRule(),
 			// GlobPatternRule(),
 			PermissionsRule(),
-			// WorkflowCallRule(path, localReusableWorkflows),
+			WorkflowCall(filePath, localReusableWorkflow),
 			ExpressionRule(localActions, localReusableWorkflow),
 			DeprecatedCommandsRule(),
 			NewConditionalRule(),
 		}
-		if l.shellcheckExecutablePath != "" {
+		/* if l.shellcheckExecutablePath != "" {
 			r, err := ShellCheckRule(l.shellcheckExecutablePath, proc)
 			if err != nil {
 				rules = append(rules, r)
@@ -547,7 +547,7 @@ func (l *Linter) validate(
 			}
 		} else {
 			l.log("disabling shellcheck rule because shellcheck command name was not found")
-		}
+		} */
 
 		v := NewSyntaxTreeVisitor()
 		for _, rule := range rules {
@@ -613,7 +613,7 @@ func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError,
 
 	if l.loggingLevel >= LogLevelDetailedOutput {
 		elapsed := time.Since(validationStart)
-		l.log(len(*allErrors), "errors found in", elapsed.Milliseconds(), "found in ms", filePath)
+		l.log("Found total", len(*allErrors), "errors found in", elapsed.Milliseconds(), "found in ms", filePath)
 	}
 }
 

@@ -11,7 +11,6 @@ import (
 	"text/template"
 
 	"github.com/fatih/color"
-	"github.com/mattn/go-runewidth"
 	"github.com/ultra-supara/sisakulint/src/ast"
 )
 
@@ -68,17 +67,10 @@ func FormattedError(position *ast.Position, errorType string, format string, arg
 //ExtractTemplateFieldsはLintingErrorからテンプレートの生成に必要なフィールドを抽出する
 func (e *LintingError) ExtractTemplateFields(sourceContent []byte) *TemplateFields {
 	codeSnippet := ""
-	endingColumn := e.ColNumber
 
 	if len(sourceContent) > 0 && e.LineNumber > 0 {
 		if lineContent, found := e.extractLineContent(sourceContent); found {
 			codeSnippet = lineContent
-			if len(lineContent) < e.ColNumber - 1 {
-				if indicator := e.determineIndicator(lineContent); indicator != "" {
-					codeSnippet +=  "\n" + indicator
-					endingColumn = len(indicator)
-				}
-			}
 		}
 	}
 	return &TemplateFields{
@@ -88,7 +80,6 @@ func (e *LintingError) ExtractTemplateFields(sourceContent []byte) *TemplateFiel
 		Column: e.ColNumber,
 		Type: e.Type,
 		Snippet: codeSnippet,
-		EndColumn: endingColumn,
 	}
 }
 
@@ -112,7 +103,6 @@ func (a ByRuleTemplateField) Swap(i, j int) {
 }
 
 //DisplayErrorはエラーを見やすい形で出力する
-//ソースコードのスニペットのindicatorと一緒に表示
 //sourceがnilな場合はスニペットは表示しない
 func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 	printColored(output, GreenStyle, e.FilePath)
@@ -138,7 +128,6 @@ func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 	printColored(output, GrayStyle, fmt.Sprintf("%s %s", padding, lineHeader))
 	fmt.Fprintln(output,lineContent)
 	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, strings.Repeat(" ", e.ColNumber - 1)))
-	printColored(output, GreenStyle, e.determineIndicator(lineContent))
 }
 
 //helper function to print with color
@@ -157,30 +146,6 @@ func (e *LintingError) extractLineContent(sourceContent []byte) (string, bool) {
 		}
 	}
 	return "", false
-}
-
-//determineIndicatorはエラーが発生した箇所を示すindicatorを生成する
-func (e *LintingError) determineIndicator(lineContent string) string {
-	if e.ColNumber <= 0 {
-		return ""
-	}
-	startPos := e.ColNumber - 1
-
-	underlineWidth := 0
-	r := strings.NewReader(lineContent[startPos:])
-	for {
-		char, size, err := r.ReadRune()
-		if err != nil || size == 0 || char == ' ' || char == '\t' || char == '\n' || char == '\r' {
-			break
-		}
-		underlineWidth += runewidth.RuneWidth(char)
-	}
-	if underlineWidth > 0 {
-		underlineWidth--
-	}
-
-	spaceWidth := runewidth.StringWidth(lineContent[:startPos])
-	return fmt.Sprintf("%s^%s", strings.Repeat(" ", spaceWidth), strings.Repeat("~", underlineWidth))
 }
 
 type ByRuleErrorPosition []*LintingError
@@ -219,9 +184,6 @@ type TemplateFields struct {
 	// Snippet はエラーが発生した位置を示すコードスニペットおよびインジケーター
 	// JSONにエンコードする際、スニペットが空の場合、(このフィールドは省略される可能性あり)
 	Snippet string `json:"snippet,omitempty"`
-	// EndColumn はエラーインジケーター(^~~~~~~)が終了する列番号
-	//インジケーターが表示されない場合、EndColumn=Column
-	EndColumn int `json:"end_column"`
 }
 
 //backslashのunescape
