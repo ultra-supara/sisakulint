@@ -433,6 +433,14 @@ func (rule *ExprRule) checkSemanticsOfExprNode(expr expressions.ExprNode, line, 
 	if rule.JobsType != nil {
 		c.UpdateJobs(rule.JobsType)
 	}
+	if workflowKey != "" {
+		ctx ,sp := WorkflowKeyAvailability(workflowKey)
+		if len(ctx) == 0 {
+			rule.Debug("WorkflowKeyAvailability: %q", workflowKey)
+		}
+		c.SetContextAvailability(ctx)
+		c.SetSpecialFunctionAvailability(sp)
+	}
 
 	ty, errs := c.Check(expr)
 	for _, err := range errs {
