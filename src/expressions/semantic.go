@@ -438,8 +438,7 @@ func (sema *ExprSemanticsChecker) UpdateJobs(ty *ObjectType) {
 //* https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
 // 'avail'パラメータの要素は、大文字小文字を区別せずにコンテキスト名をチェックするために小文字である必要があります。
 // このメソッドがチェック前に呼び出されない場合、ExprSemanticsCheckerはデフォルトで任意のコンテキストが利用可能であると考えます。
-// ワークフローのキーに対する利用可能なコンテキストは
-//todo:sisakulint.ContextAvailabilityから取得できます。
+// ワークフローのキーに対する利用可能なコンテキストは sisakulint.ContextAvailabilityから取得できます。
 func (sema *ExprSemanticsChecker) SetContextAvailability(avail []string) {
 	sema.availableContexts = avail
 }
@@ -471,10 +470,49 @@ func (sema *ExprSemanticsChecker) checkAvailableContext(n *VariableNode) {
 
 // SetSpecialFunctionAvailabilityはセマンティクスチェック時の利用可能な特別な関数の名前を設定します。
 // 一部の関数は使用できる場所に制限があります。
-//* https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability への実装対応はtodoです。
 // 'avail' パラメータの要素は、大文字小文字を区別せずに関数名を確認するために小文字である必要があります。
 // このメソッドがチェック前に呼び出されない場合、ExprSemanticsCheckerはデフォルトで特別な関数を許可しないものと見なします。
 //todo:  関数名は sisakulint.SpecialFunctionNames のグローバル定数から取得できます。
+func (sema *ExprSemanticsChecker) SetSpecialFunctionAvailability(avail []string) {
+	sema.availableSpecialFuncs = avail
+}
+
+func (sema *ExprSemanticsChecker) checkSpecialFunctionAvailability(n *FuncCallNode) {
+	f := strings.ToLower(n.Callee)
+	// SpecialFunctionNames は、特別な関数名から利用可能なワークフロー キーへのマップです。
+	// 一部の関数は特定の位置でのみ使用できます。 この変数は、次のような場合に役立ちます。
+	// どの関数が特別で、どのワークフロー キーがそれらをサポートしているかを把握します。
+	//* https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
+	var SpecialFunctionNames = map[string][]string{
+		"always": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"cancelled": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"failure": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"hashfiles": []string{"jobs.<job_id>.steps.continue-on-error",
+								"jobs.<job_id>.steps.env", "jobs.<job_id>.steps.if",
+								"jobs.<job_id>.steps.name", "jobs.<job_id>.steps.run",
+								"jobs.<job_id>.steps.timeout-minutes", "jobs.<job_id>.steps.with",
+								"jobs.<job_id>.steps.working-directory"},
+		"success": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+	}
+	// WorkflowKeyAvailability returns availability of given workflow key context and special functions.
+
+	allowed, ok := SpecialFunctionNames[f]
+	if !ok {
+		return
+	}
+	for _, sp := range sema.availableSpecialFuncs {
+		if sp == f {
+			return
+		}
+	}
+	sema.errorf(
+		n,
+		"function %q is not allowed here. Available functions are %q in %s. For more details, please visit: https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability",
+		n.Callee,
+		n.Callee,
+		quotes(allowed),
+	)
+}
 
 func (sema *ExprSemanticsChecker) visitUntrustedCheckerOnLeaveNode(n ExprNode) {
 	if sema.untrusted != nil {
@@ -747,7 +785,7 @@ func checkFuncSignature(n *FuncCallNode, sig *FuncSignature, args []ExprType) *E
 }
 
 func (sema *ExprSemanticsChecker) checkBuiltinFunctionCall(n *FuncCallNode, sig *FuncSignature) {
-	//todo: sema.checkSpecialFunctionAvailability(n)
+	sema.checkSpecialFunctionAvailability(n)
 	// Special checks for specific built-in functions
 	switch n.Callee {
 	case "format":
