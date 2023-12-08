@@ -6,7 +6,7 @@ WORKDIR /go/src/app
 COPY go.* *.go ./
 COPY cmd cmd/
 ENV CGO_ENABLED 0
-ARG SISAKULINT_VER=0.0.1
+ARG SISAKULINT_VER=0.0.0
 RUN go build -v -ldflags "-s -w -X github.com/ultra-supara/sisakulint/cmd/sisakulint.version=${SISAKULINT_VER}" ./cmd/sisakulint
 
 FROM koalaman/shellcheck-alpine:stable as shellcheck
