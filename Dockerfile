@@ -7,7 +7,7 @@ WORKDIR /go/src/app
 COPY go.* *.go ./
 COPY cmd cmd/
 ENV CGO_ENABLED 0
-ARG SISAKULINT_VER=0.0.0
+ARG SISAKULINT_VER=0.0.3
 RUN export GOPRIVATE=github.com/ultrasupara/sisakulint
 RUN git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
 RUN go mod download
