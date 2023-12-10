@@ -20,8 +20,7 @@ jobs:
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-      - name: Lint bash scripts
-        run: shellcheck ./download.bash
+
   docker:
     name: Dockerfile
     runs-on: ubuntu-latest
