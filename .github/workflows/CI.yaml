@@ -26,6 +26,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
       - name: Build image
         id: image
         uses: docker/build-push-action@v3
@@ -34,12 +40,6 @@ jobs:
             GOLANG_VER=1.21.4
             "TOKEN=${{ steps.generate_token.outputs.token }}"
           push: false
-      - name: generate token
-        id: token
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.PRIVATE_KEY }}
       - name: Test Docker image
         run: docker container run
           --mount type=bind,source="$(pwd)",target=/mnt/app
