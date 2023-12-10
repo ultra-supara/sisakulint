@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
-          go-version: "1.21.3"
+          go-version: "1.21.4"
       - name: Check Go sources are formatted
         run: |
           diffs="$(gofmt -d ./src/core/*.go ./cmd/sisakulint/*.go)"
@@ -31,7 +31,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           build-args: |
-            GOLANG_VER=1.21.3
+            GOLANG_VER=1.21.4
             "TOKEN=${{ steps.generate_token.outputs.token }}"
           push: false
       - name: generate token
