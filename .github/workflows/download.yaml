@@ -19,5 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set execute permission for the script
+        run: chmod +x ./test-download.bash
       - run: ./test-download.bash
         shell: bash
