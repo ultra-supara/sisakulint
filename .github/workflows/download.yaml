@@ -2,12 +2,12 @@ name: Download sisakulint
 on:
   push:
     paths:
-      - download.bash
-      - test-download.bash
+      - ./download.bash
+      - ./test-download.bash
   pull_request:
     paths:
-      - download.bash
-      - test-download.bash
+      - ./download.bash
+      - ./test-download.bash
   workflow_dispatch:
 
 jobs:

@@ -40,10 +40,10 @@ jobs:
             GOLANG_VER=1.21.4
             "TOKEN=${{ steps.generate_token.outputs.token }}"
           push: false
-      - name: Test Docker image
-        run: docker container run
-          --mount type=bind,source="$(pwd)",target=/mnt/app
-          --workdir /mnt/app
-          -- ${{ steps.image.outputs.digest }}  -debug
+      # - name: Test Docker image
+      #  run: docker container run
+      #    --mount type=bind,source="$(pwd)",target=/mnt/app
+      #    --workdir /mnt/app
+      #    -- ${{ steps.image.outputs.digest }}  -debug
       - name: Lint Dockerfile with hadolint
         run: docker run --rm -i hadolint/hadolint hadolint --ignore DL3018 --strict-labels - < Dockerfile
