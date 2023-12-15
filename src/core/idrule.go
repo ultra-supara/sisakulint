@@ -24,6 +24,7 @@ func IDRule() *RuleID {
 			RuleName: "id",
 			RuleDesc: "Checks for duplication and naming convention of job/step IDs",
 		},
+		seen: make(map[string]*ast.Position),
 	}
 }
 
