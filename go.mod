@@ -5,7 +5,6 @@ go 1.21.4
 require (
 	github.com/fatih/color v1.16.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/mattn/go-runewidth v0.0.15
 	github.com/open-policy-agent/opa v0.59.0
 	golang.org/x/sync v0.5.0
 	golang.org/x/sys v0.15.0
@@ -31,7 +30,6 @@ require (
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
-	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
