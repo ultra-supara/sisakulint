@@ -29,6 +29,7 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
 
   update-homebrew-formula:
     needs: goreleaser
@@ -38,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: sisakulint/homebrew-sisakulint
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.ACCESS_TOKEN }}
           path: homebrew-sisakulint
 
       - name: Copy Homebrew Formula

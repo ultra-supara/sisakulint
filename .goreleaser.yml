@@ -20,14 +20,6 @@ builds:
     goos: [linux]
     goarch: [arm, amd64, arm64]
 
-archives:
-  - <<: &archives_defaults
-      files:
-        - README.md
-    id: nix
-    builds: [macos, linux, freebsd]
-    format: tar.gz
-
 brews:
   - name: sisakulint
     folder: HomebrewFormula
@@ -41,6 +33,10 @@ brews:
       bin.install "sisakulint"
     test: |
       system "#{bin}/sisakulint -version"
+  - repository:
+      owner: sisakulint # Homebrew Taps 用のリポジトリのオーナー名
+      name: homebrew-sisakulint # Homebrew Taps 用のリポジトリ名
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}" # `TAP_GITHUB_TOKEN` 環境変数をトークンとして使うようにする
 
 changelog:
   skip: true
