@@ -22,7 +22,10 @@ builds:
 
 brews:
   - name: sisakulint
-    folder: HomebrewFormula
+    tap:
+      owner: sisakulint # Homebrew Taps 用のリポジトリのオーナー名
+      name: homebrew-sisakulint # Homebrew Taps 用のリポジトリ名
+    url_template: "https://github.com/sisakulint/homebrew-sisakulint/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     commit_author:
       name: "github-actions[bot]"
       email: "41898282+github-actions[bot]@users.noreply.github.com"
