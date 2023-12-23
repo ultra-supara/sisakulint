@@ -41,8 +41,8 @@ jobs:
 
       - name: Copy Homebrew Formula
         run: |
-          cp HomebrewFormula/sisakulint.rb homebrew-sisakulint/lib/sisakulint.rb
-          cp HomebrewFormula/strategy.rb homebrew-sisakulint/lib/strategy.rb
+          cp HomebrewFormula/dist/sisakulint.rb homebrew-sisakulint/lib/sisakulint.rb
+          cp HomebrewFormula/dist/strategy.rb homebrew-sisakulint/lib/strategy.rb
 
       - name: Commit and Push
         run: |
