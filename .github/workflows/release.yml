@@ -31,10 +31,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
 
-  update-homebrew-formula:
-    needs: goreleaser
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Checkout Homebrew Tap Repository
         uses: actions/checkout@v4
         with:
