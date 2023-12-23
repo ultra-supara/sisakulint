@@ -524,8 +524,7 @@ func (l *Linter) validate(
 
 		rules := []Rule{
 			// MatrixRule(),
-			// CredentialsRule(),
-			// RunnerLabelRule(),
+			//CredentialsRule(),
 			// EventsRule(),
 			// JobDependenciesRule(),
 			// ActionRule(localActions),
