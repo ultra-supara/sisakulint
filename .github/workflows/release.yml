@@ -48,6 +48,6 @@ jobs:
           cd homebrew-sisakulint
           git config --global user.name "sisakulint-bot"
           git config --global user.email "actions@github.com"
-          git add homebrew-sisakulint/sisakulint.rb
+          git add sisakulint.rb
           git commit -m "Update sisakulint.rb"
           git push origin HEAD:main
