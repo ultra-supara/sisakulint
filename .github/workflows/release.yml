@@ -52,4 +52,3 @@ jobs:
           git add homebrew-sisakulint/sisakulint.rb
           git commit -m "Update sisakulint.rb"
           git push origin HEAD:main
-               
