@@ -36,12 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tap repository
-        uses: actions/checkout@v4
-        with:
-          repository: "ultra-spara/homebrew-sisakulint"
-          path: "homebrew-sisakulint"
-          token: ${{ secrets.TAP_ACCESS_TOKEN }}
-          branch: main
+        run: | 
+          git clone https://github.com/ultra-spara/homebrew-sisakulint
+          git config --global url."https://${{ github.TAP_ACCESS_TOKEN }}:x-oauth-basic@github.com".insteadOf "https://github.com"
       - name: Update formula
         run: |
           sed -i -e 's/# typed:/require_relative "strategy" # typed:/g' homebrew-sisakulint/sisakulint.rb
