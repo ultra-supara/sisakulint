@@ -42,8 +42,10 @@ jobs:
       - name: Update formula
         run: |
           sed -i -e 's/# typed:/require_relative "strategy" # typed:/g' homebrew-sisakulint/sisakulint.rb
+          cat homebrew-sisakulint/sisakulint.rb
       - name: Commit and push changes
         run: |
+          cd homebrew-sisakulint
           git config --global user.name "sisakulint-bot"
           git config --global user.email "actions@github.com"
           git add homebrew-sisakulint/sisakulint.rb
