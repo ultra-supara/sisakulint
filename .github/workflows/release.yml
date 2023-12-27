@@ -37,7 +37,7 @@ jobs:
     steps:
       - name: Checkout tap repository
         run: | 
-          git clone https://github.com/ultra-spara/homebrew-sisakulint
+          git clone https://github.com/ultra-supara/homebrew-sisakulint
           git config --global url."https://x-oauth-basic:${{ secrets.TAP_ACCESS_TOKEN }}@github.com".insteadOf "https://github.com"
       - name: Update formula
         run: |
