@@ -51,3 +51,5 @@ jobs:
           git add sisakulint.rb
           git commit -m "Update sisakulint.rb"
           git push origin HEAD:main
+          git tag ${{ github.ref_name }}
+          git push origin ${{ github.ref_name }}
