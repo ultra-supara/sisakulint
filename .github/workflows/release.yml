@@ -30,13 +30,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
-    
+
   after_release:
     needs: goreleaser
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tap repository
-        run: | 
+        run: |
           git clone https://github.com/ultra-supara/homebrew-sisakulint
           git config --global url."https://x-oauth-basic:${{ secrets.TAP_ACCESS_TOKEN }}@github.com".insteadOf "https://github.com"
       - name: Update formula

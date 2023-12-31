@@ -51,9 +51,8 @@ func (rule *ConditionalRule) checkcond(n *ast.String) {
 	}
 	// rule
 	rule.Errorf(
-    n.Pos,
-    "The condition '%s' will always evaluate to true. If you intended to use a literal value, please use ${{ true }}. Ensure there are no extra characters within the ${{ }} brackets in conditions.",
-    n.Value,
-)
-
+    	n.Pos,
+    	"The condition '%s' will always evaluate to true. If you intended to use a literal value, please use ${{ true }}. Ensure there are no extra characters within the ${{ }} brackets in conditions.",
+    	n.Value,
+    )
 }
