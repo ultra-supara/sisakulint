@@ -3,8 +3,8 @@
 /.testtimestamp
 /.staticchecktimestamp
 /env.sh
-/.github/sisaku.yaml
-/.github/sisaku.yml
+/.github/action.yaml
+/.github/action.yml
 /sisakulint-workflow-ast
 /.DS_Store
 .DS_Store

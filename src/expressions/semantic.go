@@ -618,7 +618,7 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 	if len(sema.configVars) == 0 {
 		sema.errorf(
     		n,
-    		"No configuration variables are allowed because the variables list is empty in sisaku.yaml. You may have forgotten to add the variable %q to the list.",
+    		"No configuration variables are allowed because the variables list is empty in action.yaml. You may have forgotten to add the variable %q to the list.",
     		n.Property,
 		)
 		return
@@ -632,7 +632,7 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 
 	sema.errorf(
     	n,
-    	"The configuration variable %q is undefined. The defined configuration variables in sisaku.yaml are: %s",
+    	"The configuration variable %q is undefined. The defined configuration variables in action.yaml are: %s",
     	n.Property,
     	SortedQuotes(sema.configVars),
 	)
