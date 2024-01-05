@@ -14,17 +14,17 @@ import (
 	"github.com/ultra-supara/sisakulint/src/ast"
 )
 
-//コンソール出力時における色付けのための定数
+// コンソール出力時における色付けのための定数
 var (
-	BoldStyle = color.New(color.Bold)
-	GreenStyle = color.New(color.FgGreen)
+	BoldStyle   = color.New(color.Bold)
+	GreenStyle  = color.New(color.FgGreen)
 	YellowStyle = color.New(color.FgYellow)
-	GrayStyle = color.New(color.FgHiBlack)
+	GrayStyle   = color.New(color.FgHiBlack)
 	OrangeStyle = color.New(color.FgHiYellow)
-	RedStyle = color.New(color.FgRed)
+	RedStyle    = color.New(color.FgRed)
 )
 
-//LintingErrorはsisakulintにおけるlinting errorの詳細を表す構造体
+// LintingErrorはsisakulintにおけるlinting errorの詳細を表す構造体
 type LintingError struct {
 	//LintingErrorの種類
 	Description string
@@ -49,22 +49,22 @@ func (e *LintingError) String() string {
 func NewError(position *ast.Position, errorType string, message string) *LintingError {
 	return &LintingError{
 		Description: message,
-		LineNumber: position.Line,
-		ColNumber: position.Col,
-		Type: errorType,
+		LineNumber:  position.Line,
+		ColNumber:   position.Col,
+		Type:        errorType,
 	}
 }
 
 func FormattedError(position *ast.Position, errorType string, format string, args ...interface{}) *LintingError {
 	return &LintingError{
 		Description: fmt.Sprintf(format, args...),
-		LineNumber: position.Line,
-		ColNumber: position.Col,
-		Type: errorType,
+		LineNumber:  position.Line,
+		ColNumber:   position.Col,
+		Type:        errorType,
 	}
 }
 
-//ExtractTemplateFieldsはLintingErrorからテンプレートの生成に必要なフィールドを抽出する
+// ExtractTemplateFieldsはLintingErrorからテンプレートの生成に必要なフィールドを抽出する
 func (e *LintingError) ExtractTemplateFields(sourceContent []byte) *TemplateFields {
 	codeSnippet := ""
 
@@ -74,17 +74,17 @@ func (e *LintingError) ExtractTemplateFields(sourceContent []byte) *TemplateFiel
 		}
 	}
 	return &TemplateFields{
-		Message : e.Description,
+		Message:  e.Description,
 		Filepath: e.FilePath,
-		Line: e.LineNumber,
-		Column: e.ColNumber,
-		Type: e.Type,
-		Snippet: codeSnippet,
+		Line:     e.LineNumber,
+		Column:   e.ColNumber,
+		Type:     e.Type,
+		Snippet:  codeSnippet,
 	}
 }
 
 type RuleTemplateField struct {
-	Name string
+	Name        string
 	Description string
 }
 
@@ -102,8 +102,8 @@ func (a ByRuleTemplateField) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 
-//DisplayErrorはエラーを見やすい形で出力する
-//sourceがnilな場合はスニペットは表示しない
+// DisplayErrorはエラーを見やすい形で出力する
+// sourceがnilな場合はスニペットは表示しない
 func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 	printColored(output, GreenStyle, e.FilePath)
 	printColored(output, GrayStyle, ":")
@@ -119,23 +119,23 @@ func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 	}
 
 	lineContent, found := e.extractLineContent(sourceContent)
-	if !found || len(lineContent) < e.ColNumber - 1 {
+	if !found || len(lineContent) < e.ColNumber-1 {
 		return
 	}
 
 	lineHeader := fmt.Sprintf("%d 👈|", e.LineNumber)
-	padding := strings.Repeat(" ", len(lineHeader) - 2)
+	padding := strings.Repeat(" ", len(lineHeader)-2)
 	printColored(output, GrayStyle, fmt.Sprintf("%s %s", padding, lineHeader))
-	fmt.Fprintln(output,lineContent)
-	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, strings.Repeat(" ", e.ColNumber - 1)))
+	fmt.Fprintln(output, lineContent)
+	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, strings.Repeat(" ", e.ColNumber-1)))
 }
 
-//helper function to print with color
+// helper function to print with color
 func printColored(output io.Writer, colorizer *color.Color, content string) {
 	colorizer.Fprint(output, content)
 }
 
-//extractLineContentはソースコードの中からエラーが発生した行の内容を抽出する
+// extractLineContentはソースコードの中からエラーが発生した行の内容を抽出する
 func (e *LintingError) extractLineContent(sourceContent []byte) (string, bool) {
 	s := bufio.NewScanner(bytes.NewReader(sourceContent))
 	lineNumber := 0
@@ -168,7 +168,7 @@ func (a ByRuleErrorPosition) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 
-//TemplateFieldsはエラーメッセージをフォーマットするためのフィールド保持
+// TemplateFieldsはエラーメッセージをフォーマットするためのフィールド保持
 type TemplateFields struct {
 	// Message はエラーメッセージの本文
 	Message string `json:"message"`
@@ -186,13 +186,13 @@ type TemplateFields struct {
 	Snippet string `json:"snippet,omitempty"`
 }
 
-//backslashのunescape
+// backslashのunescape
 func unescapeBackslash(input string) string {
 	replacer := strings.NewReplacer("\a", "\a", "\b", "\b", "\f", "\f", "\\", "\\", "\n", "\n", "\r", "\r", "\t", "\t", "\v", "\v")
 	return replacer.Replace(input)
 }
 
-//文字列をパスカルケースに変換
+// 文字列をパスカルケースに変換
 func toPascalCase(input string) string {
 	words := strings.FieldsFunc(input, func(r rune) bool {
 		return !('a' <= r && r <= 'z' || 'A' <= r && r <= 'Z' || '0' <= r && r <= '9')
@@ -209,15 +209,15 @@ func toPascalCase(input string) string {
 	return strings.Join(words, "")
 }
 
-//ErrorFormatterはErrorTemplateFieldsのスライスをフォーマットする
-//todo: -formatでエラーメッセージをフォーマットするために使用される
+// ErrorFormatterはErrorTemplateFieldsのスライスをフォーマットする
+// todo: -formatでエラーメッセージをフォーマットするために使用される
 type ErrorFormatter struct {
 	templateInstance *template.Template
-	ruleTemplates map[string]*RuleTemplateField
+	ruleTemplates    map[string]*RuleTemplateField
 }
 
-//NewErrorformatterは新しいErrorFormatterインスタンスを作成する。
-//指定されたフォーマットには少なくとも1つの{{}}が入っていてほしい
+// NewErrorformatterは新しいErrorFormatterインスタンスを作成する。
+// 指定されたフォーマットには少なくとも1つの{{}}が入っていてほしい
 // \nはunescapedされる
 func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 	if !strings.Contains(format, "{{") {
@@ -238,7 +238,7 @@ func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 			return builder.String(), nil
 		},
 
-		"replace": func(str string , oldnew ...string) string {
+		"replace": func(str string, oldnew ...string) string {
 			return strings.NewReplacer(oldnew...).Replace(str)
 		},
 
@@ -260,7 +260,7 @@ func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 	return &ErrorFormatter{t, ruleTemplates}, nil
 }
 
-//PrintErrorsはテンプレートでフォーマットした後でエラーを出力する
+// PrintErrorsはテンプレートでフォーマットした後でエラーを出力する
 func (formatter *ErrorFormatter) Print(writer io.Writer, templateFields []*TemplateFields) error {
 	if err := formatter.templateInstance.Execute(writer, templateFields); err != nil {
 		return fmt.Errorf("failed to error message format: %w", err)
@@ -268,7 +268,7 @@ func (formatter *ErrorFormatter) Print(writer io.Writer, templateFields []*Templ
 	return nil
 }
 
-//PrintErrorsはテンプレートでフォーマットした後でエラー出力
+// PrintErrorsはテンプレートでフォーマットした後でエラー出力
 func (formatter *ErrorFormatter) PrintErrors(writer io.Writer, lintErrors []*LintingError, source []byte) error {
 	templateFieldsList := make([]*TemplateFields, 0, len(lintErrors))
 	for _, lintError := range lintErrors {
@@ -277,13 +277,13 @@ func (formatter *ErrorFormatter) PrintErrors(writer io.Writer, lintErrors []*Lin
 	return formatter.Print(writer, templateFieldsList)
 }
 
-//RegisterRuleはルール登録
-//登録済みのルールは、エラーフォーマットテンプレート内のkindDescriptionやkindIndexで取得
+// RegisterRuleはルール登録
+// 登録済みのルールは、エラーフォーマットテンプレート内のkindDescriptionやkindIndexで取得
 func (formatter *ErrorFormatter) RegisterRule(rule Rule) {
 	ruleName := rule.RuleNames()
 	if _, exists := formatter.ruleTemplates[ruleName]; !exists {
 		formatter.ruleTemplates[ruleName] = &RuleTemplateField{
-			Name: ruleName,
+			Name:        ruleName,
 			Description: rule.RuleDescription(),
 		}
 	}

@@ -13,8 +13,8 @@ var deprecatedCommandsPattern = regexp.MustCompile(`(?:::(save-state|set-output|
 
 // RuleDeprecatedCommandsは非推奨のワークフローコマンドを検出するルールチェッカーです。
 // 現在では'set-state'、'set-output'、`set-env'、'add-path'が非推奨として検出されます。
-//* https://github.blog/changelog/2020-10-01-github-actions-deprecating-set-env-and-add-path-commands/
-//* https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+// * https://github.blog/changelog/2020-10-01-github-actions-deprecating-set-env-and-add-path-commands/
+// * https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
 type RuleDeprecatedCommands struct {
 	BaseRule
 }
