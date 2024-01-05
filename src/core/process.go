@@ -12,17 +12,17 @@ import (
 	"golang.org/x/sys/execabs"
 )
 
-//ConcurrentExecutorは同時に実行されるプロセスの数を制限するための構造体
+// ConcurrentExecutorは同時に実行されるプロセスの数を制限するための構造体
 type ConcurrentExecutor struct {
-	ctx context.Context
+	ctx  context.Context
 	sema *semaphore.Weighted
-	wg sync.WaitGroup
+	wg   sync.WaitGroup
 }
 
-//NewConcurrentExecutorはConcurrentExecutorを生成する
+// NewConcurrentExecutorはConcurrentExecutorを生成する
 func NewConcurrentExecutor(par int) *ConcurrentExecutor {
 	return &ConcurrentExecutor{
-		ctx: context.Background(),
+		ctx:  context.Background(),
 		sema: semaphore.NewWeighted(int64(par)),
 	}
 }
@@ -52,36 +52,36 @@ func (ce *ConcurrentExecutor) execute(eg *errgroup.Group, exe string, args []str
 	})
 }
 
-//Waitはgoroutineの終了を待つ
+// Waitはgoroutineの終了を待つ
 func (ce *ConcurrentExecutor) Wait() {
 	ce.wg.Wait()
 }
 
-//CommandRunnerは指定された実行ファイル用の外部コマンドランナーを作成
+// CommandRunnerは指定された実行ファイル用の外部コマンドランナーを作成
 func (ce *ConcurrentExecutor) CommandRunner(exe string) (*ExternalCommandRunner, error) {
 	p, err := execabs.LookPath(exe)
 	if err != nil {
 		return nil, err
 	}
 	return &ExternalCommandRunner{
-		ce: ce,
+		ce:  ce,
 		exe: p,
 	}, nil
 }
 
-//ExternalCommandRunnerは外部コマンドを実行するための構造体
+// ExternalCommandRunnerは外部コマンドを実行するための構造体
 type ExternalCommandRunner struct {
-	ce *ConcurrentExecutor
+	ce  *ConcurrentExecutor
 	eg  errgroup.Group
 	exe string
 }
 
-//Executeは指定された引数とstdinでコマンドを実行
+// Executeは指定された引数とstdinでコマンドを実行
 func (ecr *ExternalCommandRunner) Execute(args []string, stdin string, callback func([]byte, error) error) {
 	ecr.ce.execute(&ecr.eg, ecr.exe, args, stdin, callback)
 }
 
-//Waitはgoroutineの終了を待つ
+// Waitはgoroutineの終了を待つ
 func (ecr *ExternalCommandRunner) Wait() error {
 	return ecr.eg.Wait()
 }

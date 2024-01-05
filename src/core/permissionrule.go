@@ -22,7 +22,7 @@ var allPermissionScopes = map[string]struct{}{
 }
 
 // RulePermissions is a rule checker to check permission configurations in a workflow.
-//* https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+// * https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
 type PermissionRule struct {
 	BaseRule
 }
@@ -61,7 +61,7 @@ func (rule *PermissionRule) checkPermissions(p *ast.Permissions) {
 				p.All.Pos,
 				"The 'write-all' scope is too broad, covering all available scopes. Please specify 'write' or 'read' for each individual scope instead.Value: %s plaese see https://github.com/suzuki-shunsuke/ghalint/blob/main/docs/policies/003.md",
 				p.All.Value,
-				)
+			)
 		default:
 			rule.Errorf(p.All.Pos, "%q is invalid for permission for all the scopes.", p.All.Value)
 		}

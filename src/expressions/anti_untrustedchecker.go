@@ -9,10 +9,10 @@ import (
 // 信頼できない入力へのパスを検出し、このインスタンスで見つかったエラーを保存します。これらのエラーは、Errsメソッドを介して取得できます。
 type UntiChecker struct {
 	roots           ContextPropertySearchRoots // 信頼できない入力パスを定義する検索ツリー
-	filteringObject bool                      // 現在のノードがオブジェクトフィルターであるかどうか
+	filteringObject bool                       // 現在のノードがオブジェクトフィルターであるかどうか
 	cur             []*ContextPropertyMap      // 現在のノードの信頼できない入力マップ
-	start           ExprNode                  // 現在の式の開始ノード
-	errs            []*ExprError              // 現在の式で見つかったエラー
+	start           ExprNode                   // 現在の式の開始ノード
+	errs            []*ExprError               // 現在の式で見つかったエラー
 }
 
 // NewUntiCheckerは、新しいUntiCheckerインスタンスを作成します。
@@ -80,7 +80,7 @@ func (u *UntiChecker) onPropAccess(name string) {
 }
 
 // onIndexAccessは、インデックスアクセスノードが訪問されたときに呼び出されます。
-//現在のノードの信頼できない入力マップ内で配列要素を見つけます。
+// 現在のノードの信頼できない入力マップ内で配列要素を見つけます。
 // 要素が見つからない場合、現在のノードの信頼できない入力マップをnilに設定します。
 func (u *UntiChecker) onIndexAccess() {
 	if u.filteringObject {

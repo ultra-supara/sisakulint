@@ -23,7 +23,7 @@ func (project *parser) parseMapping(sec string, node *yaml.Node, allowEmpty bool
 		return nil
 	}
 
-	mappings := make(map[string]*ast.Position,len(node.Content)/2)
+	mappings := make(map[string]*ast.Position, len(node.Content)/2)
 	m := make([]workflowKeyValue, 0, len(node.Content)/2)
 	for i := 0; i < len(node.Content); i += 2 {
 		key := project.parseString(node.Content[i], false)
@@ -56,103 +56,103 @@ func (project *parser) parseMapping(sec string, node *yaml.Node, allowEmpty bool
 
 func (project *parser) parseString(node *yaml.Node, allowEmpty bool) *ast.String {
 	if !project.checkString(node, allowEmpty) {
-		return &ast.String{Value:"", Quoted:false, Pos:positionAt(node)}
+		return &ast.String{Value: "", Quoted: false, Pos: positionAt(node)}
 	}
 	return newString(node)
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
-func (project *parser) parseEvents(pos *ast.Position, node *yaml.Node) []ast.Event{
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
+func (project *parser) parseEvents(pos *ast.Position, node *yaml.Node) []ast.Event {
 	switch node.Kind {
-		case yaml.ScalarNode:
-			switch node.Value {
-				case "workflow_dispatch":
-					return []ast.Event{
-						&ast.WorkflowDispatchEvent{Pos: positionAt(node)},
-					}
-				case "repository_dispatch":
-					return []ast.Event{
-						&ast.RepositoryDispatchEvent{Pos: positionAt(node)},
-					}
-				case "schedule":
-					project.errorAt(pos, "schedule event is not supported")
-					return []ast.Event{}
-				case "workflow_call":
-					return []ast.Event{
-						&ast.WorkflowCallEvent{Pos: positionAt(node)},
-					}
-				default:
-					hi := project.parseString(node, false)
-					if hi.Value == "" {
-						return []ast.Event{}
-					}
-					return []ast.Event{
-						&ast.WebhookEvent{
-							Hook: hi,
-							Pos: positionAt(node),
-						},
-					}
+	case yaml.ScalarNode:
+		switch node.Value {
+		case "workflow_dispatch":
+			return []ast.Event{
+				&ast.WorkflowDispatchEvent{Pos: positionAt(node)},
 			}
-		case yaml.MappingNode:
-			kvs := project.parseSectionMapping("on", node, false, true)
-			ret := make([]ast.Event, 0, len(kvs))
-
-			for _, kv := range kvs {
-				pos := kv.key.Pos
-				switch kv.id {
-					//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#schedule
-					case "schedule":
-						if e := project.parseScheduleEvent(pos, kv.val); e != nil {
-							ret = append(ret, e)
-						}
-					//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
-					case "workflow_dispatch":
-						ret = append(ret, project.parseWorkflowDispatchEvent(pos, kv.val))
-
-					//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
-					case "repository_dispatch":
-						ret = append(ret, project.parseRepositoryDispatchEvent(pos, kv.val))
-
-					//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
-					case "workflow_call":
-						ret = append(ret, project.parseWorkflowCallEvent(pos, kv.val))
-					default:
-						ret = append(ret, project.parseWebhookEvent(kv.key, kv.val))
-					}
-				}
-				return ret
-		case yaml.SequenceNode:
-			project.checkNotEmpty("on", len(node.Content), node)
-			ret := make([]ast.Event, 0, len(node.Content))
-
-			for _, c := range node.Content {
-				if s := project.parseString(c, false); s != nil {
-					switch s.Value {
-						//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#schedule
-						//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
-						case "schedule", "repository_dispatch":
-							project.errorf(c, "event %q must be mapping", s.Value)
-
-						//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
-						case "workflow_dispatch":
-							ret = append(ret, &ast.WorkflowDispatchEvent{Pos: positionAt(c)})
-
-						//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
-						case "workflow_call":
-							ret = append(ret, &ast.WorkflowCallEvent{Pos: positionAt(c)})
-						default:
-							ret = append(ret, &ast.WebhookEvent{Hook: s, Pos: positionAt(c)})
-					}
-				}
+		case "repository_dispatch":
+			return []ast.Event{
+				&ast.RepositoryDispatchEvent{Pos: positionAt(node)},
 			}
-			return ret
+		case "schedule":
+			project.errorAt(pos, "schedule event is not supported")
+			return []ast.Event{}
+		case "workflow_call":
+			return []ast.Event{
+				&ast.WorkflowCallEvent{Pos: positionAt(node)},
+			}
 		default:
-			project.errorf(node, "expected scalar, mapping or sequence node for \"on\" but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
-			return nil
+			hi := project.parseString(node, false)
+			if hi.Value == "" {
+				return []ast.Event{}
+			}
+			return []ast.Event{
+				&ast.WebhookEvent{
+					Hook: hi,
+					Pos:  positionAt(node),
+				},
+			}
+		}
+	case yaml.MappingNode:
+		kvs := project.parseSectionMapping("on", node, false, true)
+		ret := make([]ast.Event, 0, len(kvs))
+
+		for _, kv := range kvs {
+			pos := kv.key.Pos
+			switch kv.id {
+			//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#schedule
+			case "schedule":
+				if e := project.parseScheduleEvent(pos, kv.val); e != nil {
+					ret = append(ret, e)
+				}
+			//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
+			case "workflow_dispatch":
+				ret = append(ret, project.parseWorkflowDispatchEvent(pos, kv.val))
+
+			//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
+			case "repository_dispatch":
+				ret = append(ret, project.parseRepositoryDispatchEvent(pos, kv.val))
+
+			//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
+			case "workflow_call":
+				ret = append(ret, project.parseWorkflowCallEvent(pos, kv.val))
+			default:
+				ret = append(ret, project.parseWebhookEvent(kv.key, kv.val))
+			}
+		}
+		return ret
+	case yaml.SequenceNode:
+		project.checkNotEmpty("on", len(node.Content), node)
+		ret := make([]ast.Event, 0, len(node.Content))
+
+		for _, c := range node.Content {
+			if s := project.parseString(c, false); s != nil {
+				switch s.Value {
+				//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#schedule
+				//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
+				case "schedule", "repository_dispatch":
+					project.errorf(c, "event %q must be mapping", s.Value)
+
+				//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
+				case "workflow_dispatch":
+					ret = append(ret, &ast.WorkflowDispatchEvent{Pos: positionAt(c)})
+
+				//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
+				case "workflow_call":
+					ret = append(ret, &ast.WorkflowCallEvent{Pos: positionAt(c)})
+				default:
+					ret = append(ret, &ast.WebhookEvent{Hook: s, Pos: positionAt(c)})
+				}
+			}
+		}
+		return ret
+	default:
+		project.errorf(node, "expected scalar, mapping or sequence node for \"on\" but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
+		return nil
 	}
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
 func (project *parser) parsePermissions(pos *ast.Position, node *yaml.Node) *ast.Permissions {
 	ret := &ast.Permissions{Pos: pos}
 
@@ -172,7 +172,7 @@ func (project *parser) parsePermissions(pos *ast.Position, node *yaml.Node) *ast
 	return ret
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#env
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#env
 func (project *parser) parseEnv(node *yaml.Node) *ast.Env {
 	if node.Kind == yaml.ScalarNode {
 		return &ast.Env{
@@ -192,7 +192,7 @@ func (project *parser) parseEnv(node *yaml.Node) *ast.Env {
 	return &ast.Env{Vars: vars}
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaults
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaults
 func (project *parser) parseDefaults(pos *ast.Position, node *yaml.Node) *ast.Defaults {
 	ret := &ast.Defaults{Pos: pos}
 
@@ -205,12 +205,12 @@ func (project *parser) parseDefaults(pos *ast.Position, node *yaml.Node) *ast.De
 
 		for _, kv := range project.parseSectionMapping("run", kv.val, false, true) {
 			switch kv.id {
-				case "shell":
-					ret.Run.Shell = project.parseString(kv.val, false)
-				case "working-directory":
-					ret.Run.WorkingDirectory = project.parseString(kv.val, false)
-				default:
-					project.unexpectedKey(kv.key, "run", []string{"shell", "working-directory"})
+			case "shell":
+				ret.Run.Shell = project.parseString(kv.val, false)
+			case "working-directory":
+				ret.Run.WorkingDirectory = project.parseString(kv.val, false)
+			default:
+				project.unexpectedKey(kv.key, "run", []string{"shell", "working-directory"})
 			}
 		}
 	}
@@ -220,7 +220,7 @@ func (project *parser) parseDefaults(pos *ast.Position, node *yaml.Node) *ast.De
 	return ret
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
 func (project *parser) parseConcurrency(pos *ast.Position, node *yaml.Node) *ast.Concurrency {
 	ret := &ast.Concurrency{Pos: pos}
 
@@ -230,13 +230,13 @@ func (project *parser) parseConcurrency(pos *ast.Position, node *yaml.Node) *ast
 		groupFound := false
 		for _, kv := range project.parseSectionMapping("concurrency", node, false, true) {
 			switch kv.id {
-				case "group":
-					ret.Group = project.parseString(kv.val, false)
-					groupFound = true
-				case "cancel-in-progress":
-					ret.CancelInProgress = project.parseBool(kv.val)
-				default:
-					project.unexpectedKey(kv.key, "concurrency", []string{"group", "cancel-in-progress"})
+			case "group":
+				ret.Group = project.parseString(kv.val, false)
+				groupFound = true
+			case "cancel-in-progress":
+				ret.CancelInProgress = project.parseBool(kv.val)
+			default:
+				project.unexpectedKey(kv.key, "concurrency", []string{"group", "cancel-in-progress"})
 			}
 		}
 		if !groupFound {
@@ -246,7 +246,7 @@ func (project *parser) parseConcurrency(pos *ast.Position, node *yaml.Node) *ast
 	return ret
 }
 
-//*https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_id
+// *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_id
 func (project *parser) parseJob(id *ast.String, n *yaml.Node) *ast.Job {
 	ret := &ast.Job{ID: id, Pos: id.Pos}
 	call := &ast.WorkflowCall{}
@@ -412,7 +412,7 @@ func (project *parser) parseJob(id *ast.String, n *yaml.Node) *ast.Job {
 	return ret
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobs
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobs
 func (project *parser) parseJobs(node *yaml.Node) map[string]*ast.Job {
 	jobs := project.parseSectionMapping("jobs", node, false, false)
 	ret := make(map[string]*ast.Job, len(jobs))

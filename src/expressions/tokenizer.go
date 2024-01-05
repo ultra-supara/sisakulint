@@ -46,31 +46,30 @@ const expectedDigitChars = "'0'..'9'"
 const expectedAlphaChars = "'a'..'z', 'A'..'Z', '_'"
 const expectedAllChars = expectedAlphaChars + ", " + expectedDigitChars + ", " + expectedPunctChars
 
-
 // tokenの種類の一覧
 const (
-	TokenKindUnknown TokenKind = iota // 不明なトークンの種類のデフォルト値です。
-	TokenKindEnd                      // トークンシーケンスの終了を示すトークンです。このトークンがないシーケンスは無効です。
-	TokenKindIdent                    // 識別子のトークンです。
-	TokenKindString                   // 文字列リテラルのトークンです。
-	TokenKindInt                      // 16進数を含む整数のトークンです。
-	TokenKindFloat                    // 浮動小数点数のトークンです。
-	TokenKindLeftParen                // '('
-	TokenKindRightParen               // ')'
-	TokenKindLeftBracket              // '['
-	TokenKindRightBracket             // ']'
-	TokenKindDot                      // '.'
-	TokenKindNot                      // '!'
-	TokenKindLess                     // '<'
-	TokenKindLessEq                   // '<='
-	TokenKindGreater                  // '>'
-	TokenKindGreaterEq                // '>='
-	TokenKindEq                       // '=='
-	TokenKindNotEq                    // '!='
-	TokenKindAnd                      // '&&'
-	TokenKindOr                       // '||'
-	TokenKindStar                     // '*'
-	TokenKindComma                    // ','
+	TokenKindUnknown      TokenKind = iota // 不明なトークンの種類のデフォルト値です。
+	TokenKindEnd                           // トークンシーケンスの終了を示すトークンです。このトークンがないシーケンスは無効です。
+	TokenKindIdent                         // 識別子のトークンです。
+	TokenKindString                        // 文字列リテラルのトークンです。
+	TokenKindInt                           // 16進数を含む整数のトークンです。
+	TokenKindFloat                         // 浮動小数点数のトークンです。
+	TokenKindLeftParen                     // '('
+	TokenKindRightParen                    // ')'
+	TokenKindLeftBracket                   // '['
+	TokenKindRightBracket                  // ']'
+	TokenKindDot                           // '.'
+	TokenKindNot                           // '!'
+	TokenKindLess                          // '<'
+	TokenKindLessEq                        // '<='
+	TokenKindGreater                       // '>'
+	TokenKindGreaterEq                     // '>='
+	TokenKindEq                            // '=='
+	TokenKindNotEq                         // '!='
+	TokenKindAnd                           // '&&'
+	TokenKindOr                            // '||'
+	TokenKindStar                          // '*'
+	TokenKindComma                         // ','
 )
 
 func (t TokenKind) String() string {
@@ -126,13 +125,14 @@ func (t TokenKind) String() string {
 }
 
 // Tokenizerは式の構文を字句解析するための構造体
-//* https://docs.github.com/en/actions/learn-github-actions/expressions
+// * https://docs.github.com/en/actions/learn-github-actions/expressions
 type Tokenizer struct {
-	source    string           // 字句解析するソース文字列です。
-	scanner   scanner.Scanner  // Goの標準ライブラリから提供されるスキャナーです。
-	lexError  *ExprError       // 字句解析中に発生したエラーを保持します。
-	start     scanner.Position // トークンの開始位置を示します。
+	source   string           // 字句解析するソース文字列です。
+	scanner  scanner.Scanner  // Goの標準ライブラリから提供されるスキャナーです。
+	lexError *ExprError       // 字句解析中に発生したエラーを保持します。
+	start    scanner.Position // トークンの開始位置を示します。
 }
+
 // NewTokenizer は新しい Tokenizer インスタンスを作成します。
 func NewTokenizer(src string) *Tokenizer {
 	t := &Tokenizer{

@@ -67,56 +67,55 @@ func (b *Bool) String() string {
 	return "false"
 }
 
-//* https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#using-filters
+// * https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#using-filters
 // IsEmpty は値を持っていない場合にtrueを返します。これはWebhookEventFilterインスタンス自体がnilである可能性もあります。
 func (f *WebhookEventFilter) IsEmpty() bool {
 	return f == nil || len(f.Values) == 0
 }
 
-
-//* https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onevent_nametypes
+// * https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onevent_nametypes
 // EventName はこのワークフローをトリガーするイベントの名前を返します。
 func (e *WebhookEvent) EventName() string {
 	return e.Hook.Value
 }
 
-//* https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#scheduled-events
+// * https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#scheduled-events
 // EventName はこのワークフローをトリガーするイベントの名前を返します。
 func (e *ScheduledEvent) EventName() string {
 	return "schedule"
 }
 
-//* https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
+// * https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
 // EventName はこのワークフローをトリガーするイベントの名前を返します。
 func (e *WorkflowDispatchEvent) EventName() string {
 	return "workflow_dispatch"
 }
 
-//* https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#repository_dispatch
+// * https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#repository_dispatch
 // EventName はこのワークフローをトリガーするイベントの名前を返します。
 func (e *RepositoryDispatchEvent) EventName() string {
 	return "repository_dispatch"
 }
 
-//* https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
+// * https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onworkflow_callinputs
 // IsRequired は入力が必須としてマークされているかどうかを返します。
 func (i *WorkflowCallEventInput) IsRequired() bool {
 	return i.Required != nil && i.Required.Value
 }
 
-//* https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow-reuse-events
+// * https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow-reuse-events
 // EventName はこのワークフローをトリガーするイベントの名前を返します。
 func (e *WorkflowCallEvent) EventName() string {
 	return "workflow_call"
 }
 
-//* https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+// * https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
 // Kind はステップ実行の種類を返します。
 func (e *ExecRun) Kind() ExecKind {
 	return ExecKindRun
 }
 
-//* https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsuses
+// * https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsuses
 // Kind はステップの実行種別を返します。この場合はアクション実行を意味します。
 func (e *ExecAction) Kind() ExecKind {
 	return ExecKindAction

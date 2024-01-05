@@ -12,13 +12,13 @@ import (
 )
 
 // GitHub Actionsの入力メタデータ構造体 : inputs
-//*https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#inputs
+// *https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#inputs
 type ActionInputMetadata struct {
-	Name string `json:"name"`
-	Required bool `json:"required"`
+	Name     string `json:"name"`
+	Required bool   `json:"required"`
 }
 
-//actionの入力メタデータのマップ
+// actionの入力メタデータのマップ
 type ActionInputsMetadata map[string]*ActionInputMetadata
 
 // YAMLからアクションの入力メタデータを読み込む関数
@@ -28,8 +28,8 @@ func (inputs *ActionInputsMetadata) UnmarshalYAML(n *yaml.Node) error {
 	}
 
 	type TempInputMetadata struct {
-		Required bool `yaml:"required"`
-		Default *string `yaml:"default"`
+		Required bool    `yaml:"required"`
+		Default  *string `yaml:"default"`
 	}
 
 	md := make(ActionInputsMetadata, len(n.Content)/2)
@@ -52,7 +52,7 @@ func (inputs *ActionInputsMetadata) UnmarshalYAML(n *yaml.Node) error {
 }
 
 // GitHub Actionsの出力メタデータ構造体
-//*https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#outputs-for-composite-actions
+// *https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions#outputs-for-composite-actions
 type ActionOutputMetadata struct {
 	Name string `json:"name"`
 }
@@ -80,21 +80,21 @@ func (outputs *ActionOutputsMetadata) UnmarshalYAML(n *yaml.Node) error {
 }
 
 // GitHub Actionsの全体的なメタデータ構造体
-//*https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+// *https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
 type ActionMetadata struct {
-	Name string `yaml:"name" json:"name"`
-	Inputs ActionInputsMetadata `yaml:"inputs" json:"inputs"`
-	Outputs ActionOutputsMetadata `yaml:"outputs" json:"outputs"`
-	SkipInputs bool `json:"skip_inputs"`
-	SkipOutputs bool `json:"skip_outputs"`
+	Name        string                `yaml:"name" json:"name"`
+	Inputs      ActionInputsMetadata  `yaml:"inputs" json:"inputs"`
+	Outputs     ActionOutputsMetadata `yaml:"outputs" json:"outputs"`
+	SkipInputs  bool                  `json:"skip_inputs"`
+	SkipOutputs bool                  `json:"skip_outputs"`
 }
 
 // ローカルアクションのメタデータキャッシュ構造体
 type LocalActionsMetadataCache struct {
-	mu sync.RWMutex
-	proj *Project
+	mu    sync.RWMutex
+	proj  *Project
 	cache map[string]*ActionMetadata
-	dbg io.Writer
+	dbg   io.Writer
 }
 
 // ローカルアクションのメタデータキャッシュを新規作成する関数
@@ -131,14 +131,13 @@ func (c *LocalActionsMetadataCache) writeCache(key string, val *ActionMetadata) 
 	c.cache[key] = val
 }
 
-
 // FindMetadataは指定されたspecのメタデータを検索します。specはローカルアクションを示すべきであるため、
 // "./"で始まる必要があります。エラーが発生していなくても、最初の戻り値はnilになることがあります。
 // LocalActionCacheは、アクションが見つからなかったことをキャッシュします。最初の検索時には、
 // アクションが見つからなかったというエラーを返します。しかし、2回目の検索では、結果がnilであってもエラーは返されません。
 // この振る舞いは、同じエラーを複数の場所から繰り返し報告するのを防ぐためです。
-func (c * LocalActionsMetadataCache) FindMetadata(spec string) (*ActionMetadata, error) {
-	if c.proj ==nil || !strings.HasPrefix(spec, "./") {
+func (c *LocalActionsMetadataCache) FindMetadata(spec string) (*ActionMetadata, error) {
+	if c.proj == nil || !strings.HasPrefix(spec, "./") {
 		return nil, nil
 	}
 

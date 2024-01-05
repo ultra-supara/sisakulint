@@ -62,8 +62,10 @@ func NewContextPropertyMap(name string, children ...*ContextPropertyMap) *Contex
 
 // ContextPropertySearchRoots は信用できない入力のリストです。
 // 例えば    1.ネストされたオブジェクトプロパティアクセス、
-//          2.配列インデックスアクセス、
-//          3.オブジェクトフィルタでuntrusted inputアクセス
+//
+//	2.配列インデックスアクセス、
+//	3.オブジェクトフィルタでuntrusted inputアクセス
+//
 // などなどを効果的に検出するためのツリー構造を形成します。
 // このマップの各値は検索のルートを表すため、それらの名前はコンテキストの名前です。
 type ContextPropertySearchRoots map[string]*ContextPropertyMap

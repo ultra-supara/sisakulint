@@ -79,8 +79,8 @@ func (project *parser) parse(node *yaml.Node) *ast.Workflow {
 	return workflow
 }
 
-//handleYamlErrorはyamlのエラーを処理する
-//yaml.v3のエラーを返す
+// handleYamlErrorはyamlのエラーを処理する
+// yaml.v3のエラーを返す
 func handleYamlError(err error) []*LintingError {
 	lineNumberPattern := regexp.MustCompile(`\bline (\d+)\b`)
 
@@ -104,9 +104,9 @@ func handleYamlError(err error) []*LintingError {
 	return []*LintingError{convertToError(err.Error())}
 }
 
-//Parse : byteで与えられたソースをworkflowの構文木に解析する
-//入力を解析しながら検出されたエラーを全部返す:解析を途中でやめない
-//parserはエラーがあっても最後まで解析をしてエラーとなる部分をファイルから全部抽出する
+// Parse : byteで与えられたソースをworkflowの構文木に解析する
+// 入力を解析しながら検出されたエラーを全部返す:解析を途中でやめない
+// parserはエラーがあっても最後まで解析をしてエラーとなる部分をファイルから全部抽出する
 func Parse(sourceContent []byte) (*ast.Workflow, []*LintingError) {
 	var node yaml.Node
 	if err := yaml.Unmarshal(sourceContent, &node); err != nil {

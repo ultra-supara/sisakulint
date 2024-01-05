@@ -57,10 +57,10 @@ func (rule *RuleID) VisitStep(n *ast.Step) error {
 	id := strings.ToLower(n.ID.Value)
 	if prev, ok := rule.seen[id]; ok {
 		rule.Errorf(
-    		n.ID.Pos,
-    		"Step ID %q is a duplicate. It was previously defined at %s. Step IDs must be unique within a job. Please note that step IDs are case-insensitive, so ensure that the step ID is distinct from the previous occurrence.",
-    		n.ID.Value,
-    		prev.String(),
+			n.ID.Pos,
+			"Step ID %q is a duplicate. It was previously defined at %s. Step IDs must be unique within a job. Please note that step IDs are case-insensitive, so ensure that the step ID is distinct from the previous occurrence.",
+			n.ID.Value,
+			prev.String(),
 		)
 
 		return nil
@@ -74,10 +74,10 @@ func (rule *RuleID) validateConvention(id *ast.String, what string) {
 		return
 	}
 	rule.Errorf(
-    	id.Pos,
-    	"Invalid %s ID %q. %s IDs must start with a letter or '_', and may contain only alphanumeric characters, '-', or '_'.",
-    	what,
-    	id.Value,
-    	what,
+		id.Pos,
+		"Invalid %s ID %q. %s IDs must start with a letter or '_', and may contain only alphanumeric characters, '-', or '_'.",
+		what,
+		id.Value,
+		what,
 	)
 }

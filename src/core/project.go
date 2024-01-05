@@ -23,7 +23,7 @@ func getAbsolutePath(path string) string {
 	return path
 }
 
-//ぷろじぇくとの探索して指定されたパスが所属するプロジェクトを見つけることで新しいProjectインスタンスを作成する
+// ぷろじぇくとの探索して指定されたパスが所属するプロジェクトを見つけることで新しいProjectインスタンスを作成する
 func locateProject(path string) (*Project, error) {
 	destinations := getAbsolutePath(path)
 	for {
@@ -40,7 +40,7 @@ func locateProject(path string) (*Project, error) {
 	}
 }
 
-//新しいインスタンスを作成するリポジトリのrootdirへのfilepathを再利用
+// 新しいインスタンスを作成するリポジトリのrootdirへのfilepathを再利用
 func NewProject(root string) (*Project, error) {
 	c, err := loadRepoConfig(root)
 	if err != nil {
@@ -53,37 +53,37 @@ func NewProject(root string) (*Project, error) {
 	return &Project{root: root, config: c, boiler: d}, nil
 }
 
-//githubプロジェクトのルートディレクトリを返す
+// githubプロジェクトのルートディレクトリを返す
 func (project *Project) RootDirectory() string {
 	return project.root
 }
 
-//githubプロジェクトの"/.github/workflows"ディレクトリを返す
+// githubプロジェクトの"/.github/workflows"ディレクトリを返す
 func (project *Project) WorkflowDirectory() string {
 	return filepath.Join(project.root, ".github", "workflows")
 }
 
-//プロジェクトが指定されたファイルを知っている場合はtrueを返す
+// プロジェクトが指定されたファイルを知っている場合はtrueを返す
 func (project *Project) IsKnown(path string) bool {
 	return strings.HasPrefix(getAbsolutePath(path), project.root)
 }
 
-//githubプロジェクトのconfigオブジェクトを返す
+// githubプロジェクトのconfigオブジェクトを返す
 func (project *Project) ProjectConfig() *Config {
 	return project.config
 }
 
-//Projectsはプロジェクトのset , 前に作られたprojectインスタンスをキャッシュして再利用
+// Projectsはプロジェクトのset , 前に作られたprojectインスタンスをキャッシュして再利用
 type Projects struct {
 	known []*Project
 }
 
-//新しいProjectsインスタンスを作成する
+// 新しいProjectsインスタンスを作成する
 func NewProjects() *Projects {
 	return &Projects{}
 }
 
-//パスが所属数rProjectインスタンスを返す. パスが見つからない場合はnilを返す
+// パスが所属数rProjectインスタンスを返す. パスが見つからない場合はnilを返す
 func (projects *Projects) GetProjectForPath(path string) (*Project, error) {
 	for _, p := range projects.known {
 		if p.IsKnown(path) {

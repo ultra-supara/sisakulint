@@ -21,7 +21,7 @@ type Boiler struct {
 	ConfigVariables []string `yaml:"config-variables"`
 }
 
-//parseBoilerは与えられたbyte sliceをConfigにparseする
+// parseBoilerは与えられたbyte sliceをConfigにparseする
 func parseBoiler(b []byte, path string) (*Boiler, error) {
 	var c Boiler
 	if err := yaml.Unmarshal(b, &c); err != nil {
@@ -40,7 +40,7 @@ func ReadBoiler(path string) (*Boiler, error) {
 	return parseBoiler(b, path)
 }
 
-//loadBoilerは.github/boilerplate.yml or .github/boilerplate.ymlを読み込む
+// loadBoilerは.github/boilerplate.yml or .github/boilerplate.ymlを読み込む
 func loadBoiler(root string) (*Boiler, error) {
 	for _, f := range []string{"boilerplate.yaml", "boilerplate.yml"} {
 		path := filepath.Join(root, ".github", f)
@@ -105,8 +105,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 	`)
-		if err := os.WriteFile(path, b, 0644); err != nil {
-			return fmt.Errorf("failed to write config file %q: %w", path, err)
-		}
-		return nil
+	if err := os.WriteFile(path, b, 0644); err != nil {
+		return fmt.Errorf("failed to write config file %q: %w", path, err)
+	}
+	return nil
 }

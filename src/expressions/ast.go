@@ -1,7 +1,7 @@
 package expressions
 
 // Tokenは式の構文から字句解析されたトークン
-//* https://docs.github.com/en/actions/learn-github-actions/expressions
+// * https://docs.github.com/en/actions/learn-github-actions/expressions
 type Token struct {
 	Kind   TokenKind // トークンの種類です。
 	Value  string    // トークンの文字列表現です。
@@ -217,53 +217,53 @@ func (n *LogicalOpNode) Token() *Token {
 // FuncCallNode は式内の関数呼び出しを表します。
 // 現在、ビルトイン関数の呼び出しのみがサポートされていることに注意してください。
 type FuncCallNode struct {
-    // Callee は呼び出された関数の名前です。現在ビルトイン関数のみが呼び出せるため、これは文字列値です。
-    Callee string
-    // Args は関数呼び出しの引数です。
-    Args []ExprNode
-    tok  *Token
+	// Callee は呼び出された関数の名前です。現在ビルトイン関数のみが呼び出せるため、これは文字列値です。
+	Callee string
+	// Args は関数呼び出しの引数です。
+	Args []ExprNode
+	tok  *Token
 }
 
 // Token はノードの最初のトークンを返します。このメソッドは、このノードの位置を取得するのに役立ちます。
 func (n *FuncCallNode) Token() *Token {
-    return n.tok
+	return n.tok
 }
 
 // VisitExprNodeFunc は VisitExprNode() のためのビジター関数です。
-//entering 引数は、子ノードを訪問する前に呼び出されるときに true に設定されます。
-//子ノードを訪問した後に呼び出されるときは false に設定されます。
-//つまり、この関数は同じノードに対して2回呼び出されることを意味します。
-//parentは、ノードの親です。ノードがルートの場合、その親は nil です。
+// entering 引数は、子ノードを訪問する前に呼び出されるときに true に設定されます。
+// 子ノードを訪問した後に呼び出されるときは false に設定されます。
+// つまり、この関数は同じノードに対して2回呼び出されることを意味します。
+// parentは、ノードの親です。ノードがルートの場合、その親は nil です。
 type VisitExprNodeFunc func(node, parent ExprNode, entering bool)
 
 func visitExprNode(n, p ExprNode, f VisitExprNodeFunc) {
-    f(n, p, true)
-    switch n := n.(type) {
-    case *ObjectDerefNode:
-        visitExprNode(n.Receiver, n, f)
-    case *ArrayDerefNode:
-        visitExprNode(n.Receiver, n, f)
-    case *IndexAccessNode:
-        // インデックスは、UntrustedInputChecker が正しく動作するために、オペランドの前に訪問
-        visitExprNode(n.Index, n, f)
-        visitExprNode(n.Operand, n, f)
-    case *NotOpNode:
-        visitExprNode(n.Operand, n, f)
-    case *CompareOpNode:
-        visitExprNode(n.Left, n, f)
-        visitExprNode(n.Right, n, f)
-    case *LogicalOpNode:
-        visitExprNode(n.Left, n, f)
-        visitExprNode(n.Right, n, f)
-    case *FuncCallNode:
-        for _, a := range n.Args {
-            visitExprNode(a, n, f)
-        }
-    }
-    f(n, p, false)
+	f(n, p, true)
+	switch n := n.(type) {
+	case *ObjectDerefNode:
+		visitExprNode(n.Receiver, n, f)
+	case *ArrayDerefNode:
+		visitExprNode(n.Receiver, n, f)
+	case *IndexAccessNode:
+		// インデックスは、UntrustedInputChecker が正しく動作するために、オペランドの前に訪問
+		visitExprNode(n.Index, n, f)
+		visitExprNode(n.Operand, n, f)
+	case *NotOpNode:
+		visitExprNode(n.Operand, n, f)
+	case *CompareOpNode:
+		visitExprNode(n.Left, n, f)
+		visitExprNode(n.Right, n, f)
+	case *LogicalOpNode:
+		visitExprNode(n.Left, n, f)
+		visitExprNode(n.Right, n, f)
+	case *FuncCallNode:
+		for _, a := range n.Args {
+			visitExprNode(a, n, f)
+		}
+	}
+	f(n, p, false)
 }
 
 // VisitExprNode は与えられた式の構文木を指定された関数 f で訪問します。
 func VisitExprNode(n ExprNode, f VisitExprNodeFunc) {
-    visitExprNode(n, nil, f)
+	visitExprNode(n, nil, f)
 }

@@ -47,7 +47,6 @@ type FuncSignature struct {
 	VariableLengthParams bool
 }
 
-
 func (sig *FuncSignature) String() string {
 	ts := make([]string, 0, len(sig.Params))
 	for _, p := range sig.Params {
@@ -62,7 +61,7 @@ func (sig *FuncSignature) String() string {
 
 // BuiltinFuncSignaturesはすべての組み込み関数のシグネチャのセットです。すべての関数名は
 // 大文字小文字を区別せずに比較されるため、すべて小文字で表記されています。
-//* https://docs.github.com/en/actions/learn-github-actions/expressions#functions
+// * https://docs.github.com/en/actions/learn-github-actions/expressions#functions
 var BuiltinFuncSignatures = map[string][]*FuncSignature{
 	"contains": {
 		{
@@ -177,8 +176,8 @@ var BuiltinFuncSignatures = map[string][]*FuncSignature{
 		Ret:    BoolType{},
 		Params: []ExprType{},
 	}},
-	"cancelled": {{
-		Name:   "cancelled",
+	"canceled": {{
+		Name:   "canceled",
 		Ret:    BoolType{},
 		Params: []ExprType{},
 	}},
@@ -192,19 +191,19 @@ var BuiltinFuncSignatures = map[string][]*FuncSignature{
 //todo:  Global variables
 
 // BuiltinGlobalVariableTypes でグローバル変数の定義
-//* https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+// * https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
 var BuiltinGlobalVariableTypes = map[string]ExprType{
 	"github": NewStrictObjectType(map[string]ExprType{
-		"action":              StringType{},
-		"action_path":         StringType{},
-		"action_ref":          StringType{},
-		"action_repository":   StringType{},
-		"action_status":       StringType{},
-		"actor":               StringType{},
-		"actor_id":            StringType{},
-		"api_url":             StringType{},
-		"base_ref":            StringType{},
-		"env":                 StringType{},
+		"action":            StringType{},
+		"action_path":       StringType{},
+		"action_ref":        StringType{},
+		"action_repository": StringType{},
+		"action_status":     StringType{},
+		"actor":             StringType{},
+		"actor_id":          StringType{},
+		"api_url":           StringType{},
+		"base_ref":          StringType{},
+		"env":               StringType{},
 		// Note: Stricter type check for this payload would be possible
 		"event":               NewEmptyObjectType(),
 		"event_name":          StringType{},
@@ -288,8 +287,8 @@ var BuiltinGlobalVariableTypes = map[string]ExprType{
 
 // ExprSemanticsCheckerは式構文の意味チェックを行うものです。与えられた式構文ツリー内の値の型をチェックします。
 // さらに、format() 組み込み関数の引数など、その他の意味論的なチェックも行います。構文の詳細については、以下のリンクを参照してください。
-//* https://docs.github.com/en/actions/learn-github-actions/contexts
-//* https://docs.github.com/en/actions/learn-github-actions/expressions
+// * https://docs.github.com/en/actions/learn-github-actions/contexts
+// * https://docs.github.com/en/actions/learn-github-actions/expressions
 type ExprSemanticsChecker struct {
 	funcs                 map[string][]*FuncSignature
 	vars                  map[string]ExprType
@@ -409,13 +408,13 @@ func (sema *ExprSemanticsChecker) UpdateInputs(ty *ObjectType) {
 }
 
 // UpdateDispatchInputs updates 'github.event.inputs' and 'inputs' objects to given object type.
-//* https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
+// * https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
 func (sema *ExprSemanticsChecker) UpdateDispatchInputs(ty *ObjectType) {
 	sema.UpdateInputs(ty)
 
-// `github.event.inputs` を更新します。
-// `inputs.*` とは異なり、`github.event.inputs.*` の型は常に文字列であるため、
-// `ty` から新しい型を作成する必要があります（例：{foo: boolean, bar: number} -> {foo: string, bar: string}）。
+	// `github.event.inputs` を更新します。
+	// `inputs.*` とは異なり、`github.event.inputs.*` の型は常に文字列であるため、
+	// `ty` から新しい型を作成する必要があります（例：{foo: boolean, bar: number} -> {foo: string, bar: string}）。
 
 	p := make(map[string]ExprType, len(ty.Props))
 	for n := range ty.Props {
@@ -435,7 +434,7 @@ func (sema *ExprSemanticsChecker) UpdateJobs(ty *ObjectType) {
 
 // SetContextAvailabilityは、セマンティクスチェック時に利用可能なコンテキスト名を設定します。
 // 一部のコンテキストは、使用できる場所に制限があることがあります。
-//* https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
+// * https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
 // 'avail'パラメータの要素は、大文字小文字を区別せずにコンテキスト名をチェックするために小文字である必要があります。
 // このメソッドがチェック前に呼び出されない場合、ExprSemanticsCheckerはデフォルトで任意のコンテキストが利用可能であると考えます。
 // ワークフローのキーに対する利用可能なコンテキストは sisakulint.ContextAvailabilityから取得できます。
@@ -472,7 +471,7 @@ func (sema *ExprSemanticsChecker) checkAvailableContext(n *VariableNode) {
 // 一部の関数は使用できる場所に制限があります。
 // 'avail' パラメータの要素は、大文字小文字を区別せずに関数名を確認するために小文字である必要があります。
 // このメソッドがチェック前に呼び出されない場合、ExprSemanticsCheckerはデフォルトで特別な関数を許可しないものと見なします。
-//todo:  関数名は sisakulint.SpecialFunctionNames のグローバル定数から取得できます。
+// todo:  関数名は sisakulint.SpecialFunctionNames のグローバル定数から取得できます。
 func (sema *ExprSemanticsChecker) SetSpecialFunctionAvailability(avail []string) {
 	sema.availableSpecialFuncs = avail
 }
@@ -484,15 +483,15 @@ func (sema *ExprSemanticsChecker) checkSpecialFunctionAvailability(n *FuncCallNo
 	// どの関数が特別で、どのワークフロー キーがそれらをサポートしているかを把握します。
 	//* https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
 	var SpecialFunctionNames = map[string][]string{
-		"always": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
-		"cancelled": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
-		"failure": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
-		"hashfiles": []string{"jobs.<job_id>.steps.continue-on-error",
-								"jobs.<job_id>.steps.env", "jobs.<job_id>.steps.if",
-								"jobs.<job_id>.steps.name", "jobs.<job_id>.steps.run",
-								"jobs.<job_id>.steps.timeout-minutes", "jobs.<job_id>.steps.with",
-								"jobs.<job_id>.steps.working-directory"},
-		"success": []string{"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"always":    {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"cancelled": {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"failure":   {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"hashfiles": {"jobs.<job_id>.steps.continue-on-error",
+			"jobs.<job_id>.steps.env", "jobs.<job_id>.steps.if",
+			"jobs.<job_id>.steps.name", "jobs.<job_id>.steps.run",
+			"jobs.<job_id>.steps.timeout-minutes", "jobs.<job_id>.steps.with",
+			"jobs.<job_id>.steps.working-directory"},
+		"success": {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
 	}
 	// WorkflowKeyAvailability returns availability of given workflow key context and special functions.
 
@@ -605,9 +604,9 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 			continue
 		}
 		sema.errorf(
-    		n,
-    		"The configuration variable name %q can only contain alphabets, decimal numbers, and underscores '_'. Please refer to the naming conventions at https://docs.github.com/en/actions/learn-github-actions/variables#naming-conventions-for-configuration-variables for more information.",
-    		n.Property,
+			n,
+			"The configuration variable name %q can only contain alphabets, decimal numbers, and underscores '_'. Please refer to the naming conventions at https://docs.github.com/en/actions/learn-github-actions/variables#naming-conventions-for-configuration-variables for more information.",
+			n.Property,
 		)
 		return
 	}
@@ -617,9 +616,9 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 	}
 	if len(sema.configVars) == 0 {
 		sema.errorf(
-    		n,
-    		"No configuration variables are allowed because the variables list is empty in action.yaml. You may have forgotten to add the variable %q to the list.",
-    		n.Property,
+			n,
+			"No configuration variables are allowed because the variables list is empty in action.yaml. You may have forgotten to add the variable %q to the list.",
+			n.Property,
 		)
 		return
 	}
@@ -631,10 +630,10 @@ func (sema *ExprSemanticsChecker) checkConfigVariables(n *ObjectDerefNode) {
 	}
 
 	sema.errorf(
-    	n,
-    	"The configuration variable %q is undefined. The defined configuration variables in action.yaml are: %s",
-    	n.Property,
-    	SortedQuotes(sema.configVars),
+		n,
+		"The configuration variable %q is undefined. The defined configuration variables in action.yaml are: %s",
+		n.Property,
+		SortedQuotes(sema.configVars),
 	)
 }
 
@@ -813,7 +812,7 @@ func (sema *ExprSemanticsChecker) checkBuiltinFunctionCall(n *FuncCallNode, sig 
 
 		for i := range holders {
 			sema.errorf(n, "The format string %q contains the placeholder {%d}, but only %d argument(s) are provided for formatting. Please make sure the number of arguments matches the placeholders in the format string.",
-			lit.Value,i,l)
+				lit.Value, i, l)
 		}
 	}
 }

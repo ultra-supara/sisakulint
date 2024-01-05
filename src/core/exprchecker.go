@@ -434,7 +434,7 @@ func (rule *ExprRule) checkSemanticsOfExprNode(expr expressions.ExprNode, line, 
 		c.UpdateJobs(rule.JobsType)
 	}
 	if workflowKey != "" {
-		ctx ,sp := WorkflowKeyAvailability(workflowKey)
+		ctx, sp := WorkflowKeyAvailability(workflowKey)
 		if len(ctx) == 0 {
 			rule.Debug("WorkflowKeyAvailability: %q", workflowKey)
 		}
@@ -450,7 +450,7 @@ func (rule *ExprRule) checkSemanticsOfExprNode(expr expressions.ExprNode, line, 
 	return ty, len(errs) == 0
 }
 
-//todo: checkSemantics は式のセマンティクスをチェックします。
+// todo: checkSemantics は式のセマンティクスをチェックします。
 func (rule *ExprRule) checkSemantics(src string, line, col int, checkUntrusted bool, workflowKey string) (expressions.ExprType, int, bool) {
 	l := expressions.NewTokenizer(src)
 	p := expressions.NewMiniParser()
@@ -501,7 +501,7 @@ func (rule *ExprRule) populateDependantNeedsTypes(out *expressions.ObjectType, j
 			"outputs": outputs,
 			"result":  expressions.StringType{},
 		})
-	}// (#151)
+	} // (#151)
 }
 
 // checkMatrixExpression はマトリックス式をチェックします。
@@ -536,7 +536,6 @@ func (rule *ExprRule) checkMatrixExpression(expr *ast.String) *expressions.Objec
 
 	return matrixType
 }
-
 
 func (rule *ExprRule) checkMatrix(m *ast.Matrix) *expressions.ObjectType {
 	if m.Expression != nil {
@@ -586,7 +585,7 @@ func (rule *ExprRule) checkMatrix(m *ast.Matrix) *expressions.ObjectType {
 		return expressions.NewEmptyObjectType()
 	}
 
-		// 'include' セクションの組み合わせをチェック
+	// 'include' セクションの組み合わせをチェック
 	for _, combination := range m.Include.Combinations {
 		if combination.Expression != nil {
 			typeChecked := rule.checkOneExpression(m.Include.Expression, "matrix combination at element of include section", "jobs.<job_id>.strategy")

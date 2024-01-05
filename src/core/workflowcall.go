@@ -145,7 +145,7 @@ func (rule *RuleWorkflowCall) checkWorkflowCallUsesLocal(call *ast.WorkflowCall)
 }
 
 // ./{path/{filename} を解析する関数です。
-//* https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#calling-a-reusable-workflow
+// * https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#calling-a-reusable-workflow
 func isWorkflowCallUsesLocalFormat(u string) bool {
 	if !strings.HasPrefix(u, "./") {
 		return false
@@ -162,7 +162,7 @@ func isWorkflowCallUsesLocalFormat(u string) bool {
 }
 
 // {owner}/{repo}/{path to workflow.yml}@{ref} を解析する関数です。
-//* https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#calling-a-reusable-workflow
+// * https://docs.github.com/en/actions/learn-github-actions/reusing-workflows#calling-a-reusable-workflow
 func isWorkflowCallUsesRepoFormat(u string) bool {
 	// リポジトリ参照はオーナーから始まる必要があります
 	if strings.HasPrefix(u, ".") {

@@ -27,11 +27,11 @@ func nodeKindName(k yaml.Kind) string {
 }
 
 func (project *parser) error(node *yaml.Node, msg string) {
-	project.errors = append(project.errors, &LintingError {msg, "", node.Line, node.Column, "syntax"})
+	project.errors = append(project.errors, &LintingError{msg, "", node.Line, node.Column, "syntax"})
 }
 
 func (project *parser) errorAt(position *ast.Position, msg string) {
-	project.errors = append(project.errors, &LintingError {msg, "", position.Line, position.Col, "syntax"})
+	project.errors = append(project.errors, &LintingError{msg, "", position.Line, position.Col, "syntax"})
 }
 
 func (project *parser) errorf(node *yaml.Node, format string, args ...interface{}) {
@@ -45,7 +45,7 @@ func (project *parser) errorfAt(position *ast.Position, format string, args ...i
 }
 
 func positionAt(node *yaml.Node) *ast.Position {
-	return &ast.Position{Line:node.Line, Col:node.Column}
+	return &ast.Position{Line: node.Line, Col: node.Column}
 }
 
 func isNull(node *yaml.Node) bool {
@@ -54,7 +54,7 @@ func isNull(node *yaml.Node) bool {
 
 func newString(node *yaml.Node) *ast.String {
 	quoted := node.Style&(yaml.DoubleQuotedStyle|yaml.SingleQuotedStyle) != 0
-	return &ast.String{Value:node.Value, Quoted:quoted, Pos:positionAt(node)}
+	return &ast.String{Value: node.Value, Quoted: quoted, Pos: positionAt(node)}
 }
 
 type workflowKeyValue struct {
@@ -140,16 +140,16 @@ func (project *parser) parseBool(node *yaml.Node) *ast.Bool {
 		project.errorf(node, "expected bool node but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
 		return nil
 	}
-	if node.Tag =="!!str" {
+	if node.Tag == "!!str" {
 		e := project.parseExpression(node, "boolean literal \"true\" or \"false\"")
 		return &ast.Bool{
 			Expression: e,
-			Pos: positionAt(node),
+			Pos:        positionAt(node),
 		}
 	}
 	return &ast.Bool{
 		Value: node.Value == "true",
-		Pos: positionAt(node),
+		Pos:   positionAt(node),
 	}
 }
 
@@ -162,7 +162,7 @@ func (project *parser) parseInt(node *yaml.Node) *ast.Int {
 		e := project.parseExpression(node, "integer literal")
 		return &ast.Int{
 			Expression: e,
-			Pos: positionAt(node),
+			Pos:        positionAt(node),
 		}
 	}
 	i, err := strconv.Atoi(node.Value)
@@ -172,7 +172,7 @@ func (project *parser) parseInt(node *yaml.Node) *ast.Int {
 	}
 	return &ast.Int{
 		Value: i,
-		Pos: positionAt(node),
+		Pos:   positionAt(node),
 	}
 }
 
@@ -185,7 +185,7 @@ func (project *parser) parseFloat(node *yaml.Node) *ast.Float {
 		e := project.parseExpression(node, "float literal")
 		return &ast.Float{
 			Expression: e,
-			Pos: positionAt(node),
+			Pos:        positionAt(node),
 		}
 	}
 	f, err := strconv.ParseFloat(node.Value, 64)
@@ -195,11 +195,11 @@ func (project *parser) parseFloat(node *yaml.Node) *ast.Float {
 	}
 	return &ast.Float{
 		Value: f,
-		Pos: positionAt(node),
+		Pos:   positionAt(node),
 	}
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
 func (project *parser) parseTimeoutMinutes(node *yaml.Node) *ast.Float {
 	f := project.parseFloat(node)
 	if f == nil && f.Expression == nil && f.Value < 0 {
@@ -208,13 +208,13 @@ func (project *parser) parseTimeoutMinutes(node *yaml.Node) *ast.Float {
 	return f
 }
 
-func (project *parser) parseRawYAMLValue(node *yaml.Node) ast.RawYAMLValue{
+func (project *parser) parseRawYAMLValue(node *yaml.Node) ast.RawYAMLValue {
 	switch node.Kind {
 	case yaml.ScalarNode:
 		if node.Tag == "!!null" {
 			return nil
 		}
-		return &ast.RawYAMLString{Value:node.Value, Posi:positionAt(node)}
+		return &ast.RawYAMLString{Value: node.Value, Posi: positionAt(node)}
 	case yaml.SequenceNode:
 		ret := make([]ast.RawYAMLValue, 0, len(node.Content))
 		for _, c := range node.Content {
@@ -222,7 +222,7 @@ func (project *parser) parseRawYAMLValue(node *yaml.Node) ast.RawYAMLValue{
 				ret = append(ret, v)
 			}
 		}
-		return &ast.RawYAMLArray{Elems:ret, Posi:positionAt(node)}
+		return &ast.RawYAMLArray{Elems: ret, Posi: positionAt(node)}
 	case yaml.MappingNode:
 		parsed := project.parseMapping("matrix row value", node, true, false)
 		m := make(map[string]ast.RawYAMLValue, len(parsed))
@@ -231,15 +231,15 @@ func (project *parser) parseRawYAMLValue(node *yaml.Node) ast.RawYAMLValue{
 				m[kv.id] = v
 			}
 		}
-		return &ast.RawYAMLObject{Props:m, Posi:positionAt(node)}
+		return &ast.RawYAMLObject{Props: m, Posi: positionAt(node)}
 	default:
 		project.errorf(node, "expected scalar, sequence or mapping node but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
 		return nil
 	}
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstrategymatrixinclude
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstrategymatrixexclude
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstrategymatrixinclude
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstrategymatrixexclude
 func (project *parser) parseMatrixCombinations(sec string, node *yaml.Node) *ast.MatrixCombinations {
 	if node.Kind == yaml.ScalarNode {
 		return &ast.MatrixCombinations{
@@ -261,7 +261,7 @@ func (project *parser) parseMatrixCombinations(sec string, node *yaml.Node) *ast
 		assigns := make(map[string]*ast.MatrixAssign, len(kvs))
 		for _, kv := range kvs {
 			if v := project.parseRawYAMLValue(kv.val); v != nil {
-				assigns[kv.id] = &ast.MatrixAssign{Key:kv.key, Value:v}
+				assigns[kv.id] = &ast.MatrixAssign{Key: kv.key, Value: v}
 			}
 		}
 		ret = append(ret, &ast.MatrixCombination{Assigns: assigns})
@@ -269,8 +269,8 @@ func (project *parser) parseMatrixCombinations(sec string, node *yaml.Node) *ast
 	return &ast.MatrixCombinations{Combinations: ret}
 }
 
-//parseContainer
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idcontainer
+// parseContainer
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idcontainer
 func (project *parser) parseContainer(sec string, pos *ast.Position, node *yaml.Node) *ast.Container {
 	ret := &ast.Container{Pos: pos}
 
@@ -279,42 +279,42 @@ func (project *parser) parseContainer(sec string, pos *ast.Position, node *yaml.
 	} else {
 		for _, kv := range project.parseSectionMapping(sec, node, false, true) {
 			switch kv.id {
-				case "image":
-					ret.Image = project.parseString(kv.val, false)
-				case "credentials":
-					cred := &ast.Credentials{Pos: kv.key.Pos}
-					for _, attr := range project.parseSectionMapping("credentials", kv.val, false, true) {
-						switch attr.id {
-							case "username":
-								cred.Username = project.parseString(attr.val, false)
-							case "password":
-								cred.Password = project.parseString(attr.val, false)
-							default:
-								project.unexpectedKey(attr.key, "credentials", []string{"username", "password"})
-						}
+			case "image":
+				ret.Image = project.parseString(kv.val, false)
+			case "credentials":
+				cred := &ast.Credentials{Pos: kv.key.Pos}
+				for _, attr := range project.parseSectionMapping("credentials", kv.val, false, true) {
+					switch attr.id {
+					case "username":
+						cred.Username = project.parseString(attr.val, false)
+					case "password":
+						cred.Password = project.parseString(attr.val, false)
+					default:
+						project.unexpectedKey(attr.key, "credentials", []string{"username", "password"})
 					}
-					if cred.Username == nil || cred.Password == nil {
-						project.errorAt(kv.key.Pos, "both \"username\" and \"password\" are required for \"credentials\"")
-						continue
-					}
-					ret.Credentials = cred
-				case "env":
-					ret.Env = project.parseEnv(kv.val)
-				case "ports":
-					ret.Ports = project.parseStringSequence("ports", kv.val, true, false)
-				case "volumes":
-					ret.Ports = project.parseStringSequence("volumes", kv.val, true, false)
-				case "options":
-					ret.Options = project.parseString(kv.val, true)
-				default:
-					project.unexpectedKey(kv.key, sec, []string{"image", "credentials", "env", "ports", "volumes", "options"})
+				}
+				if cred.Username == nil || cred.Password == nil {
+					project.errorAt(kv.key.Pos, "both \"username\" and \"password\" are required for \"credentials\"")
+					continue
+				}
+				ret.Credentials = cred
+			case "env":
+				ret.Env = project.parseEnv(kv.val)
+			case "ports":
+				ret.Ports = project.parseStringSequence("ports", kv.val, true, false)
+			case "volumes":
+				ret.Ports = project.parseStringSequence("volumes", kv.val, true, false)
+			case "options":
+				ret.Options = project.parseString(kv.val, true)
+			default:
+				project.unexpectedKey(kv.key, sec, []string{"image", "credentials", "env", "ports", "volumes", "options"})
 			}
 		}
 	}
 	return ret
 }
 
-//*https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymatrix
+// *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymatrix
 func (project *parser) parseMatrix(pos *ast.Position, node *yaml.Node) *ast.Matrix {
 	if node.Kind == yaml.ScalarNode {
 		return &ast.Matrix{Pos: positionAt(node), Expression: project.parseExpression(node, "matrix")}
@@ -324,32 +324,31 @@ func (project *parser) parseMatrix(pos *ast.Position, node *yaml.Node) *ast.Matr
 
 	for _, kv := range project.parseSectionMapping("matrix", node, false, true) {
 		switch kv.id {
-			case "include":
-				ret.Include = project.parseMatrixCombinations("include", kv.val)
-			case "exclude":
-				ret.Exclude = project.parseMatrixCombinations("exclude", kv.val)
-			default:
-				if kv.val.Kind == yaml.ScalarNode {
-					ret.Rows[kv.id] = &ast.MatrixRow{Expression: project.parseExpression(kv.val, "array value for matrix variations"),
-					}
-					continue
+		case "include":
+			ret.Include = project.parseMatrixCombinations("include", kv.val)
+		case "exclude":
+			ret.Exclude = project.parseMatrixCombinations("exclude", kv.val)
+		default:
+			if kv.val.Kind == yaml.ScalarNode {
+				ret.Rows[kv.id] = &ast.MatrixRow{Expression: project.parseExpression(kv.val, "array value for matrix variations")}
+				continue
+			}
+			if ok := project.checkSequence("matrix", kv.val, false); !ok {
+				continue
+			}
+			values := make([]ast.RawYAMLValue, 0, len(kv.val.Content))
+			for _, c := range kv.val.Content {
+				if v := project.parseRawYAMLValue(c); v != nil {
+					values = append(values, v)
 				}
-				if ok := project.checkSequence("matrix", kv.val, false); !ok {
-					continue
-				}
-				values := make([]ast.RawYAMLValue, 0, len(kv.val.Content))
-				for _, c := range kv.val.Content {
-					if v := project.parseRawYAMLValue(c); v != nil {
-						values = append(values, v)
-					}
-				}
-				ret.Rows[kv.id] = &ast.MatrixRow{Values: values, Name: kv.key,}
+			}
+			ret.Rows[kv.id] = &ast.MatrixRow{Values: values, Name: kv.key}
 		}
 	}
 	return ret
 }
 
-//*https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymax-parallel
+// *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymax-parallel
 func (project *parser) parseMaxParallel(node *yaml.Node) *ast.Int {
 	i := project.parseInt(node)
 	if i == nil && i.Expression == nil && i.Value < 0 {
@@ -358,8 +357,8 @@ func (project *parser) parseMaxParallel(node *yaml.Node) *ast.Int {
 	return i
 }
 
-//parseStrategy
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstrategy
+// parseStrategy
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstrategy
 func (project *parser) parseStrategy(pos *ast.Position, node *yaml.Node) *ast.Strategy {
 	ret := &ast.Strategy{Pos: pos}
 
@@ -407,7 +406,7 @@ func (project *parser) parseSSSequence(sec string, node *yaml.Node, allowEmpty b
 	}
 }
 
-//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
+// *https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
 func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.Node) *ast.WorkflowDispatchEvent {
 	ret := &ast.WorkflowDispatchEvent{Pos: pos}
 
@@ -419,7 +418,7 @@ func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.
 		inputs := project.parseSectionMapping("inputs", kv.val, true, false)
 		ret.Inputs = make(map[string]*ast.DispatchInput, len(inputs))
 		for _, input := range inputs {
-			name , spec := input.key, input.val
+			name, spec := input.key, input.val
 			var description *ast.String
 			var required *ast.Bool
 			var def *ast.String
@@ -439,18 +438,18 @@ func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.
 						continue
 					}
 					switch attract.val.Value {
-						case "string":
-							ty = ast.WorkflowDispatchEventInputTypeString
-						case "number":
-							ty = ast.WorkflowDispatchEventInputTypeNumber
-						case "boolean":
-							ty = ast.WorkflowDispatchEventInputTypeBoolean
-						case "choice":
-							ty = ast.WorkflowDispatchEventInputTypeChoice
-						case "environment":
-							ty = ast.WorkflowDispatchEventInputTypeEnvironment
-						default:
-							project.errorf(attract.val, "expected one of \"string\", \"number\", \"boolean\", \"choice\", \"environment\" for \"type\" but found %q", attract.val.Value)
+					case "string":
+						ty = ast.WorkflowDispatchEventInputTypeString
+					case "number":
+						ty = ast.WorkflowDispatchEventInputTypeNumber
+					case "boolean":
+						ty = ast.WorkflowDispatchEventInputTypeBoolean
+					case "choice":
+						ty = ast.WorkflowDispatchEventInputTypeChoice
+					case "environment":
+						ty = ast.WorkflowDispatchEventInputTypeEnvironment
+					default:
+						project.errorf(attract.val, "expected one of \"string\", \"number\", \"boolean\", \"choice\", \"environment\" for \"type\" but found %q", attract.val.Value)
 					}
 				case "options":
 					options = project.parseStringSequence("options", attract.val, false, false)
@@ -471,7 +470,7 @@ func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.
 	return ret
 }
 
-//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
+// *https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
 func (project *parser) parseRepositoryDispatchEvent(pos *ast.Position, node *yaml.Node) *ast.RepositoryDispatchEvent {
 	ret := &ast.RepositoryDispatchEvent{Pos: pos}
 
@@ -485,10 +484,9 @@ func (project *parser) parseRepositoryDispatchEvent(pos *ast.Position, node *yam
 	return ret
 }
 
-
-//* https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow-reuse-events
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onworkflow_callinputs
-//* https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
+// * https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow-reuse-events
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onworkflow_callinputs
+// * https://docs.github.com/en/actions/learn-github-actions/reusing-workflows
 func (project *parser) parseWorkflowCallEvent(pos *ast.Position, node *yaml.Node) *ast.WorkflowCallEvent {
 	ret := &ast.WorkflowCallEvent{Pos: pos}
 
@@ -504,26 +502,26 @@ func (project *parser) parseWorkflowCallEvent(pos *ast.Position, node *yaml.Node
 
 				for _, attr := range project.parseMapping("input of workflow_call event", spec, true, true) {
 					switch attr.id {
-						case "description":
-							input.Description = project.parseString(attr.val, true)
-						case "required":
-							input.Required = project.parseBool(attr.val)
-						case "default":
-							input.Default = project.parseString(attr.val, true)
-						case "type":
-							switch attr.val.Value {
-								case "boolean":
-									input.Type = ast.WorkflowCallEventInputTypeBoolean
-								case "number":
-									input.Type = ast.WorkflowCallEventInputTypeNumber
-								case "string":
-									input.Type = ast.WorkflowCallEventInputTypeString
-								default:
-									project.errorf(attr.val, "expected one of \"boolean\", \"number\", \"string\" for \"type\" but found %q", attr.val.Value)
-								}
-								sawType = true
+					case "description":
+						input.Description = project.parseString(attr.val, true)
+					case "required":
+						input.Required = project.parseBool(attr.val)
+					case "default":
+						input.Default = project.parseString(attr.val, true)
+					case "type":
+						switch attr.val.Value {
+						case "boolean":
+							input.Type = ast.WorkflowCallEventInputTypeBoolean
+						case "number":
+							input.Type = ast.WorkflowCallEventInputTypeNumber
+						case "string":
+							input.Type = ast.WorkflowCallEventInputTypeString
 						default:
-							project.unexpectedKey(attr.key, "input of workflow_call event", []string{"description", "required", "default", "type"})
+							project.errorf(attr.val, "expected one of \"boolean\", \"number\", \"string\" for \"type\" but found %q", attr.val.Value)
+						}
+						sawType = true
+					default:
+						project.unexpectedKey(attr.key, "input of workflow_call event", []string{"description", "required", "default", "type"})
 					}
 				}
 				if !sawType {
@@ -540,12 +538,12 @@ func (project *parser) parseWorkflowCallEvent(pos *ast.Position, node *yaml.Node
 
 				for _, attr := range project.parseMapping("secret of workflow_call event", spec, true, true) {
 					switch attr.id {
-						case "description":
-							secret.Description = project.parseString(attr.val, true)
-						case "required":
-							secret.Required = project.parseBool(attr.val)
-						default:
-							project.unexpectedKey(attr.key, "secret of workflow_call event", []string{"description", "required"})
+					case "description":
+						secret.Description = project.parseString(attr.val, true)
+					case "required":
+						secret.Required = project.parseBool(attr.val)
+					default:
+						project.unexpectedKey(attr.key, "secret of workflow_call event", []string{"description", "required"})
 					}
 				}
 				ret.Secrets[kv.id] = secret
@@ -559,12 +557,12 @@ func (project *parser) parseWorkflowCallEvent(pos *ast.Position, node *yaml.Node
 
 				for _, attr := range project.parseMapping("output of workflow_call event", spec, true, true) {
 					switch attr.id {
-						case "description":
-							output.Description = project.parseString(attr.val, true)
-						case "value":
-							output.Value = project.parseString(attr.val, true)
-						default:
-							project.unexpectedKey(attr.key, "output of workflow_call event", []string{"description", "value"})
+					case "description":
+						output.Description = project.parseString(attr.val, true)
+					case "value":
+						output.Value = project.parseString(attr.val, true)
+					default:
+						project.unexpectedKey(attr.key, "output of workflow_call event", []string{"description", "value"})
 					}
 				}
 				ret.Outputs[kv.id] = output
@@ -576,10 +574,10 @@ func (project *parser) parseWorkflowCallEvent(pos *ast.Position, node *yaml.Node
 	return ret
 }
 
-//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#using-filters
+// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#using-filters
 func (project *parser) parseWebhookEventFilter(name *ast.String, node *yaml.Node) *ast.WebhookEventFilter {
 	vi := project.parseSSSequence(name.Value, node, false, false)
-	return &ast.WebhookEventFilter{Name:name, Values:vi}
+	return &ast.WebhookEventFilter{Name: name, Values: vi}
 }
 
 func (project *parser) parseWebhookEvent(name *ast.String, node *yaml.Node) *ast.WebhookEvent {
@@ -617,34 +615,34 @@ func (project *parser) maybeParseExpression(node *yaml.Node) *ast.String {
 	return newString(node)
 }
 
-//for parseJob
-//parseRunsOn関数
+// for parseJob
+// parseRunsOn関数
 func (project *parser) parseRunsOn(node *yaml.Node) *ast.Runner {
 	if expression := project.maybeParseExpression(node); expression != nil {
-		return &ast.Runner{Labels:nil, LabelsExpr:expression, Group:nil}
+		return &ast.Runner{Labels: nil, LabelsExpr: expression, Group: nil}
 	}
 	if node.Kind == yaml.ScalarNode || node.Kind == yaml.SequenceNode {
-		return &ast.Runner{Labels:project.parseSSSequence("runs-on", node, false, false), LabelsExpr:nil, Group:nil}
+		return &ast.Runner{Labels: project.parseSSSequence("runs-on", node, false, false), LabelsExpr: nil, Group: nil}
 	}
 	r := &ast.Runner{}
 	for _, keyvalue := range project.parseSectionMapping("runs-on", node, false, true) {
 		switch keyvalue.id {
-			case "labels":
-				if expression := project.maybeParseExpression(keyvalue.val); expression != nil {
-					r.LabelsExpr = expression
-					continue
-				}
-				r.Labels = project.parseSSSequence("labels", keyvalue.val, false, false)
-			case "group":
-				r.Group = project.parseString(keyvalue.val, false)
-			default:
-				project.unexpectedKey(keyvalue.key, "runs-on", []string{"labels", "group"})
+		case "labels":
+			if expression := project.maybeParseExpression(keyvalue.val); expression != nil {
+				r.LabelsExpr = expression
+				continue
+			}
+			r.Labels = project.parseSSSequence("labels", keyvalue.val, false, false)
+		case "group":
+			r.Group = project.parseString(keyvalue.val, false)
+		default:
+			project.unexpectedKey(keyvalue.key, "runs-on", []string{"labels", "group"})
 		}
 	}
 	return r
 }
 
-//parseEnvironment
+// parseEnvironment
 func (project *parser) parseEnvironment(pos *ast.Position, node *yaml.Node) *ast.Environment {
 	ret := &ast.Environment{Pos: pos}
 
@@ -654,13 +652,13 @@ func (project *parser) parseEnvironment(pos *ast.Position, node *yaml.Node) *ast
 		nameisfound := false
 		for _, keyvalue := range project.parseSectionMapping("environment", node, false, true) {
 			switch keyvalue.id {
-				case "name":
-					ret.Name = project.parseString(keyvalue.val, false)
-					nameisfound = true
-				case "url":
-					ret.URL = project.parseString(keyvalue.val, false)
-				default:
-					project.unexpectedKey(keyvalue.key, "environment", []string{"name", "url"})
+			case "name":
+				ret.Name = project.parseString(keyvalue.val, false)
+				nameisfound = true
+			case "url":
+				ret.URL = project.parseString(keyvalue.val, false)
+			default:
+				project.unexpectedKey(keyvalue.key, "environment", []string{"name", "url"})
 			}
 		}
 		if !nameisfound {
@@ -670,21 +668,21 @@ func (project *parser) parseEnvironment(pos *ast.Position, node *yaml.Node) *ast
 	return ret
 }
 
-//parseOutputs
+// parseOutputs
 func (project *parser) parseOutputs(node *yaml.Node) map[string]*ast.Output {
 	outputs := project.parseSectionMapping("outputs", node, false, false)
 	ret := make(map[string]*ast.Output, len(outputs))
 	for _, output := range outputs {
 		ret[output.id] = &ast.Output{
-			Name:        output.key,
-			Value: 	 project.parseString(output.val, true),
+			Name:  output.key,
+			Value: project.parseString(output.val, true),
 		}
 	}
 	project.checkNotEmpty("outputs", len(ret), node)
 	return ret
 }
 
-//*https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idsteps
+// *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idsteps
 func (project *parser) parseStep(node *yaml.Node) *ast.Step {
 	ret := &ast.Step{Pos: positionAt(node)}
 	var workDir *ast.String
@@ -721,14 +719,14 @@ func (project *parser) parseStep(node *yaml.Node) *ast.Step {
 				exec.Inputs = make(map[string]*ast.Input, len(with))
 				for _, kv := range with {
 					switch kv.id {
-						case "entrypoint":
-							//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepswithentrypoint
-							exec.Entrypoint = project.parseString(kv.val, false)
-						case "args":
-							//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepswithargs
-							exec.Args = project.parseString(kv.val, false)
-						default:
-							exec.Inputs[kv.id] = &ast.Input{Name:kv.key, Value:project.parseString(kv.val, true)}
+					case "entrypoint":
+						//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepswithentrypoint
+						exec.Entrypoint = project.parseString(kv.val, false)
+					case "args":
+						//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepswithargs
+						exec.Args = project.parseString(kv.val, false)
+					default:
+						exec.Inputs[kv.id] = &ast.Input{Name: kv.key, Value: project.parseString(kv.val, true)}
 					}
 				}
 			}
@@ -744,11 +742,11 @@ func (project *parser) parseStep(node *yaml.Node) *ast.Step {
 				continue
 			}
 			switch kv.id {
-				case "run":
-					exec.Run = project.parseString(kv.val, false)
-					exec.RunPos = kv.key.Pos
-				case "shell":
-					exec.Shell = project.parseString(kv.val, false)
+			case "run":
+				exec.Run = project.parseString(kv.val, false)
+				exec.RunPos = kv.key.Pos
+			case "shell":
+				exec.Shell = project.parseString(kv.val, false)
 			}
 			exec.WorkingDirectory = workDir
 			ret.Exec = exec
@@ -779,8 +777,8 @@ func (project *parser) parseStep(node *yaml.Node) *ast.Step {
 	return ret
 }
 
-//ret.Steps = project.parseSteps(value)
-//parseSteps関数
+// ret.Steps = project.parseSteps(value)
+// parseSteps関数
 func (project *parser) parseSteps(node *yaml.Node) []*ast.Step {
 	if ok := project.checkSequence("steps", node, false); !ok {
 		return nil

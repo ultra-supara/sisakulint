@@ -14,43 +14,43 @@ type typedExpression struct {
 }
 
 // ExprRule
-//* https://docs.github.com/en/actions/learn-github-actions/contexts
-//* https://docs.github.com/en/actions/learn-github-actions/expressions
+// * https://docs.github.com/en/actions/learn-github-actions/contexts
+// * https://docs.github.com/en/actions/learn-github-actions/expressions
 type ExprRule struct {
 	BaseRule
-	MatrixType           *expressions.ObjectType
-	StepsType            *expressions.ObjectType
-	NeedsType            *expressions.ObjectType
-	SecretsType          *expressions.ObjectType
-	InputsType           *expressions.ObjectType
-	DispatchInputsType   *expressions.ObjectType
-	JobsType             *expressions.ObjectType
-	WorkflowDefinition   *ast.Workflow
-	LocalActionsCache    *LocalActionsMetadataCache
-	LocalWorkflowsCache  *LocalReusableWorkflowCache
+	MatrixType          *expressions.ObjectType
+	StepsType           *expressions.ObjectType
+	NeedsType           *expressions.ObjectType
+	SecretsType         *expressions.ObjectType
+	InputsType          *expressions.ObjectType
+	DispatchInputsType  *expressions.ObjectType
+	JobsType            *expressions.ObjectType
+	WorkflowDefinition  *ast.Workflow
+	LocalActionsCache   *LocalActionsMetadataCache
+	LocalWorkflowsCache *LocalReusableWorkflowCache
 }
 
 // ExpressionRule creates a new ExprRule instance.
 func ExpressionRule(actionsCache *LocalActionsMetadataCache, workflowsCache *LocalReusableWorkflowCache) *ExprRule {
 	return &ExprRule{
-		BaseRule: BaseRule {
+		BaseRule: BaseRule{
 			RuleName: "expression",
 			RuleDesc: "Checks for syntax errors in expressions ${{ }} syntax",
 		},
-		MatrixType:     nil,
-		StepsType:      nil,
-		NeedsType:      nil,
-		SecretsType:    nil,
-		InputsType:     nil,
-		DispatchInputsType: nil,
-		JobsType:       nil,
-		WorkflowDefinition: nil,
-		LocalActionsCache: actionsCache,
+		MatrixType:          nil,
+		StepsType:           nil,
+		NeedsType:           nil,
+		SecretsType:         nil,
+		InputsType:          nil,
+		DispatchInputsType:  nil,
+		JobsType:            nil,
+		WorkflowDefinition:  nil,
+		LocalActionsCache:   actionsCache,
 		LocalWorkflowsCache: workflowsCache,
 	}
 }
 
-//VisitWorkflowPre is callback when visiting Workflow node before visiting its children.
+// VisitWorkflowPre is callback when visiting Workflow node before visiting its children.
 func (rule *ExprRule) VisitWorkflowPre(node *ast.Workflow) error {
 	rule.checkString(node.Name, "")
 	for _, env := range node.On {
@@ -167,9 +167,9 @@ func (rule *ExprRule) VisitWorkflowPre(node *ast.Workflow) error {
 	return nil
 }
 
-//VisitWorkflowPost is callback when visiting Workflow node after visiting its children.
+// VisitWorkflowPost is callback when visiting Workflow node after visiting its children.
 func (rule *ExprRule) VisitWorkflowPost(node *ast.Workflow) error {
-	if env , ok := node.FindWorkflowCallEvent(); ok {
+	if env, ok := node.FindWorkflowCallEvent(); ok {
 		rule.checkWorkflowCallOutputs(env.Outputs, node.Jobs)
 	}
 	rule.WorkflowDefinition = nil
@@ -240,7 +240,6 @@ func (rule *ExprRule) VisitJobPre(n *ast.Job) error {
 
 	return nil
 }
-
 
 func (rule *ExprRule) VisitJobPost(n *ast.Job) error {
 	// 'environment' および 'outputs' セクションは、すべてのステップが実行された後に評価されます。

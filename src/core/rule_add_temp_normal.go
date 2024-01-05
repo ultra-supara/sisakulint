@@ -27,13 +27,13 @@ func (rule *AddRule) VisitStep(n *ast.Step) error {
 	return nil
 }
 
-//VisitJobPre is called before visiting a job children
+// VisitJobPre is called before visiting a job children
 func (rule *AddRule) VisitJobPre(n *ast.Job) error {
 	//todo:ここに実装を追加してください
 	return nil
 }
 
-//VisitJobPost is called after visiting a job children
+// VisitJobPost is called after visiting a job children
 func (rule *AddRule) VisitJobPost(n *ast.Job) error {
 	//todo:ここに実装を追加してください
 	return nil

@@ -149,7 +149,7 @@ func NewLinter(errorOutput io.Writer, options *LinterOptions) (*Linter, error) {
 
 	ignorePatterns := make([]*regexp.Regexp, len(options.ErrorIgnorePatterns))
 	for i, pattern := range options.ErrorIgnorePatterns {
-		re , err := regexp.Compile(pattern)
+		re, err := regexp.Compile(pattern)
 		if err != nil {
 			return nil, fmt.Errorf("invalid error ignore pattern : %q : %w", pattern, err)
 		}
@@ -175,21 +175,21 @@ func NewLinter(errorOutput io.Writer, options *LinterOptions) (*Linter, error) {
 	}
 
 	return &Linter{
-			NewProjects(),
-			errorOutput,
-			logOutput,
-			logLevel,
-			options.ShellcheckExecutable,
-			ignorePatterns,
-			config,
-			boiler,
-			errorFormatter,
-			workDir,
-			options.OnCheckRulesModified,
+		NewProjects(),
+		errorOutput,
+		logOutput,
+		logLevel,
+		options.ShellcheckExecutable,
+		ignorePatterns,
+		config,
+		boiler,
+		errorFormatter,
+		workDir,
+		options.OnCheckRulesModified,
 	}, nil
 }
 
-//logはlog levelがDetailedOutput以上の場合にログを出力する
+// logはlog levelがDetailedOutput以上の場合にログを出力する
 func (l *Linter) log(args ...interface{}) {
 	if l.loggingLevel < LogLevelDetailedOutput {
 		return
@@ -199,7 +199,7 @@ func (l *Linter) log(args ...interface{}) {
 	fmt.Fprintln(l.logOutput, args...)
 }
 
-//debugはlog levelがAllOutputIncludingDebug以上の場合にログを出力する
+// debugはlog levelがAllOutputIncludingDebug以上の場合にログを出力する
 func (l *Linter) debug(format string, args ...interface{}) {
 	if l.loggingLevel < LogLevelAllOutputIncludingDebug {
 		return
@@ -208,7 +208,7 @@ func (l *Linter) debug(format string, args ...interface{}) {
 	fmt.Fprintf(l.logOutput, message, args...)
 }
 
-//debugWriterはlog levelがAllOutputIncludingDebug以上の場合にログを出力する
+// debugWriterはlog levelがAllOutputIncludingDebug以上の場合にログを出力する
 func (l *Linter) debugWriter() io.Writer {
 	if l.loggingLevel < LogLevelAllOutputIncludingDebug {
 		return nil
@@ -216,7 +216,7 @@ func (l *Linter) debugWriter() io.Writer {
 	return l.logOutput
 }
 
-//GenerateDefaultConfigは、-init指定の時に、指定されたディレクトリにデフォルトの configファイルを生成する
+// GenerateDefaultConfigは、-init指定の時に、指定されたディレクトリにデフォルトの configファイルを生成する
 func (l *Linter) GenerateDefaultConfig(dir string) error {
 	l.log("generating default config file...", dir)
 
@@ -241,7 +241,7 @@ func (l *Linter) GenerateDefaultConfig(dir string) error {
 	return nil
 }
 
-//GenerateBoilerplateは、-boilerplate指定の時に、指定されたディレクトリにデフォルトの configファイルを生成する
+// GenerateBoilerplateは、-boilerplate指定の時に、指定されたディレクトリにデフォルトの configファイルを生成する
 func (l *Linter) GenerateBoilerplate(dir string) error {
 	l.log("generating boilerplate file...", dir)
 
@@ -266,7 +266,7 @@ func (l *Linter) GenerateBoilerplate(dir string) error {
 	return nil
 }
 
-//LintRepositoryは、指定されたディレクトリのリポジトリをリントする
+// LintRepositoryは、指定されたディレクトリのリポジトリをリントする
 func (l *Linter) LintRepository(dir string) ([]*LintingError, error) {
 	l.log("linting repository...", dir)
 
@@ -282,7 +282,7 @@ func (l *Linter) LintRepository(dir string) ([]*LintingError, error) {
 	return l.LintDir(workflowsDir, project)
 }
 
-//LintDirは、指定されたディレクトリをLint
+// LintDirは、指定されたディレクトリをLint
 func (l *Linter) LintDir(dir string, project *Project) ([]*LintingError, error) {
 	var files []string
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
@@ -309,8 +309,8 @@ func (l *Linter) LintDir(dir string, project *Project) ([]*LintingError, error) 
 	return l.LintFiles(files, project)
 }
 
-//lintFilesは、指定されたyaml workflowをlintしてエラーを返す
-//projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
+// lintFilesは、指定されたyaml workflowをlintしてエラーを返す
+// projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
 func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingError, error) {
 	fileCount := len(filepaths)
 	switch fileCount {
@@ -329,7 +329,7 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 	reusableWorkflowCacheFactory := NewLocalReusableWorkflowCacheFactory(currentDir, debugLog)
 
 	type workspace struct {
-		path string
+		path   string
 		errors []*LintingError
 		source []byte
 	}
@@ -373,7 +373,7 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 			ws.errors = errors
 			return nil
 		})
-    }
+	}
 
 	proc.Wait()
 	if err := errorGroups.Wait(); err != nil {
@@ -386,32 +386,32 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 	}
 
 	allErrors := make([]*LintingError, 0, totalErrors)
-		if l.errorFormatter != nil {
-			templateFields := make([]*TemplateFields, 0, totalErrors)
-			for i := range workspaces{
-				wanda := &workspaces[i]
-				for _, err := range wanda.errors {
-					templateFields = append(templateFields, err.ExtractTemplateFields(wanda.source))
-				}
-				allErrors = append(allErrors, wanda.errors...)
+	if l.errorFormatter != nil {
+		templateFields := make([]*TemplateFields, 0, totalErrors)
+		for i := range workspaces {
+			wanda := &workspaces[i]
+			for _, err := range wanda.errors {
+				templateFields = append(templateFields, err.ExtractTemplateFields(wanda.source))
 			}
-			if err := l.errorFormatter.Print(l.errorOutput, templateFields); err != nil{
-				return nil, err
-			}
-		} else {
-			for i := range workspaces {
-				ws := &workspaces[i]
-				l.displayErrors(ws.errors, ws.source)
-				allErrors = append(allErrors, ws.errors...)
-			}
+			allErrors = append(allErrors, wanda.errors...)
 		}
-		l.log("Detected", totalErrors, "errors in", fileCount, "files checked")
+		if err := l.errorFormatter.Print(l.errorOutput, templateFields); err != nil {
+			return nil, err
+		}
+	} else {
+		for i := range workspaces {
+			ws := &workspaces[i]
+			l.displayErrors(ws.errors, ws.source)
+			allErrors = append(allErrors, ws.errors...)
+		}
+	}
+	l.log("Detected", totalErrors, "errors in", fileCount, "files checked")
 
 	return allErrors, nil
 }
 
-//LintFileは、指定されたyaml workflowをlintしてエラーを返す
-//projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
+// LintFileは、指定されたyaml workflowをlintしてエラーを返す
+// projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
 func (l *Linter) LintFile(file string, project *Project) ([]*LintingError, error) {
 	if project == nil {
 		pa, err := l.projectInformation.GetProjectForPath(file)
@@ -449,10 +449,10 @@ func (l *Linter) LintFile(file string, project *Project) ([]*LintingError, error
 	return errors, nil
 }
 
-//Lintはbyteのスライスとして与えられたyaml workflowをlintしてエラーを返す
-//pathパラメタは、コンテンツがどこからきたのかを示すfilepathとして使用
-//pathパラメタに<stdin>を入力すると出力がSTDINから来たことを示す
-//projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
+// Lintはbyteのスライスとして与えられたyaml workflowをlintしてエラーを返す
+// pathパラメタは、コンテンツがどこからきたのかを示すfilepathとして使用
+// pathパラメタに<stdin>を入力すると出力がSTDINから来たことを示す
+// projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
 func (l *Linter) Lint(filepath string, content []byte, project *Project) ([]*LintingError, error) {
 	if project == nil && filepath != "<stdin>" {
 		if _, err := os.Stat(filepath); !errors.Is(err, fs.ErrNotExist) {
@@ -489,13 +489,12 @@ func (l *Linter) validate(
 	localActions *LocalActionsMetadataCache,
 	localReusableWorkflow *LocalReusableWorkflowCache,
 ) ([]*LintingError, error) {
-
 	var validationStart time.Time
 	if l.loggingLevel >= LogLevelDetailedOutput {
 		validationStart = time.Now()
 	}
 
-	l.log("validating workflow..." , filePath)
+	l.log("validating workflow...", filePath)
 	if project != nil {
 		l.log("Detected project:", project.RootDirectory())
 	}
@@ -520,7 +519,7 @@ func (l *Linter) validate(
 	}
 
 	if parsedWorkflow != nil {
-		dbg :=l.debugWriter()
+		dbg := l.debugWriter()
 
 		rules := []Rule{
 			// MatrixRule(),
@@ -616,7 +615,7 @@ func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError,
 	}
 }
 
-//displayErrorsは、指定されたエラーを出力する
+// displayErrorsは、指定されたエラーを出力する
 func (l *Linter) displayErrors(errors []*LintingError, source []byte) {
 	for _, err := range errors {
 		err.DisplayError(l.errorOutput, source)

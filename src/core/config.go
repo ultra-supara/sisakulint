@@ -21,7 +21,7 @@ type Config struct {
 	ConfigVariables []string `yaml:"config-variables"`
 }
 
-//parseConfigは与えられたbyte sliceをConfigにparseする
+// parseConfigは与えられたbyte sliceをConfigにparseする
 func parseConfig(b []byte, path string) (*Config, error) {
 	var c Config
 	if err := yaml.Unmarshal(b, &c); err != nil {
@@ -40,7 +40,7 @@ func ReadConfigFile(path string) (*Config, error) {
 	return parseConfig(b, path)
 }
 
-//loadRepoConfigは、リポジトリ.github/sisakulint.yml or .github/sisakulint.ymlを読み込む
+// loadRepoConfigは、リポジトリ.github/sisakulint.yml or .github/sisakulint.ymlを読み込む
 func loadRepoConfig(root string) (*Config, error) {
 	for _, f := range []string{"sisakulint.yaml", "sisakulint.yml"} {
 		path := filepath.Join(root, ".github", f)
@@ -81,8 +81,8 @@ config-variables: null
 # 🧠 Example: some-option: value
 # Note: Refer to the sisakulint documentation for more information on available settings.
 	`)
-		if err := os.WriteFile(path, b, 0644); err != nil {
-			return fmt.Errorf("failed to write config file %q: %w", path, err)
-		}
-		return nil
+	if err := os.WriteFile(path, b, 0644); err != nil {
+		return fmt.Errorf("failed to write config file %q: %w", path, err)
+	}
+	return nil
 }

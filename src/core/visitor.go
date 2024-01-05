@@ -8,7 +8,7 @@ import (
 	"github.com/ultra-supara/sisakulint/src/ast"
 )
 
-//TreeVisitorはworkflowのsyntax'streeをトラバースするためのinterface
+// TreeVisitorはworkflowのsyntax'streeをトラバースするためのinterface
 type TreeVisitor interface {
 	VisitStep(node *ast.Step) error
 	VisitJobPre(node *ast.Job) error
@@ -17,28 +17,28 @@ type TreeVisitor interface {
 	VisitWorkflowPost(node *ast.Workflow) error
 }
 
-//SyntaxTreeVisitorはworkflowのsyntax'streeをトラバースするためのinterface
+// SyntaxTreeVisitorはworkflowのsyntax'streeをトラバースするためのinterface
 type SyntaxTreeVisitor struct {
 	passes []TreeVisitor
 	debugW io.Writer
 }
 
-//NewSyntaxTreeVisitorはSyntaxTreeVisitorを生成する
+// NewSyntaxTreeVisitorはSyntaxTreeVisitorを生成する
 func NewSyntaxTreeVisitor() *SyntaxTreeVisitor {
 	return &SyntaxTreeVisitor{}
 }
 
-//AddVisitorはvisitorを追加する
+// AddVisitorはvisitorを追加する
 func (s *SyntaxTreeVisitor) AddVisitor(visitor TreeVisitor) {
 	s.passes = append(s.passes, visitor)
 }
 
-//EnableDebugOutputはdebug出力を有効にする
+// EnableDebugOutputはdebug出力を有効にする
 func (s *SyntaxTreeVisitor) EnableDebugOutput(writer io.Writer) {
 	s.debugW = writer
 }
 
-//logElapsedTimeは経過時間を出力する
+// logElapsedTimeは経過時間を出力する
 func (s *SyntaxTreeVisitor) logreportElapsedTime(task string, startTime time.Time) {
 	if s.debugW != nil {
 		duration := time.Since(startTime).Milliseconds()
@@ -46,7 +46,7 @@ func (s *SyntaxTreeVisitor) logreportElapsedTime(task string, startTime time.Tim
 	}
 }
 
-//visits given syntax tree in depth-first order
+// visits given syntax tree in depth-first order
 func (s *SyntaxTreeVisitor) VisitTree(node *ast.Workflow) error {
 	var startTime time.Time
 	if s.debugW != nil {
@@ -71,7 +71,7 @@ func (s *SyntaxTreeVisitor) VisitTree(node *ast.Workflow) error {
 	}
 
 	if s.debugW != nil {
-		msg := fmt.Sprintf("VisitJob was tooking %d jobs",len(node.Jobs))
+		msg := fmt.Sprintf("VisitJob was tooking %d jobs", len(node.Jobs))
 		defer s.logreportElapsedTime(msg, startTime)
 		startTime = time.Now()
 	}
@@ -89,7 +89,7 @@ func (s *SyntaxTreeVisitor) VisitTree(node *ast.Workflow) error {
 	return nil
 }
 
-//visitJobはjobを訪問する
+// visitJobはjobを訪問する
 func (s *SyntaxTreeVisitor) visitJob(node *ast.Job) error {
 	var startTime time.Time
 	if s.debugW != nil {
@@ -114,7 +114,7 @@ func (s *SyntaxTreeVisitor) visitJob(node *ast.Job) error {
 	}
 
 	if s.debugW != nil {
-		msg := fmt.Sprintf("VisitStep was tooking %d steps",len(node.Steps))
+		msg := fmt.Sprintf("VisitStep was tooking %d steps", len(node.Steps))
 		defer s.logreportElapsedTime(msg, startTime)
 		startTime = time.Now()
 	}
@@ -126,14 +126,14 @@ func (s *SyntaxTreeVisitor) visitJob(node *ast.Job) error {
 	}
 
 	if s.debugW != nil {
-		msg := fmt.Sprintf("VisitJobPost was tooking %d jobs, at job %q",len(node.Steps), node.ID.Value)
+		msg := fmt.Sprintf("VisitJobPost was tooking %d jobs, at job %q", len(node.Steps), node.ID.Value)
 		defer s.logreportElapsedTime(msg, startTime)
 	}
 
 	return nil
 }
 
-//visitStepはstepを訪問する
+// visitStepはstepを訪問する
 func (s *SyntaxTreeVisitor) visitStep(node *ast.Step) error {
 	var startTime time.Time
 	if s.debugW != nil {

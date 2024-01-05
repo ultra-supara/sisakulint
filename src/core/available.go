@@ -5,7 +5,7 @@ package core
 // 2番目の戻り値は、どのような特別な関数が使用できるかを示します。 空のスライスは、特別な機能が使用できないことを意味します。
 // 'key' パラメータは、jobs.<job_id>.concurrencyのようなワークフローキーを表す必要があります。
 //
-//* https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability.
+// * https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability.
 func WorkflowKeyAvailability(key string) ([]string, []string) {
 	switch key {
 	case "jobs.<job_id>.outputs.<output_id>":
@@ -17,7 +17,7 @@ func WorkflowKeyAvailability(key string) ([]string, []string) {
 	case "jobs.<job_id>.environment.url":
 		return []string{"env", "github", "inputs", "job", "matrix", "needs", "runner", "steps", "strategy", "vars"}, []string{}
 	case "jobs.<job_id>.steps.if":
-		return []string{"env", "github", "inputs", "job", "matrix", "needs", "runner", "steps", "strategy", "vars"}, []string{"always", "cancelled", "failure", "hashfiles", "success"}
+		return []string{"env", "github", "inputs", "job", "matrix", "needs", "runner", "steps", "strategy", "vars"}, []string{"always", "canceled", "failure", "hashfiles", "success"}
 	case "jobs.<job_id>.container.credentials", "jobs.<job_id>.services.<service_id>.credentials":
 		return []string{"env", "github", "inputs", "matrix", "needs", "secrets", "strategy", "vars"}, []string{}
 	case "jobs.<job_id>.defaults.run":
@@ -31,7 +31,7 @@ func WorkflowKeyAvailability(key string) ([]string, []string) {
 	case "jobs.<job_id>.strategy":
 		return []string{"github", "inputs", "needs", "vars"}, []string{}
 	case "jobs.<job_id>.if":
-		return []string{"github", "inputs", "needs", "vars"}, []string{"always", "cancelled", "failure", "success"}
+		return []string{"github", "inputs", "needs", "vars"}, []string{"always", "canceled", "failure", "success"}
 	case "env":
 		return []string{"github", "inputs", "secrets", "vars"}, []string{}
 	case "concurrency", "on.workflow_call.inputs.<inputs_id>.default", "run-name":

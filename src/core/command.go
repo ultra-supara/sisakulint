@@ -10,7 +10,7 @@ import (
 
 // バージョンとインストール情報を保持する変数
 var (
-	versionInfo       = ""
+	versionInfo        = ""
 	installationMethod = "installed by building from source"
 )
 
@@ -66,7 +66,7 @@ type Command struct {
 	Stderr io.Writer
 }
 
-//todo: linterを実行して結果を返すメソッド
+// todo: linterを実行して結果を返すメソッド
 func (cmd *Command) runLint(args []string, linterOpts *LinterOptions, initConfig bool, generateBoilerplate bool) ([]*LintingError, error) {
 	l, err := NewLinter(cmd.Stdout, linterOpts)
 	if err != nil {
@@ -98,7 +98,7 @@ func (i *ignorePatternFlags) Set(v string) error {
 	return nil
 }
 
-//todo: sisakulintのmain関数
+// todo: sisakulintのmain関数
 func (cmd *Command) Main(args []string) int {
 	var showVersion bool
 	var linterOpts LinterOptions

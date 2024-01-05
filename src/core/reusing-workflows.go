@@ -22,19 +22,18 @@ func expectedMapping(where string, node *yaml.Node) error {
 // ReusableWorkflowMetadataInput は、ローカルで再利用可能なワークフローファイルを検証するための入力メタデータです。
 type ReusableWorkflowMetadataInput struct {
 	// Name は、再利用可能なワークフローで定義された入力の名前です。
-	Name 	  string
+	Name string
 	// Required は、入力の 'required' フィールドが true に設定され、デフォルト値が設定されていない場合に true です。
-	Required  bool
+	Required bool
 	Type     expressions.ExprType
 }
-
 
 // UnmarshalYAML implements yaml.Unmarshaler interface.
 func (input *ReusableWorkflowMetadataInput) UnmarshalYAML(node *yaml.Node) error {
 	type metadata struct {
-		Required bool `yaml:"required"`
-		Default *string `yaml:"default"`
-		Type string `yaml:"type"`
+		Required bool    `yaml:"required"`
+		Default  *string `yaml:"default"`
+		Type     string  `yaml:"type"`
 	}
 	var m metadata
 	if err := node.Decode(&m); err != nil {
@@ -44,17 +43,17 @@ func (input *ReusableWorkflowMetadataInput) UnmarshalYAML(node *yaml.Node) error
 	input.Required = m.Required && m.Default == nil
 	var exprType expressions.ExprType
 	switch m.Type {
-		case "boolean":
-			// input.Type = ExprBoolean
-			exprType = expressions.BoolType{}
-		case "number":
-			// input.Type = ExprNumber
-			exprType = expressions.NumberType{}
-		case "string":
-			// input.Type = ExprString
-			exprType = expressions.StringType{}
-		default:
-			exprType = expressions.UnknownType{}
+	case "boolean":
+		// input.Type = ExprBoolean
+		exprType = expressions.BoolType{}
+	case "number":
+		// input.Type = ExprNumber
+		exprType = expressions.NumberType{}
+	case "string":
+		// input.Type = ExprString
+		exprType = expressions.StringType{}
+	default:
+		exprType = expressions.UnknownType{}
 	}
 	input.Type = exprType
 	return nil
@@ -97,7 +96,6 @@ type ReusableWorkflowMetadataSecret struct {
 // ReusableWorkflowMetadataSecretsは、秘密の名前から再利用可能なワークフローの秘密のメタデータへのマップです。
 // キーは小文字であり、ワークフローの呼び出しの秘密の名前は大文字/小文字を区別しないためです。
 type ReusableWorkflowMetadataSecrets map[string]*ReusableWorkflowMetadataSecret
-
 
 // UnmarshalYAMLは、yaml.Unmarshalerインターフェイスを実装します。
 func (secrets *ReusableWorkflowMetadataSecrets) UnmarshalYAML(node *yaml.Node) error {
@@ -148,8 +146,8 @@ func (outputs *ReusableWorkflowMetadataOutputs) UnmarshalYAML(node *yaml.Node) e
 }
 
 // ReusableWorkflowMetadataは、ローカルの再利用可能なワークフローを検証するためのメタデータ
-//この構造体はYAMLファイルからのすべてのメタデータを含んでいません。
-//再利用可能なワークフローファイルの検証に必要なメタデータのみ
+// この構造体はYAMLファイルからのすべてのメタデータを含んでいません。
+// 再利用可能なワークフローファイルの検証に必要なメタデータのみ
 type ReusableWorkflowMetadata struct {
 	Inputs  ReusableWorkflowMetadataInputs  `yaml:"inputs"`
 	Outputs ReusableWorkflowMetadataOutputs `yaml:"outputs"`
@@ -175,7 +173,7 @@ func (c *LocalReusableWorkflowCache) debugf(format string, args ...interface{}) 
 	fmt.Fprintf(c.dbg, format, args...)
 }
 
-//readCacheは、キャッシュから再利用可能なワークフローメタデータを読み取ります。
+// readCacheは、キャッシュから再利用可能なワークフローメタデータを読み取ります。
 func (c *LocalReusableWorkflowCache) readCache(key string) (*ReusableWorkflowMetadata, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -183,7 +181,7 @@ func (c *LocalReusableWorkflowCache) readCache(key string) (*ReusableWorkflowMet
 	return m, ok
 }
 
-//writeCacheは、キャッシュに再利用可能なワークフローメタデータを書き込みます。
+// writeCacheは、キャッシュに再利用可能なワークフローメタデータを書き込みます。
 func (c *LocalReusableWorkflowCache) writeCache(key string, m *ReusableWorkflowMetadata) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -224,8 +222,8 @@ func (c *LocalReusableWorkflowCache) FindMetadata(spec string) (*ReusableWorkflo
 	return m, nil
 }
 
-//pathToWorkflowSpecification
-func (c *LocalReusableWorkflowCache) pathToWorkflowSpecification(spec string) (string , bool) {
+// pathToWorkflowSpecification
+func (c *LocalReusableWorkflowCache) pathToWorkflowSpecification(spec string) (string, bool) {
 	if c.proj == nil {
 		return "", false
 	}
@@ -251,9 +249,9 @@ func (c *LocalReusableWorkflowCache) pathToWorkflowSpecification(spec string) (s
 // 'wpath'は、ASTのworkflowファイルのパス
 //プロジェクトのrootディレクトリ相対か、絶対パス
 // 以下の状況では、このメソッドは実行されない
-    //todo: (1) プロジェクトが未設定
-	//todo: (2) workflow pathをworkflow call specに変換できない
-	//todo: (3) 既に該当workflowのキャッシュが存在する場合
+//todo: (1) プロジェクトが未設定
+//todo: (2) workflow pathをworkflow call specに変換できない
+//todo: (3) 既に該当workflowのキャッシュが存在する場合
 // このメソッドの呼び出しはthread-safeで
 
 func (c *LocalReusableWorkflowCache) WriteWorkflowCallEvent(wpath string, event *ast.WorkflowCallEvent) {
@@ -287,9 +285,9 @@ func (c *LocalReusableWorkflowCache) WriteWorkflowCallEvent(wpath string, event 
 			ExprType = expressions.StringType{}
 		}
 		m.Inputs[i.ID] = &ReusableWorkflowMetadataInput{
-			Type: ExprType,
+			Type:     ExprType,
 			Required: i.Required != nil && i.Required.Value && i.Default == nil,
-			Name: i.Name.Value,
+			Name:     i.Name.Value,
 		}
 	}
 	for n, o := range event.Outputs {
@@ -302,7 +300,7 @@ func (c *LocalReusableWorkflowCache) WriteWorkflowCallEvent(wpath string, event 
 		r := s.Required != nil && s.Required.Value
 		m.Secrets[n] = &ReusableWorkflowMetadataSecret{
 			Required: r,
-			Name: s.Name.Value,
+			Name:     s.Name.Value,
 		}
 	}
 	c.mu.Lock()

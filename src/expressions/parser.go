@@ -10,9 +10,9 @@ import (
 func errorpositionToken(t *Token, msg string) *ExprError {
 	return &ExprError{
 		Message: msg,
-		Offset: t.Offset,
-		Line: t.Line,
-		Column: t.Column,
+		Offset:  t.Offset,
+		Line:    t.Line,
+		Column:  t.Column,
 	}
 }
 
@@ -20,9 +20,9 @@ func errorpositionToken(t *Token, msg string) *ExprError {
 //* https://docs.github.com/en/actions/learn-github-actions/expressions
 
 type MiniParser struct {
-	cur *Token
+	cur       *Token
 	tokenizer *Tokenizer
-	err *ExprError
+	err       *ExprError
 }
 
 // NewMiniParser creates a new MiniParser.
@@ -37,12 +37,12 @@ func (p *MiniParser) error(msg string) {
 	}
 }
 
-//errorf creates a new error with a formatted message.
+// errorf creates a new error with a formatted message.
 func (p *MiniParser) errorf(format string, args ...interface{}) {
 	p.error(fmt.Sprintf(format, args...))
 }
 
-//unexpected creates a new error for an unexpected token.
+// unexpected creates a new error for an unexpected token.
 func (p *MiniParser) unexpected(where string, expected []TokenKind) {
 	if p.err != nil {
 		return
@@ -68,12 +68,12 @@ func (p *MiniParser) next() *Token {
 	return ret
 }
 
-//peek returns the next token without advancing the parser.
+// peek returns the next token without advancing the parser.
 func (p *MiniParser) peek() *Token {
 	return p.cur
 }
 
-//the given expressionのparse.
+// the given expressionのparse.
 func (p *MiniParser) parsing() ExprNode {
 	ident := p.next() // identを取得
 	switch p.peek().Kind {
@@ -127,7 +127,7 @@ func (p *MiniParser) parsing() ExprNode {
 	}
 }
 
-//parseNested
+// parseNested
 func (p *MiniParser) parseNested() ExprNode {
 	p.next() // '(' を取得
 	nested := p.parseOrExpression()
@@ -143,7 +143,7 @@ func (p *MiniParser) parseNested() ExprNode {
 	return nested
 }
 
-//parseInt parses an integer literal.
+// parseInt parses an integer literal.
 func (p *MiniParser) parseInt() ExprNode {
 	t := p.peek() // 数値を取得
 	ism, err := strconv.ParseInt(t.Value, 0, 32)
@@ -155,7 +155,7 @@ func (p *MiniParser) parseInt() ExprNode {
 	return &IntNode{int(ism), t}
 }
 
-//floating-point literalのparse.
+// floating-point literalのparse.
 func (p *MiniParser) parseFloat() ExprNode {
 	t := p.peek() // 数値を取得
 	f, err := strconv.ParseFloat(t.Value, 64)
@@ -167,7 +167,7 @@ func (p *MiniParser) parseFloat() ExprNode {
 	return &FloatNode{f, t}
 }
 
-//string literalのparse.
+// string literalのparse.
 func (p *MiniParser) parseString() ExprNode {
 	t := p.next() // 文字列を取得
 	s := t.Value[1 : len(t.Value)-1]
@@ -175,7 +175,7 @@ func (p *MiniParser) parseString() ExprNode {
 	return &StringNode{t.Value, t}
 }
 
-//OR expressionのparse.
+// OR expressionのparse.
 func (p *MiniParser) parseOrExpression() ExprNode {
 	l := p.parseAndExpression()
 	if l == nil {
@@ -192,7 +192,7 @@ func (p *MiniParser) parseOrExpression() ExprNode {
 	return &LogicalOpNode{LogicalOpNodeKindOr, l, r}
 }
 
-//AND expressionのparse.
+// AND expressionのparse.
 func (p *MiniParser) parseAndExpression() ExprNode {
 	l := p.parseComparisonOperator()
 	if l == nil {
@@ -296,8 +296,6 @@ func (p *MiniParser) parsePostfixOperator() ExprNode {
 	}
 }
 
-
-
 func (p *MiniParser) parseComparisonOperator() ExprNode {
 	leftOperand := p.parsePrefixOperator()
 	if leftOperand == nil {
@@ -353,21 +351,21 @@ func (p *MiniParser) Parse(l *Tokenizer) (ExprNode, *ExprError) {
 
 	// トークンのシーケンスの終端に到達しているかを確認します。
 	if t := p.peek(); t.Kind != TokenKindEnd {
-	// まだ残っているトークンをリストアップ
-	remainingTokens := []string{t.Kind.String()}
+		// まだ残っているトークンをリストアップ
+		remainingTokens := []string{t.Kind.String()}
 
-	for {
-		t = p.tokenizer.AnalyzeToken()
-		if t.Kind == TokenKindEnd {
-			break
+		for {
+			t = p.tokenizer.AnalyzeToken()
+			if t.Kind == TokenKindEnd {
+				break
+			}
+			remainingTokens = append(remainingTokens, t.Kind.String())
 		}
-		remainingTokens = append(remainingTokens, t.Kind.String())
-	}
 
-	// エラーメッセージを作成して報告します。
-	tokenList := strings.Join(remainingTokens, ", ")
-	p.errorf("Parser did not consume the entire input. %d token(s) remain: %s", len(remainingTokens), tokenList)
-	return nil, p.err
+		// エラーメッセージを作成して報告します。
+		tokenList := strings.Join(remainingTokens, ", ")
+		p.errorf("Parser did not consume the entire input. %d token(s) remain: %s", len(remainingTokens), tokenList)
+		return nil, p.err
 	}
 	return root, nil
 }

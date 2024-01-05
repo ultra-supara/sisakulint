@@ -58,7 +58,7 @@ type Event interface {
 
 // WebhookEventFilter はWebhookイベントのフィルターを表します。例えば 'branches', 'paths-ignore' などです。
 // Webhookイベントはこれらのフィルターによってフィルタリングされます。一部のフィルターは排他的です。
-//* https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#using-filters
+// * https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#using-filters
 type WebhookEventFilter struct {
 	// Name はフィルターの名前です。例えば 'branches', 'tags' など。
 	Name *String
@@ -69,7 +69,7 @@ type WebhookEventFilter struct {
 // WebhookEvent はWebhookイベントに基づくイベントタイプを表します。
 // 一部のイベントは'types'フィールドを持つことができません。'push' と 'pull' イベントのみが 'tags', 'tags-ignore',
 // 'paths' および 'paths-ignore' フィールドを持つことができます。'workflow_run' イベントのみが 'workflows' フィールドを持つことができます。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onevent_nametypes
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onevent_nametypes
 type WebhookEvent struct {
 	// Hook はWebhookイベントの名前です。
 	Hook *String
@@ -94,7 +94,7 @@ type WebhookEvent struct {
 }
 
 // ScheduledEvent はワークフローによってスケジュールされたイベントを表します。
-//* https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#scheduled-events
+// * https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#scheduled-events
 type ScheduledEvent struct {
 	// Cron はワークフローをスケジュールするためのcron文字列のリストです。
 	Cron []*String
@@ -103,7 +103,7 @@ type ScheduledEvent struct {
 }
 
 // WorkflowDispatchEventInputType は workflow_dispatch イベントの入力のタイプを表します。
-//* https://github.blog/changelog/2021-11-10-github-actions-input-types-for-manual-workflows/
+// * https://github.blog/changelog/2021-11-10-github-actions-input-types-for-manual-workflows/
 type WorkflowDispatchEventInputType uint8
 
 const (
@@ -122,7 +122,7 @@ const (
 )
 
 // DispatchInput はワークフローを手動でディスパッチする際の入力を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
+// * https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
 type DispatchInput struct {
 	// Name はワークフローを手動でディスパッチする際に指定される入力の名前です。
 	Name *String
@@ -140,7 +140,7 @@ type DispatchInput struct {
 }
 
 // WorkflowDispatchEvent はワークフローを手動でディスパッチするイベントを表します。
-//* https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
+// * https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
 type WorkflowDispatchEvent struct {
 	// Inputs は入力名から入力属性へのマッピングです。キーは大文字小文字を区別しないため小文字になっています。
 	Inputs map[string]*DispatchInput
@@ -148,9 +148,8 @@ type WorkflowDispatchEvent struct {
 	Pos *Position
 }
 
-
 // RepositoryDispatchEvent は repository_dispatch イベントの設定を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
+// * https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch
 type RepositoryDispatchEvent struct {
 	// Types はワークフローをトリガーすることができるタイプのリストです。
 	Types []*String
@@ -173,7 +172,7 @@ const (
 )
 
 // WorkflowCallEventInput は workflow_call イベントの入力設定を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onworkflow_callinputs
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onworkflow_callinputs
 type WorkflowCallEventInput struct {
 	// Name は入力の名前です。
 	Name *String
@@ -192,7 +191,7 @@ type WorkflowCallEventInput struct {
 }
 
 // WorkflowCallEventSecret は workflow_call イベントの秘密設定を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onworkflow_callsecrets
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#onworkflow_callsecrets
 type WorkflowCallEventSecret struct {
 	// Name は秘密の名前です。
 	Name *String
@@ -204,7 +203,7 @@ type WorkflowCallEventSecret struct {
 }
 
 // WorkflowCallEventOutput は workflow_call イベントのアウトプット設定を表します。
-//* https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-outputs-from-a-reusable-workflow
+// * https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-outputs-from-a-reusable-workflow
 type WorkflowCallEventOutput struct {
 	// Name はアウトプットの名前です。
 	Name *String
@@ -215,7 +214,7 @@ type WorkflowCallEventOutput struct {
 }
 
 // WorkflowCallEvent は workflow_call イベントの設定を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow-reuse-events
+// * https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow-reuse-events
 type WorkflowCallEvent struct {
 	// Inputs は workflow_call イベントの入力の配列です。
 	// この値は他のフィールドとは異なり、マップではなく配列として設定されています。これは入力のデフォルト値をチェックする際に順序が重要であるためです。
@@ -233,7 +232,7 @@ type WorkflowCallEvent struct {
 }
 
 // PermissionScope はそれぞれのパーミッションスコープ（例: "issues", "checks", ...）のための構造体です。
-//* https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+// * https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
 type PermissionScope struct {
 	// Name はスコープの名前です。
 	Name *String
@@ -243,7 +242,7 @@ type PermissionScope struct {
 
 // Permissions はワークフローファイル内のパーミッション設定のセットです。
 // すべてのパーミッションを一度に設定することも、それぞれのパーミッションを個別に設定することもできます。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#permissions
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#permissions
 type Permissions struct {
 	// All はすべてのスコープに対する一度に設定されるパーミッション値です。
 	All *String
@@ -254,7 +253,7 @@ type Permissions struct {
 }
 
 // DefaultsRun はシェルがどのように実行されるかの設定です。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#defaultsrun
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#defaultsrun
 type DefaultsRun struct {
 	// Shell は実行されるシェルの名前です。
 	Shell *String
@@ -265,7 +264,7 @@ type DefaultsRun struct {
 }
 
 // Defaults はシェルを実行するためのデフォルト設定のセットです。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#defaults
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#defaults
 type Defaults struct {
 	// Run はシェルを実行する方法の設定です。
 	Run *DefaultsRun
@@ -274,7 +273,7 @@ type Defaults struct {
 }
 
 // Concurrency はワークフローの並行実行の設定です。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#concurrency
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#concurrency
 type Concurrency struct {
 	// Group は並行実行グループの名前です。
 	Group *String
@@ -284,10 +283,10 @@ type Concurrency struct {
 	Pos *Position
 }
 
-//ここからjob sectionです。
-//todo: jobs.<job_id>.environment
+// ここからjob sectionです。
+// todo: jobs.<job_id>.environment
 // Environment は環境の設定を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idenvironment
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idenvironment
 type Environment struct {
 	// Name はワークフローが使用する環境の名前です。
 	Name *String
@@ -314,7 +313,7 @@ type Exec interface {
 }
 
 // ExecRun はステップでシェルスクリプトを実行する方法の設定を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
 type ExecRun struct {
 	// Run は実行するスクリプトです。
 	Run *String
@@ -327,7 +326,7 @@ type ExecRun struct {
 }
 
 // Input はステップで使用される入力の設定を表します。
-//* https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepswith
+// * https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepswith
 type Input struct {
 	// Name は入力の名前です。
 	Name *String
@@ -335,7 +334,7 @@ type Input struct {
 	Value *String
 }
 
-//todo: jobs.<job_id>.steps[*].uses
+// todo: jobs.<job_id>.steps[*].uses
 // ExecAction はステップでアクションを実行する設定を表します。
 // uses キーワードを使用してアクションのパスやDockerイメージを指定します。
 // また、with キーワードを使用してアクションに渡す入力やパラメータを設定できます。
@@ -387,7 +386,7 @@ type RawYAMLObject struct {
 	// キーは大文字小文字を区別しないため小文字で格納されます。
 	Props map[string]RawYAMLValue
 	// Posi はソース内の位置を表します。
-	Posi   *Position
+	Posi *Position
 }
 
 // RawYAMLArray は生のYAML配列値を表します。
@@ -405,7 +404,7 @@ type RawYAMLString struct {
 }
 
 // MatrixRow is one row of matrix. One matrix row can take multiple values.
-//todo: jobs.<job_id>.strategy.matrix
+// todo: jobs.<job_id>.strategy.matrix
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymatrix
 // MatrixRow はマトリックスの値の一行を表します。
 type MatrixRow struct {
@@ -455,7 +454,7 @@ type Matrix struct {
 	Pos *Position
 }
 
-//todo: jobs.<job_id>.strategy.fail-fast
+// todo: jobs.<job_id>.strategy.fail-fast
 type Strategy struct {
 	// Matrix is matrix of combinations of values. Each combination will run the job once.
 	Matrix *Matrix
@@ -488,7 +487,7 @@ type Env struct {
 }
 
 // Step is step configuration. Step runs one action or one shell script.
-//todo: jobs.<job_id>.steps
+// todo: jobs.<job_id>.steps
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idsteps
 type Step struct {
 	// *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsid
@@ -509,7 +508,7 @@ type Step struct {
 	Pos *Position
 }
 
-//todo: jobs.<job_id>.container.credentials
+// todo: jobs.<job_id>.container.credentials
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idcontainercredentials
 type Credentials struct {
 	// Username is username for authentication.
@@ -520,7 +519,7 @@ type Credentials struct {
 	Pos *Position
 }
 
-//todo: jobs.<job_id>.container
+// todo: jobs.<job_id>.container
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idcontainer
 type Container struct {
 	// Image is specification of Docker image.
@@ -544,7 +543,7 @@ type Container struct {
 	Pos *Position
 }
 
-//todo: jobs.<job_id>.services
+// todo: jobs.<job_id>.services
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idservices
 type Service struct {
 	// Name is name of the service.
@@ -553,7 +552,7 @@ type Service struct {
 	Container *Container
 }
 
-//todo: jobs.<job_id>.outputs
+// todo: jobs.<job_id>.outputs
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idoutputs
 type Output struct {
 	// Name is name of output.
@@ -562,7 +561,7 @@ type Output struct {
 	Value *String
 }
 
-//todo: jobs.<job_id>.runs-on
+// todo: jobs.<job_id>.runs-on
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idruns-on
 type Runner struct {
 	// Labels is list label names to select a runner to run a job. There are preset labels and user defined labels. Runner matching to the labels is selected.
@@ -582,7 +581,7 @@ type WorkflowCallInput struct {
 	Value *String
 }
 
-//todo: jobs.<job_id>.with
+// todo: jobs.<job_id>.with
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idwith
 type WorkflowCallSecret struct {
 	// Name is a name of the secret
@@ -591,7 +590,7 @@ type WorkflowCallSecret struct {
 	Value *String
 }
 
-//todo: jobs.<job_id>.uses
+// todo: jobs.<job_id>.uses
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_iduses
 type WorkflowCall struct {
 	// Uses is a workflow specification to be called. This field is mandatory.
@@ -599,11 +598,11 @@ type WorkflowCall struct {
 	// Inputs is a map from input name to input value at 'with:'. Keys are in lower case since input names are case-insensitive.
 	Inputs map[string]*WorkflowCallInput
 	// Secrets is a map from secret name to secret value at 'secrets:'. Keys are in lower case since input names are case-insensitive.
-	Secrets map[string]*WorkflowCallSecret
+	Secrets        map[string]*WorkflowCallSecret
 	InheritSecrets bool
 }
 
-//todo: jobs
+// todo: jobs
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobs
 type Job struct {
 	// ID is an ID of the job, which is key of job configuration objects.
