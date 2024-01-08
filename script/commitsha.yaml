@@ -10,3 +10,8 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: "1.21.3"
+      - name: Run GolangCI-Lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.49
+          args: --timeout 5m
