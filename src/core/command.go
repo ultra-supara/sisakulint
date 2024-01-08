@@ -41,6 +41,8 @@ const commandUsageHeader = `Usage: sisakulint [FLAGS]
 
     $ sisakulint -debug
 
+  Documentation: https://www.notion.so/ultra-supara/Developer-Documents-d3f28d427cf9456dbe3c0f063a7d3baf?pvs=4
+
 Flags:`
 
 func getCommandVersion() string {
@@ -109,7 +111,6 @@ func (cmd *Command) Main(args []string) int {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(cmd.Stderr)
 	flags.Var(&ignorePats, "ignore", "Regular expression matching to error messages you want to ignore. This flag is repeatable")
-	flags.StringVar(&linterOpts.ShellcheckExecutable, "shellcheck", "shellcheck", "Command name or file path of \"shellcheck\" external command. If empty, shellcheck integration will be disabled")
 	flags.BoolVar(&generateBoilerplate, "boilerplate", false, "Generate a costomized template file for GitHub Actions workflow")
 	flags.StringVar(&linterOpts.CustomErrorMessageFormat, "format", "", "Custom template to format error messages in Go template syntax.")
 	flags.StringVar(&linterOpts.ConfigurationFilePath, "config-file", "", "File path to config file")
