@@ -202,7 +202,7 @@ func (project *parser) parseFloat(node *yaml.Node) *ast.Float {
 // *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
 func (project *parser) parseTimeoutMinutes(node *yaml.Node) *ast.Float {
 	f := project.parseFloat(node)
-	if f == nil && f.Expression == nil && f.Value < 0 {
+	if f != nil && f.Expression == nil && f.Value < 0 {
 		project.errorf(node, "expected positive number for timeout-minutes but found %v", node.Value)
 	}
 	return f
