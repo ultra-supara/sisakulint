@@ -59,51 +59,48 @@ func loadBoiler(root string) (*Boiler, error) {
 
 // writeDefaultBoilerplateFileは指定されたファイルパスにデフォルトの設定ファイルを書き込む
 func writeDefaultBoilerplateFile(path string) error {
-	b := []byte(`# costom boilerplate file from sisakulint
-	# https://docs.github.com/ja/actions/using-workflows/creating-starter-workflows-for-your-organization
-	# https://docs.github.com/en/actions/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
-	# https://github.com/docker/metadata-action#semver
-name: sisakulint CI
+	b := []byte(`
+# costom boilerplate file from sisakulint
+name: sample deploy to GitHub Pages
 
 on:
-  workflow_dispatch:
+  # Trigger the workflow every time you push to the main branch
+  # Using a different branch name? Replace main with your branch’s name
   push:
-    branches:
-      - 'master'
-    tags:
-      - 'v*'
-  pull_request:
-    branches:
-      - 'master'
+    branches: [main]
+  # Allows you to run this workflow manually from the Actions tab on GitHub.
+  workflow_dispatch:
+
+# Allow this job to clone the repo and create a page deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout your repository using git
+	  	# Recommend to fix actions commit SHA
         uses: actions/checkout@v4
-      -
-        name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: name/app
-      -
-        name: Login to DockerHub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Install, build, and upload your site output
+        uses: custom/custom@v1
+        # with:
+            # path: . # The root location of your Astro project inside the repository. (optional)
+            # node-version: 18 # The specific version of Node that should be used to build your site. Defaults to 18. (optional)
+            # package-manager: pnpm@latest # The Node package manager that should be used to install dependencies and build your site. Automatically detected based on your lockfile. (optional)
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v3
 	`)
 	if err := os.WriteFile(path, b, 0644); err != nil {
 		return fmt.Errorf("failed to write config file %q: %w", path, err)
