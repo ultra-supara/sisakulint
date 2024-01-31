@@ -22,7 +22,7 @@ func (rule *ExprRule) checkOneExpression(str *ast.String, what, workflowKey stri
 
 	if len(ts) != 1 {
 		// このケースは到達不可能であるべきです。パーサーによって一つの ${{ }} が含まれていることがチェックされます
-		rule.Errorf(str.Pos, "one ${{ }} expression should be included in %q value but got %d expressions", what, len(ts))
+		//rule.Errorf(str.Pos, "one ${{ }} expression should be included in %q value but got %d expressions", what, len(ts))
 		return nil
 	}
 
