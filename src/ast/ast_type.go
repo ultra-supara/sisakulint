@@ -16,6 +16,8 @@ type String struct {
 	Value string
 	// Quoted represents the string is quoted with ' or " in the YAML source.
 	Quoted bool
+	// Literal represents the string is literal style in the YAML source.
+	Literal bool
 	// Pos is a position of the string in source.
 	Pos *Position
 }

@@ -54,7 +54,8 @@ func isNull(node *yaml.Node) bool {
 
 func newString(node *yaml.Node) *ast.String {
 	quoted := node.Style&(yaml.DoubleQuotedStyle|yaml.SingleQuotedStyle) != 0
-	return &ast.String{Value: node.Value, Quoted: quoted, Pos: positionAt(node)}
+	literal := node.Style&yaml.LiteralStyle != 0
+	return &ast.String{Value: node.Value, Quoted: quoted, Literal: literal, Pos: positionAt(node)}
 }
 
 type workflowKeyValue struct {

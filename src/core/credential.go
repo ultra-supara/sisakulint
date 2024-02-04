@@ -45,6 +45,7 @@ func (rule *CredentialRule) VisitJobPre(node *ast.Job) error {
 func (rule *CredentialRule) checkCredentialsWithRego(where string, node *ast.Container) error {
 	containerData := map[string]interface{}{
 		"credentials": map[string]interface{}{
+			"username": node.Credentials.Username.Value,
 			"password": node.Credentials.Password.Value,
 		},
 	}
