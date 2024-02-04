@@ -523,7 +523,7 @@ func (l *Linter) validate(
 
 		rules := []Rule{
 			// MatrixRule(),
-			// CredentialsRule(),
+			CredentialsRule(),
 			// EventsRule(),
 			// JobDependenciesRule(),
 			// ActionRule(localActions),
