@@ -2,9 +2,9 @@ package core
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/ultra-supara/sisakulint/src/ast"
@@ -15,15 +15,13 @@ type CredentialRule struct {
 	regoQuery rego.PreparedEvalQuery
 }
 
-func prepareRegoQuery(queryString, regoFilePath string) (rego.PreparedEvalQuery, error) {
-	credential, err := os.ReadFile(regoFilePath)
-	if err != nil {
-		log.Fatalf("Rego file does not exist: %s :%v", regoFilePath, err)
-	}
+//go:embed credential.rego
+var credentialRego string
 
+func prepareRegoQuery(queryString string) (rego.PreparedEvalQuery, error) {
 	r := rego.New(
 		rego.Query(queryString),
-		rego.Module(regoFilePath, string(credential)),
+		rego.Module("credential.rego", string(credentialRego)),
 	)
 
 	ctx := context.Background()
@@ -31,12 +29,12 @@ func prepareRegoQuery(queryString, regoFilePath string) (rego.PreparedEvalQuery,
 	if err != nil {
 		return rego.PreparedEvalQuery{}, fmt.Errorf("failed to prepare Rego query: %v", err)
 	}
-	log.Printf("%#v\n", query)
+
 	return query, nil
 }
 
 func CredentialsRule() *CredentialRule {
-	query, err := prepareRegoQuery("data.core.check_credentials", "./script/credential.rego")
+	query, err := prepareRegoQuery("data.core.check_credentials")
 	if err != nil {
 		log.Fatalf("Error preparing Rego query: %v", err)
 	}
