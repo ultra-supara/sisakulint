@@ -63,17 +63,6 @@ func (rule *CredentialRule) checkCredentialsWithRego(where string, node *ast.Con
 		return err
 	}
 
-	for _, result := range results {
-		for _, violation := range result.Expressions[0].Value.([]interface{}) {
-			v := violation.(map[string]interface{})
-			message := v["message"].(string)
-			rule.Errorf(
-				node.Credentials.Password.Pos,
-				"%s: %s",
-				where,
-				message,
-			)
-		}
-	}
+	reportRegoError(rule, node.Credentials.Password.Pos, where, results)
 	return nil
 }
