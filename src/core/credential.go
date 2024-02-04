@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"log"
 
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/ultra-supara/sisakulint/src/ast"
@@ -18,26 +17,8 @@ type CredentialRule struct {
 //go:embed credential.rego
 var credentialRego string
 
-func prepareRegoQuery(queryString string) (rego.PreparedEvalQuery, error) {
-	r := rego.New(
-		rego.Query(queryString),
-		rego.Module("credential.rego", string(credentialRego)),
-	)
-
-	ctx := context.Background()
-	query, err := r.PrepareForEval(ctx)
-	if err != nil {
-		return rego.PreparedEvalQuery{}, fmt.Errorf("failed to prepare Rego query: %v", err)
-	}
-
-	return query, nil
-}
-
 func CredentialsRule() *CredentialRule {
-	query, err := prepareRegoQuery("data.core.check_credentials")
-	if err != nil {
-		log.Fatalf("Error preparing Rego query: %v", err)
-	}
+	query := mustPrepareRegoQuery("data.core.check_credentials", "credential.rego", credentialRego)
 
 	return &CredentialRule{
 		BaseRule: BaseRule{
@@ -82,17 +63,6 @@ func (rule *CredentialRule) checkCredentialsWithRego(where string, node *ast.Con
 		return err
 	}
 
-	for _, result := range results {
-		for _, violation := range result.Expressions[0].Value.([]interface{}) {
-			v := violation.(map[string]interface{})
-			message := v["message"].(string)
-			rule.Errorf(
-				node.Credentials.Password.Pos,
-				"%s: %s",
-				where,
-				message,
-			)
-		}
-	}
+	reportRegoError(rule, node.Credentials.Password.Pos, where, results)
 	return nil
 }
