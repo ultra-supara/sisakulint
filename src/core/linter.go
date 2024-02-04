@@ -535,6 +535,7 @@ func (l *Linter) validate(
 			ExpressionRule(localActions, localReusableWorkflow),
 			DeprecatedCommandsRule(),
 			NewConditionalRule(),
+			TimeoutMinuteRule(),
 		}
 
 		v := NewSyntaxTreeVisitor()
