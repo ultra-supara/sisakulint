@@ -29,9 +29,8 @@ func (rule *IssueInjection) VisitJobPre(node *ast.Job) error {
 		lines := strings.Split(value, "\n")
 		reportError := func(i int, msg string) {
 			base := *run.Run.Pos // copy
-			base.Line += i
 			if run.Run.Literal {
-				base.Line += 1
+				base.Line += i + 1
 			}
 			rule.Errorf(&base, msg)
 		}
