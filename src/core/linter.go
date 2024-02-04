@@ -536,6 +536,7 @@ func (l *Linter) validate(
 			DeprecatedCommandsRule(),
 			NewConditionalRule(),
 			TimeoutMinuteRule(),
+			IssueInjectionRule(),
 		}
 
 		v := NewSyntaxTreeVisitor()
