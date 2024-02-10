@@ -178,7 +178,7 @@ func (project *parser) parseInt(node *yaml.Node) *ast.Int {
 }
 
 func (project *parser) parseFloat(node *yaml.Node) *ast.Float {
-	if node.Kind != yaml.ScalarNode || (node.Tag != "!!float" && node.Tag != "!!str") {
+	if node.Kind != yaml.ScalarNode || (node.Tag != "!!int" && node.Tag != "!!float" && node.Tag != "!!str") {
 		project.errorf(node, "expected float node but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
 		return nil
 	}
