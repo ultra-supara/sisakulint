@@ -211,7 +211,7 @@ func (l *Linter) debug(format string, args ...interface{}) {
 // debugWriterはlog levelがAllOutputIncludingDebug以上の場合にログを出力する
 func (l *Linter) debugWriter() io.Writer {
 	if l.loggingLevel < LogLevelAllOutputIncludingDebug {
-		return nil
+		return io.Discard
 	}
 	return l.logOutput
 }
