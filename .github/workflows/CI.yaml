@@ -1,5 +1,5 @@
 name: CI
-on: [push, pull_request]
+on: [push, pull_request, pull_request_target]
 
 jobs:
   lint:
@@ -24,14 +24,25 @@ jobs:
   docker:
     name: Dockerfile
     runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]') ||
+      (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@v3
+      - name: checkout
+        if: ${{ github.event_name != 'pull_request_target' }}
+        uses: actions/checkout@v3
       - name: generatetoken
         id: generate_token
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.PRIVATE_KEY }}
+      - name: checkout pr
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Build image
         id: image
         uses: docker/build-push-action@v3
