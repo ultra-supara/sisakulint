@@ -1,8 +1,19 @@
 version: 2
 updates:
+  # Maintain dependence for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
-    rebase-strategy: "disabled"
-    open-pull-requests-limit: 3
+      interval: "weekly"
+
+  # Maintain dependence for golang
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Maintain dependence for Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
