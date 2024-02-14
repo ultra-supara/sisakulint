@@ -483,9 +483,9 @@ func (sema *ExprSemanticsChecker) checkSpecialFunctionAvailability(n *FuncCallNo
 	// どの関数が特別で、どのワークフロー キーがそれらをサポートしているかを把握します。
 	//* https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
 	var SpecialFunctionNames = map[string][]string{
-		"always":    {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"always":   {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
 		"canceled": {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
-		"failure":   {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
+		"failure":  {"jobs.<job_id>.if", "jobs.<job_id>.steps.if"},
 		"hashfiles": {"jobs.<job_id>.steps.continue-on-error",
 			"jobs.<job_id>.steps.env", "jobs.<job_id>.steps.if",
 			"jobs.<job_id>.steps.name", "jobs.<job_id>.steps.run",
