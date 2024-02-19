@@ -221,7 +221,7 @@ type ErrorFormatter struct {
 // \nはunescapedされる
 func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 	if !strings.Contains(format, "{{") {
-		return nil, fmt.Errorf("The specified format should contain at least one {{ }} placeholder : %s", format)
+		return nil, fmt.Errorf("the specified format should contain at least one {{ }} placeholder : %s", format)
 	}
 
 	ruleTemplates := map[string]*RuleTemplateField{

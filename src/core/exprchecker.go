@@ -390,7 +390,7 @@ func (rule *ExprRule) checkExprsIn(s string, pos *ast.Position, quoted, checkUnt
 		if ty == nil || offsetAfter == 0 {
 			return nil, true
 		}
-		ts = append(ts, typedExpression{ty, ast.Position{Line, Col - 3}})
+		ts = append(ts, typedExpression{ty, ast.Position{Line: Line, Col: Col - 3}})
 
 		s = s[offsetAfter:]
 		offset += offsetAfter
@@ -680,13 +680,13 @@ func (rule *ExprRule) checkRawYAMLValue(v ast.RawYAMLValue) expressions.ExprType
 		return expressions.NewStrictObjectType(m)
 	case *ast.RawYAMLArray:
 		if len(v.Elems) == 0 {
-			return &expressions.ArrayType{expressions.UnknownType{}, false}
+			return &expressions.ArrayType{Elem: expressions.UnknownType{}, Deref: false}
 		}
 		elem := rule.checkRawYAMLValue(v.Elems[0])
 		for _, v := range v.Elems[1:] {
 			elem = elem.Merge(rule.checkRawYAMLValue(v))
 		}
-		return &expressions.ArrayType{elem, false}
+		return &expressions.ArrayType{Elem: elem, Deref: false}
 	case *ast.RawYAMLString:
 		return rule.checkRawYAMLString(v)
 	default:
