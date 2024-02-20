@@ -39,17 +39,17 @@ jobs:
         run: |
           git clone https://github.com/ultra-supara/homebrew-sisakulint
           git config --global url."https://x-oauth-basic:${{ secrets.TAP_ACCESS_TOKEN }}@github.com".insteadOf "https://github.com"
-      - name: Update formula
-        run: |
-          sed -i -e 's/# typed:/require_relative "strategy" # typed:/g' homebrew-sisakulint/sisakulint.rb
-          cat homebrew-sisakulint/sisakulint.rb
+      #- name: Update formula
+      #  run: |
+      #    #sed -i -e 's/# typed:/require_relative "strategy" # typed:/g' homebrew-sisakulint/sisakulint.rb
+      #    #cat homebrew-sisakulint/sisakulint.rb
       - name: Commit and push changes
         run: |
           cd homebrew-sisakulint
-          git config --global user.name "sisakulint-bot"
-          git config --global user.email "actions@github.com"
-          git add sisakulint.rb
-          git commit -m "Update sisakulint.rb"
-          git push origin HEAD:main
+          #git config --global user.name "sisakulint-bot"
+          #git config --global user.email "actions@github.com"
+          #git add sisakulint.rb
+          #git commit -m "Update sisakulint.rb"
+          #git push origin HEAD:main
           git tag ${{ github.ref_name }}
           git push origin ${{ github.ref_name }}

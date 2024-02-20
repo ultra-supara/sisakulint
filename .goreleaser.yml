@@ -28,7 +28,7 @@ brews:
       email: "41898282+github-actions[bot]@users.noreply.github.com"
     homepage: https://github.com/ultra-supara/sisakulint
     description: Support tools for GitHub Actions workflow files
-    download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
+    #download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
     install: |
       bin.install "sisakulint"
     test: |
