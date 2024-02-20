@@ -43,7 +43,7 @@ jobs:
       #  run: |
       #    #sed -i -e 's/# typed:/require_relative "strategy" # typed:/g' homebrew-sisakulint/sisakulint.rb
       #    #cat homebrew-sisakulint/sisakulint.rb
-      - name: Commit and push changes
+      - name: Push tag
         run: |
           cd homebrew-sisakulint
           git config --global user.name "sisakulint-bot"
