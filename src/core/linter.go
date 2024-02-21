@@ -525,11 +525,10 @@ func (l *Linter) validate(
 			// MatrixRule(),
 			// CredentialsRule(),
 			// EventsRule(),
-			// JobDependenciesRule(),
+			JobNeedsRule(),
 			// ActionRule(localActions),
 			EnvironmentVariableRule(),
 			IDRule(),
-			// GlobPatternRule(),
 			PermissionsRule(),
 			WorkflowCall(filePath, localReusableWorkflow),
 			ExpressionRule(localActions, localReusableWorkflow),
@@ -537,7 +536,7 @@ func (l *Linter) validate(
 			NewConditionalRule(),
 			TimeoutMinuteRule(),
 			IssueInjectionRule(),
-			// CommitShaRule(),
+			CommitShaRule(),
 		}
 
 		v := NewSyntaxTreeVisitor()
