@@ -536,7 +536,7 @@ func (l *Linter) validate(
 			NewConditionalRule(),
 			TimeoutMinuteRule(),
 			IssueInjectionRule(),
-			// CommitShaRule(),
+			CommitShaRule(),
 		}
 
 		v := NewSyntaxTreeVisitor()

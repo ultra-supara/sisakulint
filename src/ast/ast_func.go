@@ -234,3 +234,14 @@ func (w *Workflow) FindWorkflowCallEvent() (*WorkflowCallEvent, bool) {
 	}
 	return nil, false
 }
+
+// String provides step name for error message
+func (s *Step) String() string {
+	if s.ID != nil {
+		return s.ID.Value
+	}
+	if s.Name != nil {
+		return s.Name.Value
+	}
+	return "<unnamed>"
+}
