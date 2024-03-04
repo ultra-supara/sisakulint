@@ -34,12 +34,12 @@ func isOfficialAction(ref string) bool {
 // VisitJobPre checks each step in each job for the action ref specifications
 func (rule *CommitSha) VisitJobPre(node *ast.Job) error {
 	for _, step := range node.Steps {
-		if step.Uses != nil {
-			usesValue := step.Uses.Value
+		if action, ok := step.Exec.(*ast.ExecAction); ok {
+			usesValue := action.Uses.Value
 			if !isFullLengthSha(usesValue) && !isOfficialAction(usesValue) {
 				rule.Errorf(step.Pos,
 					"the action ref in 'uses' for step '%s' should be a full length commit SHA for immutability and security, unless it's an official GitHub Action. See documents: https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions",
-					step.ID.Value)
+					step.String())
 			}
 		}
 	}
