@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-policy-agent/opa v0.63.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.18.0
 	gopkg.in/yaml.v3 v3.0.1
 )
