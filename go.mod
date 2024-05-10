@@ -5,9 +5,9 @@ go 1.21.4
 require (
 	github.com/fatih/color v1.16.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-policy-agent/opa v0.63.0
+	github.com/open-policy-agent/opa v0.64.1
 	golang.org/x/sync v0.7.0
-	golang.org/x/sys v0.19.0
+	golang.org/x/sys v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -25,7 +25,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.19.0 // indirect
-	github.com/prometheus/client_model v0.5.0 // indirect
+	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
