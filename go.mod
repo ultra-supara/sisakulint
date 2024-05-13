@@ -3,7 +3,7 @@ module github.com/ultra-supara/sisakulint
 go 1.21.4
 
 require (
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-policy-agent/opa v0.64.1
 	golang.org/x/sync v0.7.0
