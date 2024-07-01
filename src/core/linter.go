@@ -566,7 +566,7 @@ func (l *Linter) validate(
 			allErrors = append(allErrors, errs...)
 		}
 
-		for l.errorFormatter != nil {
+		if l.errorFormatter != nil {
 			for _, rule := range rules {
 				l.errorFormatter.RegisterRule(rule)
 			}

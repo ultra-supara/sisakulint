@@ -3,6 +3,7 @@ module github.com/ultra-supara/sisakulint
 go 1.21.4
 
 require (
+	github.com/haya14busa/go-sarif v0.0.0-20240630170108-a3ba8d79599f
 	github.com/fatih/color v1.17.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-policy-agent/opa v0.65.0

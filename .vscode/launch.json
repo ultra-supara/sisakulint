@@ -5,7 +5,8 @@
             "name":"Debug",
             "type":"go",
             "request":"launch",
-            "program":"${workspaceFolder}/cmd/sisakulint"
+            "program":"${workspaceFolder}/cmd/sisakulint",
+            "args": ["-format","{{sarif}}"]
         }
     ]
 }
