@@ -188,7 +188,7 @@ type TemplateFields struct {
 
 // backslashのunescape
 func unescapeBackslash(input string) string {
-	replacer := strings.NewReplacer("\a", "\a", "\b", "\b", "\f", "\f", "\\", "\\", "\n", "\n", "\r", "\r", "\t", "\t", "\v", "\v")
+	replacer := strings.NewReplacer("\a", "\\\a", "\b", "\\\b", "\f", "\\\f", "\\", "\\\\", "\n", "\\\n", "\r", "\\\r", "\t", "\\\t", "\v", "\\\v")
 	return replacer.Replace(input)
 }
 
@@ -252,6 +252,8 @@ func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 			sort.Sort(ByRuleTemplateField(ret))
 			return ret
 		},
+
+		"sarif": toSARIF,
 	})
 	t, err := template.New("error formatter").Funcs(funcMap).Parse(unescapeBackslash(format))
 	if err != nil {

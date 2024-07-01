@@ -3,11 +3,12 @@ module github.com/ultra-supara/sisakulint
 go 1.21.4
 
 require (
+	github.com/haya14busa/go-sarif v0.0.0-20240630170108-a3ba8d79599f
 	github.com/fatih/color v1.17.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-policy-agent/opa v0.64.1
+	github.com/open-policy-agent/opa v0.66.0
 	golang.org/x/sync v0.7.0
-	golang.org/x/sys v0.20.0
+	golang.org/x/sys v0.21.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -17,14 +18,14 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/client_golang v1.19.0 // indirect
+	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
