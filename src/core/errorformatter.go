@@ -252,6 +252,8 @@ func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 			sort.Sort(ByRuleTemplateField(ret))
 			return ret
 		},
+
+		"sarif": toSARIF,
 	})
 	t, err := template.New("error formatter").Funcs(funcMap).Parse(unescapeBackslash(format))
 	if err != nil {

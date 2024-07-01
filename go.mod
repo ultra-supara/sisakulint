@@ -4,6 +4,7 @@ go 1.21.4
 
 require (
 	github.com/fatih/color v1.16.0
+	github.com/haya14busa/go-sarif v0.0.0-20240630170108-a3ba8d79599f
 	github.com/mattn/go-colorable v0.1.13
 	github.com/open-policy-agent/opa v0.64.1
 	golang.org/x/sync v0.7.0
