@@ -29,7 +29,8 @@ func toResult(fields *TemplateFields) sarif.Result {
 
 func toSARIF(fields []*TemplateFields) (string, error) {
 	s := &sarif.Sarif{
-		Schema: sarif.String("2.1.0"),
+		Version: sarif.The210,
+		Schema:  sarif.String("https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.4.json"),
 		Runs: []sarif.Run{
 			{
 				Tool: sarif.Tool{

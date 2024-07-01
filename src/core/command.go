@@ -107,7 +107,6 @@ func (cmd *Command) Main(args []string) int {
 	var ignorePats ignorePatternFlags
 	var initConfig bool
 	var generateBoilerplate bool
-	var enableSarif bool
 
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(cmd.Stderr)
@@ -119,7 +118,6 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&linterOpts.IsVerboseOutputEnabled, "verbose", false, "Enable verbose output")
 	flags.BoolVar(&linterOpts.IsDebugOutputEnabled, "debug", false, "Enable debug output (for development)")
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
-	flags.BoolVar(&enableSarif, "sarif", false, "Output as SARIF format")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
 	flags.Usage = func() {
 		fmt.Fprintln(cmd.Stderr, commandUsageHeader)
