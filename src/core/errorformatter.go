@@ -8,6 +8,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/fatih/color"
@@ -214,6 +215,7 @@ func toPascalCase(input string) string {
 type ErrorFormatter struct {
 	templateInstance *template.Template
 	ruleTemplates    map[string]*RuleTemplateField
+	m                sync.Mutex
 }
 
 // NewErrorformatterは新しいErrorFormatterインスタンスを作成する。
@@ -259,7 +261,7 @@ func NewErrorFormatter(format string) (*ErrorFormatter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to ast %q the specified format: %w", format, err)
 	}
-	return &ErrorFormatter{t, ruleTemplates}, nil
+	return &ErrorFormatter{t, ruleTemplates, sync.Mutex{}}, nil
 }
 
 // PrintErrorsはテンプレートでフォーマットした後でエラーを出力する
@@ -283,6 +285,8 @@ func (formatter *ErrorFormatter) PrintErrors(writer io.Writer, lintErrors []*Lin
 // 登録済みのルールは、エラーフォーマットテンプレート内のkindDescriptionやkindIndexで取得
 func (formatter *ErrorFormatter) RegisterRule(rule Rule) {
 	ruleName := rule.RuleNames()
+	formatter.m.Lock()
+	defer formatter.m.Unlock()
 	if _, exists := formatter.ruleTemplates[ruleName]; !exists {
 		formatter.ruleTemplates[ruleName] = &RuleTemplateField{
 			Name:        ruleName,
