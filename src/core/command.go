@@ -41,8 +41,9 @@ const commandUsageHeader = `Usage: sisakulint [FLAGS]
 
     $ sisakulint -debug
 
-  Documentation: https://www.notion.so/ultra-supara/Developer-Documents-d3f28d427cf9456dbe3c0f063a7d3baf?pvs=4
+  # "Note": it can be used in reviewdog by supporting sarif output,
 
+	$ sisakulint -format "{{sarif .}}"
 Flags:`
 
 func getCommandVersion() string {
