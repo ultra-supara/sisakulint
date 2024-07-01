@@ -5,7 +5,7 @@ go 1.21.4
 require (
 	github.com/fatih/color v1.17.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-policy-agent/opa v0.65.0
+	github.com/open-policy-agent/opa v0.66.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.21.0
 	gopkg.in/yaml.v3 v3.0.1
