@@ -6,7 +6,7 @@ require (
 	github.com/haya14busa/go-sarif v0.0.0-20240630170108-a3ba8d79599f
 	github.com/fatih/color v1.17.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/open-policy-agent/opa v0.65.0
+	github.com/open-policy-agent/opa v0.66.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.21.0
 	gopkg.in/yaml.v3 v3.0.1
