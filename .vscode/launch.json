@@ -6,7 +6,8 @@
             "type":"go",
             "request":"launch",
             "program":"${workspaceFolder}/cmd/sisakulint",
-            "args": ["-format","{{sarif}}"]
+            "cwd": "${workspaceFolder}",
+            "args": ["-format","{{sarif}}","./script/starts_with.yml"]
         }
     ]
 }
