@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 // VisitStep is callback when visiting Step node.

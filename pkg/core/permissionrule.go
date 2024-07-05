@@ -1,8 +1,8 @@
 package core
 
 import (
-	"github.com/ultra-supara/sisakulint/src/ast"
-	"github.com/ultra-supara/sisakulint/src/expressions"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
+	"github.com/ultra-supara/sisakulint/pkg/expressions"
 )
 
 var allPermissionScopes = map[string]struct{}{

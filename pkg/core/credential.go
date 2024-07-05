@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/open-policy-agent/opa/rego"
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 type CredentialRule struct {

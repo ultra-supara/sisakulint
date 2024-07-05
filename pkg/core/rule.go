@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 // BaseRuleはruleの基本構造体

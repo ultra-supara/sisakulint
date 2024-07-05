@@ -4,7 +4,7 @@ package core
 import (
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 // BaseRule はルールチェッカーの基本的な属性を持つ構造体です。

@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"github.com/fatih/color"
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 // コンソール出力時における色付けのための定数

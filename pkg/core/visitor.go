@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 // TreeVisitorはworkflowのsyntax'streeをトラバースするためのinterface

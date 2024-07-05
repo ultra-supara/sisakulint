@@ -3,7 +3,7 @@ package core
 import (
 	"testing"
 
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 // TestIDRule tests the IDRule function.

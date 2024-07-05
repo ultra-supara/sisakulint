@@ -3,7 +3,7 @@ package core
 import (
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 type ConditionalRule struct {

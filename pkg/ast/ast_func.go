@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/src/expressions"
+	"github.com/ultra-supara/sisakulint/pkg/expressions"
 )
 
 // String は Position の文字列表現を返します。

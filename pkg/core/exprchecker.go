@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/src/ast"
-	"github.com/ultra-supara/sisakulint/src/expressions"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
+	"github.com/ultra-supara/sisakulint/pkg/expressions"
 )
 
 // checkOneExpression は単一の式をチェックします。
