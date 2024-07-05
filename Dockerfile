@@ -18,7 +18,7 @@ RUN apk add --no-cache bash
 # sisaku ユーザーの追加
 RUN adduser -D sisaku
 # アプリケーションのコピー
-COPY --from=builder /go/src/app/sisakulint /usr/local/bin/
+COPY --from=builder /go/pkg/app/sisakulint /usr/local/bin/
 
 # ユーザーの切り替え
 USER sisaku
