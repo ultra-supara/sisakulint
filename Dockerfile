@@ -2,10 +2,10 @@ ARG GOLANG_VER=1.21.4
 ARG ALPINE_VER=latest
 
 FROM golang:${GOLANG_VER} as builder
-WORKDIR /go/src/app
+WORKDIR /go/pkg/app
 COPY go.* *.go ./
 COPY cmd cmd/
-COPY src src/
+COPY pkg pkg/
 ENV CGO_ENABLED 0
 ARG SISAKULINT_VER=0.0.3
 RUN go mod download

@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/open-policy-agent/opa/rego"
-	"github.com/ultra-supara/sisakulint/src/ast"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 func mustPrepareRegoQuery(queryString, fileName, module string) rego.PreparedEvalQuery {
