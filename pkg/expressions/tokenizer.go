@@ -238,6 +238,7 @@ func (t *Tokenizer) unexpectedEOF() *Token {
 
 // lexIdent は識別子を字句解析します。
 func (t *Tokenizer) lexIdent() *Token {
+	t.start = t.scanner.Pos() // トークンの開始位置を設定
 	for {
 		if r := t.eat(); !isAlnum(r) && r != '_' && r != '-' {
 			return t.token(TokenKindIdent)
