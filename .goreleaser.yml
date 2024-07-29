@@ -24,7 +24,7 @@ builds:
 
 brews:
   - name: sisakulint
-    url_template: "https://github.com/ultra-supara/homebrew-sisakulint/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/ultra-supara/sisakulint/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     commit_author:
       name: "github-actions[bot]"
       email: "41898282+github-actions[bot]@users.noreply.github.com"
