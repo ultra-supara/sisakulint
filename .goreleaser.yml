@@ -38,4 +38,4 @@ brews:
     repository:
       owner: ultra-supara # Homebrew Taps 用のリポジトリのオーナー名
       name: homebrew-sisakulint # Homebrew Taps 用のリポジトリ名
-      # token: "{{ .Env.TAP_GITHUB_TOKEN }}" # `TAP_GITHUB_TOKEN` 環境変数をトークンとして使うようにする
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}" # `TAP_GITHUB_TOKEN` 環境変数をトークンとして使うようにする
