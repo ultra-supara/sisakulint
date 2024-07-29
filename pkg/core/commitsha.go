@@ -25,20 +25,14 @@ func isFullLengthSha(ref string) bool {
 	return re.MatchString(ref)
 }
 
-// Check if the action is an official GitHub Action
-func isOfficialAction(ref string) bool {
-	re := regexp.MustCompile(`^actions\/.+`)
-	return re.MatchString(ref)
-}
-
 // VisitJobPre checks each step in each job for the action ref specifications
 func (rule *CommitSha) VisitJobPre(node *ast.Job) error {
 	for _, step := range node.Steps {
 		if action, ok := step.Exec.(*ast.ExecAction); ok {
 			usesValue := action.Uses.Value
-			if !isFullLengthSha(usesValue) && !isOfficialAction(usesValue) {
+			if !isFullLengthSha(usesValue) {
 				rule.Errorf(step.Pos,
-					"the action ref in 'uses' for step '%s' should be a full length commit SHA for immutability and security, unless it's an official GitHub Action. See documents: https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions",
+					"the action ref in 'uses' for step '%s' should be a full length commit SHA for immutability and security. See documents: https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions",
 					step.String())
 			}
 		}
