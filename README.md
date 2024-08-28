@@ -195,56 +195,6 @@ you will likely receive the following result...
        65 👈|  run shell:
 ```
 
-## Try rego query from CI integration
-I partially cut out the opa cli part of the query processing that is combined with the static analysis processing.
-set your `.github/workflows` dir any name (example : query.yaml)
-```yaml
-name: policy check for oss repo from GitHub Actions
-on: [push]
-
-jobs:
-  opa-check:
-    name: opa cli
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout sisakulint Repository
-      uses: actions/checkout@v2
-      with:
-        repository: ultra-supara/homebrew-sisakulint
-        path: sisakulint
-
-    - name: Install OPA
-      run: |
-        curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64
-        chmod +x opa
-        sudo mv opa /usr/local/bin/
-
-    - name: Run OPA Policy Check
-      run: |
-        git clone https://github.com/ultra-supara/homebrew-sisakulint.git
-        cd homebrew-sisakulint/script
-        echo "-------start---------"
-        opa eval --format pretty --data commitsha.rego --input commitsha.yaml "data.core.missing_action_ref_sha_warnings" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data credential.rego --input credential.yaml "data.core.check_credentials" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data imagetag.rego --input imagetag.yaml "data.core.missing_image_tag_warnings" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data jobsecrets.rego --input jobsecrets.yaml "data.core.missing_secrets_warnings" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data permission.rego --input permission.yaml "data.core.missing_permissions_warnings" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data issueinjection.rego --input issueinjection.yaml "data.core.deny" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data pull_req_title.rego --input pull_req_title.yaml "data.core.deny" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data supply_chain_protection.rego --input supply_chain_protection.yaml "data.core.generate_error_messages" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data timeout-minutes.rego --input timeout-minutes.yaml "data.core.missing_timeout_warnings" --explain=full
-        echo "---------------------"
-        opa eval --format pretty --data untrusted_image.rego --input untrusted_image.yaml "data.core.deny" --explain=full
-        echo "--------end----------"
-```
 
 ## JSON schema for GitHub Actions syntax
 paste yours `settings.json`
@@ -257,6 +207,9 @@ paste yours `settings.json`
 
 ## Links
 
+![スクリーンショット 2024-08-28 14 20 32](https://github.com/user-attachments/assets/61afb4eb-944a-4d35-9a17-575704282516)
+
+
 - slides
-- poster
+- [poster](https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf)
 - video
