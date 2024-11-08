@@ -19,6 +19,14 @@ $ cd < sisakulintがあるところ >
 $ mv ./sisakulint /usr/local/bin/sisakulint
 ```
 
+## Structure
+
+![image](https://github.com/user-attachments/assets/26c4ece8-06b5-4bcd-af98-8afc504ef736)
+
+This is a project for processing the YAML language.
+
+It automatically searches for YAML files in the .github/workflows directory, and the parser traverses the token column of the AST to check many rules. We've made it easy to triage by outputting clear results using a custom error formatter we made and review dog on the GitHub UI in SARIF format.
+
 ## Usage test
 Create a file called test.yaml in the `.github/workflows` directory or go to your repository where your workflows file is located.
 ```yaml
