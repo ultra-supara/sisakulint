@@ -14,12 +14,17 @@ func toResult(fields *TemplateFields) sarif.Result {
 		Locations: []sarif.Location{
 			{
 				PhysicalLocation: &sarif.PhysicalLocation{
+					Address: &sarif.Address{
+						FullyQualifiedName: &fields.Filepath,
+					},
 					Region: &sarif.Region{
+
 						StartLine:   sarif.Int64(int64(fields.Line)),
 						StartColumn: sarif.Int64(int64(fields.Column)),
 						Snippet: &sarif.ArtifactContent{
 							Text: &fields.Snippet,
 						},
+						SourceLanguage: sarif.String("yaml"),
 					},
 				},
 			},
@@ -30,7 +35,7 @@ func toResult(fields *TemplateFields) sarif.Result {
 func toSARIF(fields []*TemplateFields) (string, error) {
 	s := &sarif.Sarif{
 		Version: sarif.The210,
-		Schema:  sarif.String("https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.4.json"),
+		Schema:  sarif.String("https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0.json"),
 		Runs: []sarif.Run{
 			{
 				Tool: sarif.Tool{
