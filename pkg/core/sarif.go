@@ -14,8 +14,8 @@ func toResult(fields *TemplateFields) sarif.Result {
 		Locations: []sarif.Location{
 			{
 				PhysicalLocation: &sarif.PhysicalLocation{
-					Address: &sarif.Address{
-						FullyQualifiedName: &fields.Filepath,
+					ArtifactLocation: &sarif.ArtifactLocation{
+						URI: &fields.Filepath,
 					},
 					Region: &sarif.Region{
 
