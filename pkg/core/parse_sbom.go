@@ -696,7 +696,7 @@ func (project *parser) parseStep(node *yaml.Node) *ast.Step {
 			ret.If = project.parseString(kv.val, false)
 		case "name":
 			ret.Name = project.parseString(kv.val, false)
-		case "env ":
+		case "env":
 			ret.Env = project.parseEnv(kv.val)
 		case "continue-on-error":
 			ret.ContinueOnError = project.parseBool(kv.val)
