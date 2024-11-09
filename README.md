@@ -4,6 +4,45 @@ Before moving on, please consider giving us a GitHub star ⭐️. Thank you!
 
 <img src="https://github.com/ultra-supara/homebrew-sisakulint/assets/67861004/e9801cbb-fbe1-4822-a5cd-d1daac33e90f" alt="sisakulint logo" width="160" height="160"/> 
 
+## what is this?
+In recent years, attacks targeting the Web Application Platform have been increasing rapidly.
+sisakulint is **a static and fast SAST for GitHub Actions**. 
+This great tool can automatically validate yaml files according to the guidelines in the security-related documentation provided by GitHub!
+It also includes functionality as a static analysis tool that can check the policies of the guidelines that should be set for use in each organization.
+These checks also comply with [the Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/) provided by OWASP.
+It implements most of the functions that can automatically check whether a workflow that meets the [security features](https://docs.github.com/ja/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions) supported by github has been built to reduce the risk of malicious code being injected into the CI/CD pipeline or credentials such as tokens being stolen.
+It does not support inspections that cannot be expressed in YAML and "repository level settings" that can be set by GitHub organization administrators.
+It is intended to be used mainly by software developers and security personnel at user companies who work in blue teams. 
+It is easy to introduce because it can be installed from brew.
+It also implements an autofix function for errors related to security features as a lint.
+It supports the SARIF format, which is the output format for static analysis. This allows [reviewdog](https://github.com/reviewdog/reviewdog?tab=readme-ov-file#sarif-format) to provide a rich UI for error triage on GitHub.
+
+## Main Tool features:**
+- **id collision detection**
+ 	- Environment variable names collision
+ 	- docs : https://sisakulint.github.io/docs/idrule/
+ 	- github ref https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#using-a-specific-shell
+
+- **Hardcoded credentials detection by rego query language**
+ 	- docs : https://sisakulint.github.io/docs/credentialsrule/
+
+- **commit-sha rule**
+ 	- docs : https://sisakulint.github.io/docs/commitsharule/
+ 	- github ref https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-third-party-actions
+
+- **premissions rule**
+ 	- docs : https://sisakulint.github.io/docs/permissions/
+ 	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#permissions
+
+- **workflow call rule**
+       - docs : https://sisakulint.github.io/docs/workflowcall/
+       - github ref : https://docs.github.com/en/actions/sharing-automations/reusing-workflows
+
+- **timeout-minutes-rule**
+       - docs : https://sisakulint.github.io/docs/timeoutminutesrule/
+       - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
+       - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
+
 ## install for macOS user
 
 ```bash
@@ -202,6 +241,38 @@ you will likely receive the following result...
 .github/workflows/a.yaml:65:3: timeout-minutes is not set for job run shell; see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes for more details. [missing-timeout-minutes]
        65 👈|  run shell:
 ```
+
+1. Missing Timeout Minutes for Jobs
+ Error: `timeout-minutes is not set for job build; see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes for more details.`
+ Scenario: If a job runs indefinitely due to an unexpected error (e.g., a script hangs), it can consume resources unnecessarily, leading to increased costs and potential service disruptions. For example, if the `build` job is stuck, subsequent jobs that depend on its completion will also be delayed, causing the entire CI/CD pipeline to stall.
+
+2. Incorrectly Formatted Environment Variable
+ Error: `Environment variable name '"SIIISA=AAKUUU"' is not formatted correctly.`
+ Scenario: If environment variables are not formatted correctly, the job may fail to execute as intended. For instance, if the variable is meant to be used in a command but is incorrectly defined, it could lead to runtime errors or unexpected behavior, such as failing to authenticate with an external service.
+
+3. Deprecated Command Usage
+ Error: `workflow command "set-output" was deprecated.`
+ Scenario: Using deprecated commands can lead to future compatibility issues. If GitHub Actions removes support for the `set-output` command, workflows relying on it will break, causing failures in automated processes. This could delay releases or lead to incomplete deployments.
+
+4. Direct Use of `${{ ... }}` in Run Steps
+ Error: `Direct use of ${{ ... }} in run steps; Use env instead.`
+ Scenario: Directly using expressions in run steps can expose the workflow to script injection attacks. For example, if an attacker can manipulate the input to the workflow, they could inject malicious commands that execute during the job, potentially compromising the repository or the CI/CD environment.
+
+5. Always True Condition
+ Error: `The condition '${{ github.event_name == 'push' }}' will always evaluate to true.`
+ Scenario: If conditions are not set correctly, it can lead to unintended behavior in the workflow. For instance, if the intention was to run a step only for specific events, but the condition is always true, it could result in unnecessary steps being executed, wasting resources and time.
+
+6. Invalid Permission Scopes
+ Error: `unknown permission scope "check".`
+ Scenario: Using invalid permission scopes can lead to failures in accessing necessary resources. For example, if the `test` job requires write access to checks but is incorrectly defined, it may not be able to create or update checks, leading to incomplete test results and a lack of visibility into the CI/CD process.
+
+7. Invalid Job ID
+ Error: `Invalid job ID "run shell". job IDs must start with a letter or '_'.`
+ Scenario: If job IDs are not valid, the workflow will fail to execute. For example, if the job `run shell` is intended to run a shell command but is not recognized due to an invalid ID, it will not run at all, potentially skipping important steps in the workflow.
+
+8. Missing Timeout Minutes for Additional Jobs
+ Error  `timeout-minutes is not set for job test; see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes for more details.`
+ Scenario: Similar to the first issue, if the `test` job runs indefinitely, it can block the workflow and lead to resource exhaustion. This can delay the entire CI/CD process, affecting deployment timelines and potentially leading to missed deadlines.
 
 
 ## JSON schema for GitHub Actions syntax
