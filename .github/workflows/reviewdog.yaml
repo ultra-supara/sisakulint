@@ -1,0 +1,27 @@
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  run_reviewdog:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: reviewdog/action-setup@v1
+      with:
+         reviewdog_version: v0.20.1 # Optional. [latest,nightly,v.X.Y.Z]
+    - name: Build sisakulint
+      run: |
+        go build -o sisakulint ./cmd/sisakulint
+        sudo mv sisakulint /usr/local/bin
+    - name: Run reviewdog
+      env:
+         REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        ls -alR
+        reviewdog -reporter=github-pr-check -diff "git diff main"
