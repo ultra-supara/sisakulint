@@ -5,16 +5,26 @@ Before moving on, please consider giving us a GitHub star ⭐️. Thank you!
 <img src="https://github.com/ultra-supara/homebrew-sisakulint/assets/67861004/e9801cbb-fbe1-4822-a5cd-d1daac33e90f" alt="sisakulint logo" width="160" height="160"/> 
 
 ## what is this?
+
 In recent years, attacks targeting the Web Application Platform have been increasing rapidly.
 sisakulint is **a static and fast SAST for GitHub Actions**. 
+
 This great tool can automatically validate yaml files according to the guidelines in the security-related documentation provided by GitHub!
+
 It also includes functionality as a static analysis tool that can check the policies of the guidelines that should be set for use in each organization.
+
 These checks also comply with [the Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/) provided by OWASP.
+
 It implements most of the functions that can automatically check whether a workflow that meets the [security features](https://docs.github.com/ja/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions) supported by github has been built to reduce the risk of malicious code being injected into the CI/CD pipeline or credentials such as tokens being stolen.
+
 It does not support inspections that cannot be expressed in YAML and "repository level settings" that can be set by GitHub organization administrators.
+
 It is intended to be used mainly by software developers and security personnel at user companies who work in blue teams. 
+
 It is easy to introduce because it can be installed from brew.
+
 It also implements an autofix function for errors related to security features as a lint.
+
 It supports the SARIF format, which is the output format for static analysis. This allows [reviewdog](https://github.com/reviewdog/reviewdog?tab=readme-ov-file#sarif-format) to provide a rich UI for error triage on GitHub.
 
 ## Main Tool features:**
@@ -35,12 +45,10 @@ It supports the SARIF format, which is the output format for static analysis. Th
  	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#permissions
 
 - **workflow call rule**
-
        - docs : https://sisakulint.github.io/docs/workflowcall/
        - github ref : https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
 - **timeout-minutes-rule**
-
        - docs : https://sisakulint.github.io/docs/timeoutminutesrule/
        - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
        - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
