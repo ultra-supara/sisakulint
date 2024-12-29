@@ -14,7 +14,7 @@ type parser struct {
 }
 
 func (project *parser) parse(node *yaml.Node) *ast.Workflow {
-	workflow := &ast.Workflow{}
+	workflow := &ast.Workflow{BaseNode: node}
 
 	if node.Line == 0 {
 		node.Line = 1
