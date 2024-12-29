@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -101,11 +102,7 @@ func (rule *CommitSha) FixStep(step *ast.Step) error {
 	//tagComment := action.Uses.BaseNode.LineComment
 	sha, _, err := gh.Repositories.GetCommitSHA1(context.TODO(), ownerRepo[0], ownerRepo[1], tag, "")
 	if err != nil {
-		// temporary report error???
-		rule.Errorf(step.Pos,
-			"tag '%s' is not found in the repository '%s' at step '%s'",
-			splitTag[1], splitTag[0], step.String())
-		return nil
+		return fmt.Errorf("failed to get commit SHA1: %w at step '%s'", err, step.String())
 	}
 	if !isSemver && isShortTag {
 		longVersion, err := getLongVersion(gh, ownerRepo[0], ownerRepo[1], sha, splitTag[1])
