@@ -20,6 +20,9 @@ type String struct {
 	Literal bool
 	// Pos is a position of the string in source.
 	Pos *Position
+
+	// BaseNode is a base node of the string in the YAML source.
+	BaseNode *yaml.Node
 }
 
 // Bool はYAMLファイル内の汎用的な真偽値を位置情報付きで表します。
@@ -681,4 +684,6 @@ type Workflow struct {
 	Concurrency *Concurrency
 	// Jobs is mappings from job ID to the job object. Keys are in lower case since they are case-insensitive.
 	Jobs map[string]*Job
+	// BaseNode is a base node of the YAML file.
+	BaseNode *yaml.Node
 }
