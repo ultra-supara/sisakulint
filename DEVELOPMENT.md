@@ -44,6 +44,15 @@ git checkout -b feature/your-feature-name
 go test
 ```
 
+3. Release new version
+```bash
+git tag -d v0.0.9            # Delete the local tag
+git push origin --delete v0.0.9  # Delete the remote tag (if it's pushed)
+git tag v0.0.9                # Create the new tag
+git push
+git push origin v0.0.9        # Push the new tag to the remote repository
+```
+
 ## Testing
 
 - Write unit tests witten in Go for new functionality
