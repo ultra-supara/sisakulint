@@ -1,4 +1,4 @@
-ARG GOLANG_VER=1.21.4
+ARG GOLANG_VER=1.23.3
 ARG ALPINE_VER=latest
 
 FROM golang:${GOLANG_VER} as builder
