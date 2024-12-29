@@ -584,7 +584,7 @@ func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError,
 		for _, err := range *allErrors {
 			ignored := false
 			for _, pattern := range l.errorIgnorePatterns {
-				if pattern.MatchString(err.Description) {
+				if pattern.MatchString(err.Type) {
 					ignored = true
 					break
 				}
