@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/google/go-github/v68/github"
 	"github.com/ultra-supara/sisakulint/pkg/ast"
@@ -74,12 +75,22 @@ func getLongVersion(cl *github.Client, owner, repo, sha string, expectedTag stri
 	return "", nil
 }
 
+var ghOnce sync.Once
+var ghClient *github.Client
+
 func (rule *CommitSha) FixStep(step *ast.Step) error {
 	// at here, we can assume that the action ref is not a full length commit SHA
 	action := step.Exec.(*ast.ExecAction)
 	usesValue := action.Uses.Value
-	gh := github.NewClient(http.DefaultClient)
+	ghOnce.Do(func() {
+		// TODO(on-keyday): make this configurable
+		ghClient = github.NewClient(http.DefaultClient)
+	})
+	gh := ghClient
 	splitTag := strings.Split(usesValue, "@")
+	if len(splitTag) != 2 {
+		return nil // cannot fix...
+	}
 	ownerRepo := strings.Split(splitTag[0], "/")
 	if len(ownerRepo) != 2 {
 		return nil // cannot fix...
