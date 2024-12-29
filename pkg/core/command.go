@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -104,10 +105,14 @@ func (cmd *Command) runAutofix(results []*ValidateResult, isDryRun bool) {
 				fmt.Fprintf(cmd.Stderr, "Error while fixing %s: %v\n", fixer.RuleName(), err)
 			}
 		}
-		data, err := yaml.Marshal(res.ParsedWorkflow.BaseNode)
+		var buf bytes.Buffer
+		enc := yaml.NewEncoder(&buf)
+		enc.SetIndent(2)
+		err := enc.Encode(res.ParsedWorkflow.BaseNode)
 		if err != nil {
 			fmt.Fprintf(cmd.Stderr, "Error while marshalling the fixed workflow: %v\n", err)
 		}
+		data := buf.Bytes()
 		if isDryRun {
 			fmt.Fprintf(cmd.Stdout, "Fixed workflow %s:\n%s\n", res.FilePath, string(data))
 		} else {
