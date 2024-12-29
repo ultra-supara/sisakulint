@@ -4,14 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 )
 
 // バージョンとインストール情報を保持する変数
 var (
-	versionInfo        = ""
-	installationMethod = "installed by building from source"
+	versionInfo = ""
 )
 
 const (
@@ -25,26 +25,41 @@ const (
 	ExitStatusFailure = 3
 )
 
-const commandUsageHeader = `Usage: sisakulint [FLAGS]
+func printingUsageHeader(out io.Writer) {
+	v := getCommandVersion()
+	b := "main"
+	if regexp.MustCompile(`^\d+\.\d+\.\d+$`).MatchString(v) {
+		b = "v" + v
+	}
+	fmt.Fprintf(out, `Usage: sisakulint [FLAGS] [FILES...] [OPTIONS]
 
-  sisakulint is a static and fast-executing linter for {.github/workflows/*.yaml or .*yml} files.
+sisakulint is a static and fast-executing linter for {.github/workflows/*.yaml or .*yml} files.
 
-  To verify all YAML files in the current repository, simply execute sisakulint without any parameters.
-  It will auto-detect the closest '.github/workflows' directory for you.
+To verify all YAML files in the current repository, simply execute sisakulint without any parameters.
+It will auto-detect the closest '.github/workflows' directory for you.
 
-    $ sisakulint
+$ sisakulint
 
-  # "Note: You can enable the debug mode by running sisakulint with the -debug argument.
-  # This will provide a detailed output of the syntax tree traversal,
-  # including the analysis of each node and additional logs,
-  # helping you to understand the internal workings and diagnose any issues."
+# "Note: You can enable the debug mode by running sisakulint with the -debug argument.
+# This will provide a detailed output of the syntax tree traversal,
+# including the analysis of each node and additional logs,
+# helping you to understand the internal workings and diagnose any issues."
 
-    $ sisakulint -debug
+$ sisakulint -debug
 
-  # "Note": it can be used in reviewdog by supporting sarif output,
+# "Note": it can be used in reviewdog by supporting sarif output,
 
-	$ sisakulint -format "{{sarif .}}"
-Flags:`
+$ sisakulint -format "{{sarif .}}"
+
+# Documents
+- https://sisakulint.github.io/
+
+# Poster
+- https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf
+
+Flags:
+`, b, b, b)
+}
 
 func getCommandVersion() string {
 	if versionInfo != "" {
@@ -120,8 +135,9 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&linterOpts.IsDebugOutputEnabled, "debug", false, "Enable debug output (for development)")
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
+
 	flags.Usage = func() {
-		fmt.Fprintln(cmd.Stderr, commandUsageHeader)
+		printingUsageHeader(cmd.Stderr)
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args[1:]); err != nil {
@@ -135,9 +151,8 @@ func (cmd *Command) Main(args []string) int {
 	if showVersion {
 		fmt.Fprintf(
 			cmd.Stdout,
-			"%s\n %s\n built with %s compiler for %s/%s\n",
+			"%s\n%s\nbuilt with %s compiler for %s/%s\n",
 			getCommandVersion(),
-			installationMethod,
 			runtime.Version(),
 			runtime.GOOS,
 			runtime.GOARCH,
