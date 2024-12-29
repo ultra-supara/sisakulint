@@ -15,6 +15,7 @@ func (b *BaseAutoFixer) RuleName() string {
 	return b.ruleName
 }
 
+// This is a dummy implementation of the Fix method
 func (b *BaseAutoFixer) Fix() error {
 	return nil
 }

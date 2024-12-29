@@ -509,6 +509,13 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 	}
 }
 
+// ValidateResultは、workflowの検証結果を表す
+// この構造体は、Linter.validateメソッドの戻り値として使用される
+// FilePathは、検証されたファイルのパス
+// Sourceは、検証されたworkflowのソースコード
+// ParsedWorkflowは、検証されたworkflowの構文木
+// Errorsは、検証中に発生したエラーのリスト
+// AutoFixersは、検証中に生成されたAutoFixerのリスト
 type ValidateResult struct {
 	FilePath       string
 	Source         []byte
@@ -637,6 +644,7 @@ func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError,
 				filteredAutoFixers = append(filteredAutoFixers, fixer)
 			}
 		}
+		*allAutoFixers = filteredAutoFixers
 	}
 	for _, err := range *allErrors {
 		err.FilePath = filePath

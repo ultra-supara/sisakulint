@@ -66,10 +66,13 @@ func (rule *BaseRule) UpdateConfig(config *Config) {
 	rule.userConfig = config
 }
 
+// AddAutoFixerはruleにAutoFixerを追加する
+// AutoFixersによって回収される
 func (rule *BaseRule) AddAutoFixer(fixer AutoFixer) {
 	rule.autoFixers = append(rule.autoFixers, fixer)
 }
 
+// AutoFixersはAddAutoFixerで追加されたAutoFixerのリストを返す
 func (rule *BaseRule) AutoFixers() []AutoFixer {
 	return rule.autoFixers
 }

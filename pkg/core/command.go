@@ -173,6 +173,11 @@ func (cmd *Command) Main(args []string) int {
 		return ExitStatusInvalidCommandOption
 	}
 
+	if autoFixMode != "off" && autoFixMode != "on" && autoFixMode != "dry-run" {
+		fmt.Fprintf(cmd.Stderr, "Invalid value for -fix: %s\n", autoFixMode)
+		return ExitStatusInvalidCommandOption
+	}
+
 	if showVersion {
 		fmt.Fprintf(
 			cmd.Stdout,
