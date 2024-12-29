@@ -27,7 +27,7 @@ It also implements an autofix function for errors related to security features a
 
 It supports the SARIF format, which is the output format for static analysis. This allows [reviewdog](https://github.com/reviewdog/reviewdog?tab=readme-ov-file#sarif-format) to provide a rich UI for error triage on GitHub.
 
-## Main Tool features:**
+## Main Tool features:
 - **id collision detection**
  	- Environment variable names collision
  	- docs : https://sisakulint.github.io/docs/idrule/
