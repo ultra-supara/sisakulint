@@ -37,5 +37,6 @@ func NewStepFixer(step *ast.Step, fixer StepFixer) AutoFixer {
 	return &stepFixer{
 		BaseAutoFixer: BaseAutoFixer{ruleName: fixer.RuleNames()},
 		step:          step,
+		fixer:         fixer,
 	}
 }
