@@ -511,6 +511,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 
 type ValidateResult struct {
 	FilePath       string
+	Source         []byte
 	ParsedWorkflow *ast.Workflow
 	Errors         []*LintingError
 	AutoFixers     []AutoFixer
@@ -600,6 +601,7 @@ func (l *Linter) validate(
 
 	return &ValidateResult{
 		FilePath:       filePath,
+		Source:         content,
 		ParsedWorkflow: parsedWorkflow,
 		Errors:         allErrors,
 		AutoFixers:     allAutoFixers,
