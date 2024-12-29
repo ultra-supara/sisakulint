@@ -13,6 +13,7 @@ type BaseRule struct {
 	RuleName   string
 	RuleDesc   string
 	ruleErrors []*LintingError
+	autoFixers []AutoFixer
 	debugOut   io.Writer
 	userConfig *Config
 }
@@ -65,6 +66,14 @@ func (rule *BaseRule) UpdateConfig(config *Config) {
 	rule.userConfig = config
 }
 
+func (rule *BaseRule) AddAutoFixer(fixer AutoFixer) {
+	rule.autoFixers = append(rule.autoFixers, fixer)
+}
+
+func (rule *BaseRule) AutoFixers() []AutoFixer {
+	return rule.autoFixers
+}
+
 // rule structs meet the Rule interface
 type Rule interface {
 	TreeVisitor
@@ -73,4 +82,6 @@ type Rule interface {
 	RuleDescription() string
 	EnableDebugOutput(out io.Writer)
 	UpdateConfig(config *Config)
+	AddAutoFixer(fixer AutoFixer)
+	AutoFixers() []AutoFixer
 }
