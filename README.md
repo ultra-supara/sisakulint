@@ -300,6 +300,14 @@ you will likely receive the following result...
 
 - Scenario: Similar to the first issue, if the `test` job runs indefinitely, it can block the workflow and lead to resource exhaustion. This can delay the entire CI/CD process, affecting deployment timelines and potentially leading to missed deadlines.
 
+Use autofix features
+
+execute following commands
+```bash
+$ sisakulint
+$ sisakulint -fix on
+$ sisakulint -fix dry-run
+```
 
 ## JSON schema for GitHub Actions syntax
 paste yours `settings.json`
