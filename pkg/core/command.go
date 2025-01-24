@@ -70,7 +70,7 @@ func getCommandVersion() string {
 	var buildInfos []byte
 	toolVersion := "unknown"
 	if versionInfo != "" {
-		toolVersion = versionInfo
+		toolVersion = "v" + versionInfo
 	}
 	buildInfos = fmt.Appendf(buildInfos, "Tool version: %s\n", toolVersion)
 	buildInfos = fmt.Appendf(buildInfos, "Go version: %s\n", runtime.Version())
