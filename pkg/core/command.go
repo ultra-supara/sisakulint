@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -31,11 +30,6 @@ const (
 )
 
 func printingUsageHeader(out io.Writer) {
-	v := getCommandVersion()
-	b := "main"
-	if regexp.MustCompile(`^\d+\.\d+\.\d+$`).MatchString(v) {
-		b = "v" + v
-	}
 	fmt.Fprintf(out, `Usage: sisakulint [FLAGS] [FILES...] [OPTIONS]
 
 sisakulint is a static and fast-executing linter for {.github/workflows/*.yaml or .*yml} files.
@@ -63,7 +57,7 @@ $ sisakulint -format "{{sarif .}}"
 - https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf
 
 Flags:
-`, b, b, b)
+`)
 }
 
 func getCommandVersion() string {
