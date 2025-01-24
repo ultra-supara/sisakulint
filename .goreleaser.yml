@@ -10,7 +10,7 @@ before:
 builds:
   - <<: &build_defaults
       main: ./cmd/sisakulint
-      ldflags: -s -w -X github.com/ultra-supara/sisakulint.version={{.Version}} -X "github.com/ultra-supara/sisakulint.installedFrom=installed from {{.Tag}}"
+      ldflags: -s -w -X github.com/ultra-supara/sisakulint/pkg/core.versionInfo={{.Version}}"
       env:
         - CGO_ENABLED=0
     id: macos

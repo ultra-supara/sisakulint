@@ -8,14 +8,14 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 // バージョンとインストール情報を保持する変数
 var (
-	versionInfo        = ""
-	installationMethod = "installed by building from source"
+	versionInfo = ""
 )
 
 const (
@@ -29,38 +29,60 @@ const (
 	ExitStatusFailure = 3
 )
 
-const commandUsageHeader = `Usage: sisakulint [FLAGS]
+func printingUsageHeader(out io.Writer) {
+	fmt.Fprintf(out, `Usage: sisakulint [FLAGS] [FILES...] [OPTIONS]
 
-  sisakulint is a static and fast-executing linter for {.github/workflows/*.yaml or .*yml} files.
+sisakulint is a static and fast-executing linter for {.github/workflows/*.yaml or .*yml} files.
 
-  To verify all YAML files in the current repository, simply execute sisakulint without any parameters.
-  It will auto-detect the closest '.github/workflows' directory for you.
+To verify all YAML files in the current repository, simply execute sisakulint without any parameters.
+It will auto-detect the closest '.github/workflows' directory for you.
 
-    $ sisakulint
+$ sisakulint
 
-  # "Note: You can enable the debug mode by running sisakulint with the -debug argument.
-  # This will provide a detailed output of the syntax tree traversal,
-  # including the analysis of each node and additional logs,
-  # helping you to understand the internal workings and diagnose any issues."
+# "Note: You can enable the debug mode by running sisakulint with the -debug argument.
+# This will provide a detailed output of the syntax tree traversal,
+# including the analysis of each node and additional logs,
+# helping you to understand the internal workings and diagnose any issues."
 
-    $ sisakulint -debug
+$ sisakulint -debug
 
-  # "Note": it can be used in reviewdog by supporting sarif output,
+# "Note": it can be used in reviewdog by supporting sarif output,
 
-	$ sisakulint -format "{{sarif .}}"
-Flags:`
+$ sisakulint -format "{{sarif .}}"
+
+# Documents
+- https://sisakulint.github.io/
+
+# Poster
+- https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf
+
+Flags:
+`)
+}
 
 func getCommandVersion() string {
+	var buildInfos []byte
+	toolVersion := "unknown"
 	if versionInfo != "" {
-		return versionInfo
+		toolVersion = "v" + versionInfo
 	}
+	buildInfos = fmt.Appendf(buildInfos, "Tool version: %s\n", toolVersion)
+	buildInfos = fmt.Appendf(buildInfos, "Go version: %s\n", runtime.Version())
+	buildInfos = fmt.Appendf(buildInfos, "OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 
 	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "unknown" //sisakulint packageがmoduleの外部でbuildされた場合にのみ到達
+	if ok {
+		buildInfos = fmt.Appendf(buildInfos, "Build info:\n")
+		for _, setting := range info.Settings {
+			if setting.Key == "-buildmode" || setting.Key == "-compiler" ||
+				strings.HasPrefix(setting.Key, "GO") ||
+				strings.HasPrefix(setting.Key, "vcs") {
+				buildInfos = fmt.Appendf(buildInfos, "%s=%s\n", setting.Key, setting.Value)
+			}
+		}
 	}
 
-	return info.Main.Version
+	return string(buildInfos)
 }
 
 // Commandは全体のsisakulintコマンドを表します。与えられたstdin/stdout/stderrは入出力に使用
@@ -161,8 +183,9 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
 	flags.StringVar(&autoFixMode, "fix", "off", "Enable auto-fix mode. Available options: off, on, dry-run")
+
 	flags.Usage = func() {
-		fmt.Fprintln(cmd.Stderr, commandUsageHeader)
+		printingUsageHeader(cmd.Stderr)
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args[1:]); err != nil {
@@ -181,12 +204,8 @@ func (cmd *Command) Main(args []string) int {
 	if showVersion {
 		fmt.Fprintf(
 			cmd.Stdout,
-			"%s\n %s\n built with %s compiler for %s/%s\n",
+			"%s",
 			getCommandVersion(),
-			installationMethod,
-			runtime.Version(),
-			runtime.GOOS,
-			runtime.GOARCH,
 		)
 		return ExitStatusSuccessNoProblem
 	}
