@@ -1,12 +1,16 @@
 package core
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
 	"regexp"
+	"os"
 	"runtime"
 	"runtime/debug"
+
+	"gopkg.in/yaml.v3"
 )
 
 // バージョンとインストール情報を保持する変数
@@ -28,7 +32,8 @@ const (
 func printingUsageHeader(out io.Writer) {
 	v := getCommandVersion()
 	b := "main"
-	if regexp.MustCompile(`^\d+\.\d+\.\d+$`).MatchString(v) {
+	if 
+  .MustCompile(`^\d+\.\d+\.\d+$`).MatchString(v) {
 		b = "v" + v
 	}
 	fmt.Fprintf(out, `Usage: sisakulint [FLAGS] [FILES...] [OPTIONS]
@@ -85,7 +90,7 @@ type Command struct {
 }
 
 // todo: linterを実行して結果を返すメソッド
-func (cmd *Command) runLint(args []string, linterOpts *LinterOptions, initConfig bool, generateBoilerplate bool) ([]*LintingError, error) {
+func (cmd *Command) runLint(args []string, linterOpts *LinterOptions, initConfig bool, generateBoilerplate bool) ([]*ValidateResult, error) {
 	l, err := NewLinter(cmd.Stdout, linterOpts)
 	if err != nil {
 		return nil, err
@@ -106,6 +111,41 @@ func (cmd *Command) runLint(args []string, linterOpts *LinterOptions, initConfig
 	return l.LintFiles(args, nil)
 }
 
+func (cmd *Command) runAutofix(results []*ValidateResult, isDryRun bool) {
+	for _, res := range results {
+		if len(res.AutoFixers) == 0 {
+			continue
+		}
+		for _, fixer := range res.AutoFixers {
+			if err := fixer.Fix(); err != nil {
+				fmt.Fprintf(cmd.Stderr, "Error while fixing %s: %v\n", fixer.RuleName(), err)
+			}
+		}
+		var buf bytes.Buffer
+		enc := yaml.NewEncoder(&buf)
+		enc.SetIndent(2)
+		err := enc.Encode(res.ParsedWorkflow.BaseNode)
+		if err != nil {
+			fmt.Fprintf(cmd.Stderr, "Error while marshalling the fixed workflow: %v\n", err)
+		}
+		data := buf.Bytes()
+		if isDryRun {
+			fmt.Fprintf(cmd.Stdout, "Fixed workflow %s:\n%s\n", res.FilePath, string(data))
+		} else {
+			err := os.WriteFile(res.FilePath, data, 0644)
+			if err != nil {
+				fmt.Fprintf(cmd.Stderr, "Error while writing the fixed workflow: %v\n", err)
+				err := os.WriteFile(res.FilePath, res.Source, 0644) // restore the original file
+				if err != nil {
+					fmt.Fprintf(cmd.Stderr, "Error while restoring the original workflow: %v\n", err)
+				}
+			} else {
+				fmt.Fprintf(cmd.Stdout, "Fixed workflow %s\n", res.FilePath)
+			}
+		}
+	}
+}
+
 type ignorePatternFlags []string
 
 func (i *ignorePatternFlags) String() string {
@@ -123,6 +163,7 @@ func (cmd *Command) Main(args []string) int {
 	var ignorePats ignorePatternFlags
 	var initConfig bool
 	var generateBoilerplate bool
+	var autoFixMode string
 
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(cmd.Stderr)
@@ -135,6 +176,7 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&linterOpts.IsDebugOutputEnabled, "debug", false, "Enable debug output (for development)")
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
+	flags.StringVar(&autoFixMode, "fix", "off", "Enable auto-fix mode. Available options: off, on, dry-run")
 
 	flags.Usage = func() {
 		printingUsageHeader(cmd.Stderr)
@@ -145,6 +187,11 @@ func (cmd *Command) Main(args []string) int {
 			// -h or -help
 			return ExitStatusSuccessNoProblem
 		}
+		return ExitStatusInvalidCommandOption
+	}
+
+	if autoFixMode != "off" && autoFixMode != "on" && autoFixMode != "dry-run" {
+		fmt.Fprintf(cmd.Stderr, "Invalid value for -fix: %s\n", autoFixMode)
 		return ExitStatusInvalidCommandOption
 	}
 
@@ -169,6 +216,10 @@ func (cmd *Command) Main(args []string) int {
 		return ExitStatusFailure
 	}
 	if len(errs) > 0 {
+		enableAutofix := autoFixMode == "on" || autoFixMode == "dry-run"
+		if enableAutofix {
+			cmd.runAutofix(errs, autoFixMode == "dry-run")
+		}
 		return ExitStatusSuccessProblemFound
 		//問題があった場合、ここでlinterが指摘してくれる！やったね！
 	}

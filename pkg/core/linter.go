@@ -15,6 +15,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -267,7 +268,7 @@ func (l *Linter) GenerateBoilerplate(dir string) error {
 }
 
 // LintRepositoryは、指定されたディレクトリのリポジトリをリントする
-func (l *Linter) LintRepository(dir string) ([]*LintingError, error) {
+func (l *Linter) LintRepository(dir string) ([]*ValidateResult, error) {
 	l.log("linting repository...", dir)
 
 	project, err := l.projectInformation.GetProjectForPath(dir)
@@ -283,7 +284,7 @@ func (l *Linter) LintRepository(dir string) ([]*LintingError, error) {
 }
 
 // LintDirは、指定されたディレクトリをLint
-func (l *Linter) LintDir(dir string, project *Project) ([]*LintingError, error) {
+func (l *Linter) LintDir(dir string, project *Project) ([]*ValidateResult, error) {
 	var files []string
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -311,13 +312,17 @@ func (l *Linter) LintDir(dir string, project *Project) ([]*LintingError, error) 
 
 // lintFilesは、指定されたyaml workflowをlintしてエラーを返す
 // projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
-func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingError, error) {
+func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*ValidateResult, error) {
 	fileCount := len(filepaths)
 	switch fileCount {
 	case 0:
-		return []*LintingError{}, nil
+		return nil, nil
 	case 1:
-		return l.LintFile(filepaths[0], project)
+		result, err := l.LintFile(filepaths[0], project)
+		if err != nil {
+			return nil, err
+		}
+		return []*ValidateResult{result}, nil
 	}
 
 	l.log("linting", fileCount, "getting started linting workflows...files")
@@ -330,7 +335,7 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 
 	type workspace struct {
 		path   string
-		errors []*LintingError
+		result *ValidateResult
 		source []byte
 	}
 
@@ -365,12 +370,12 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 					ws.path = relPath //相対パスの活用
 				}
 			}
-			errors, err := l.validate(ws.path, source, localProject, proc, actionCache, reusableWorkflowCache)
+			result, err := l.validate(ws.path, source, localProject, proc, actionCache, reusableWorkflowCache)
 			if err != nil {
 				return fmt.Errorf("occur error when check %s: %w", ws.path, err)
 			}
 			ws.source = source
-			ws.errors = errors
+			ws.result = result
 			return nil
 		})
 	}
@@ -381,19 +386,21 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 	}
 
 	totalErrors := 0
+	var allResult []*ValidateResult
 	for i := range workspaces {
-		totalErrors += len(workspaces[i].errors)
+		totalErrors += len(workspaces[i].result.Errors)
+		allResult = append(allResult, workspaces[i].result)
 	}
 
-	allErrors := make([]*LintingError, 0, totalErrors)
 	if l.errorFormatter != nil {
 		templateFields := make([]*TemplateFields, 0, totalErrors)
 		for i := range workspaces {
-			wanda := &workspaces[i]
-			for _, err := range wanda.errors {
-				templateFields = append(templateFields, err.ExtractTemplateFields(wanda.source))
+			ws := &workspaces[i]
+			for _, err := range ws.result.Errors {
+				templateFields = append(templateFields, err.ExtractTemplateFields(ws.source))
 			}
-			allErrors = append(allErrors, wanda.errors...)
+			//allErrors = append(allErrors, ws.result.Errors...)
+			//allAutoFixers = append(allAutoFixers, ws.result.AutoFixers...)
 		}
 		if err := l.errorFormatter.Print(l.errorOutput, templateFields); err != nil {
 			return nil, err
@@ -401,18 +408,19 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*LintingErro
 	} else {
 		for i := range workspaces {
 			ws := &workspaces[i]
-			l.displayErrors(ws.errors, ws.source)
-			allErrors = append(allErrors, ws.errors...)
+			l.displayErrors(ws.result.Errors, ws.source)
+			//allErrors = append(allErrors, ws.result.Errors...)
+			//allAutoFixers = append(allAutoFixers, ws.result.AutoFixers...)
 		}
 	}
 	l.log("Detected", totalErrors, "errors in", fileCount, "files checked")
 
-	return allErrors, nil
+	return allResult, nil
 }
 
 // LintFileは、指定されたyaml workflowをlintしてエラーを返す
 // projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
-func (l *Linter) LintFile(file string, project *Project) ([]*LintingError, error) {
+func (l *Linter) LintFile(file string, project *Project) (*ValidateResult, error) {
 	if project == nil {
 		pa, err := l.projectInformation.GetProjectForPath(file)
 		if err != nil {
@@ -435,25 +443,25 @@ func (l *Linter) LintFile(file string, project *Project) ([]*LintingError, error
 	localActions := NewLocalActionsMetadataCache(project, l.debugWriter())
 	//todo: reusing-workflows.go
 	localReusableWorkflow := NewLocalReusableWorkflowCache(project, l.currentWorkingDirectory, l.debugWriter())
-	errors, err := l.validate(file, source, project, proc, localActions, localReusableWorkflow)
+	result, err := l.validate(file, source, project, proc, localActions, localReusableWorkflow)
 	proc.Wait()
 
 	if err != nil {
 		return nil, err
 	}
 	if l.errorFormatter != nil {
-		l.errorFormatter.PrintErrors(l.errorOutput, errors, source)
+		l.errorFormatter.PrintErrors(l.errorOutput, result.Errors, source)
 	} else {
-		l.displayErrors(errors, source)
+		l.displayErrors(result.Errors, source)
 	}
-	return errors, nil
+	return result, nil
 }
 
 // Lintはbyteのスライスとして与えられたyaml workflowをlintしてエラーを返す
 // pathパラメタは、コンテンツがどこからきたのかを示すfilepathとして使用
 // pathパラメタに<stdin>を入力すると出力がSTDINから来たことを示す
 // projectパラメタはnilにできる。その場合、ファイルパスからプロジェクトが検出される
-func (l *Linter) Lint(filepath string, content []byte, project *Project) ([]*LintingError, error) {
+func (l *Linter) Lint(filepath string, content []byte, project *Project) (*ValidateResult, error) {
 	if project == nil && filepath != "<stdin>" {
 		if _, err := os.Stat(filepath); !errors.Is(err, fs.ErrNotExist) {
 			p, err := l.projectInformation.GetProjectForPath(filepath)
@@ -467,18 +475,53 @@ func (l *Linter) Lint(filepath string, content []byte, project *Project) ([]*Lin
 	proc := NewConcurrentExecutor(runtime.NumCPU())
 	localActions := NewLocalActionsMetadataCache(project, l.debugWriter())
 	localReusableWorkflow := NewLocalReusableWorkflowCache(project, l.currentWorkingDirectory, l.debugWriter())
-	errors, err := l.validate(filepath, content, project, proc, localActions, localReusableWorkflow)
+	result, err := l.validate(filepath, content, project, proc, localActions, localReusableWorkflow)
 	proc.Wait()
 	if err != nil {
 		return nil, err
 	}
 
 	if l.errorFormatter != nil {
-		l.errorFormatter.PrintErrors(l.errorOutput, errors, content)
+		l.errorFormatter.PrintErrors(l.errorOutput, result.Errors, content)
 	} else {
-		l.displayErrors(errors, content)
+		l.displayErrors(result.Errors, content)
 	}
-	return errors, nil
+	return result, nil
+}
+
+func makeRules(filePath string, localActions *LocalActionsMetadataCache, localReusableWorkflow *LocalReusableWorkflowCache) []Rule {
+	return []Rule{
+		// MatrixRule(),
+		CredentialsRule(),
+		// EventsRule(),
+		JobNeedsRule(),
+		// ActionRule(localActions),
+		EnvironmentVariableRule(),
+		IDRule(),
+		PermissionsRule(),
+		WorkflowCall(filePath, localReusableWorkflow),
+		ExpressionRule(localActions, localReusableWorkflow),
+		DeprecatedCommandsRule(),
+		NewConditionalRule(),
+		TimeoutMinuteRule(),
+		// IssueInjectionRule(),
+		CommitShaRule(),
+	}
+}
+
+// ValidateResultは、workflowの検証結果を表す
+// この構造体は、Linter.validateメソッドの戻り値として使用される
+// FilePathは、検証されたファイルのパス
+// Sourceは、検証されたworkflowのソースコード
+// ParsedWorkflowは、検証されたworkflowの構文木
+// Errorsは、検証中に発生したエラーのリスト
+// AutoFixersは、検証中に生成されたAutoFixerのリスト
+type ValidateResult struct {
+	FilePath       string
+	Source         []byte
+	ParsedWorkflow *ast.Workflow
+	Errors         []*LintingError
+	AutoFixers     []AutoFixer
 }
 
 func (l *Linter) validate(
@@ -488,7 +531,7 @@ func (l *Linter) validate(
 	proc *ConcurrentExecutor,
 	localActions *LocalActionsMetadataCache,
 	localReusableWorkflow *LocalReusableWorkflowCache,
-) ([]*LintingError, error) {
+) (*ValidateResult, error) {
 	var validationStart time.Time
 	if l.loggingLevel >= LogLevelDetailedOutput {
 		validationStart = time.Now()
@@ -518,26 +561,12 @@ func (l *Linter) validate(
 		l.log("parsed workflow in", len(allErrors), elapsed.Milliseconds(), "ms", filePath)
 	}
 
+	var allAutoFixers []AutoFixer
+
 	if parsedWorkflow != nil {
 		dbg := l.debugWriter()
 
-		rules := []Rule{
-			// MatrixRule(),
-			CredentialsRule(),
-			// EventsRule(),
-			JobNeedsRule(),
-			// ActionRule(localActions),
-			EnvironmentVariableRule(),
-			IDRule(),
-			PermissionsRule(),
-			WorkflowCall(filePath, localReusableWorkflow),
-			ExpressionRule(localActions, localReusableWorkflow),
-			DeprecatedCommandsRule(),
-			NewConditionalRule(),
-			TimeoutMinuteRule(),
-			// IssueInjectionRule(),
-			CommitShaRule(),
-		}
+		rules := makeRules(filePath, localActions, localReusableWorkflow)
 
 		v := NewSyntaxTreeVisitor()
 		for _, rule := range rules {
@@ -564,6 +593,8 @@ func (l *Linter) validate(
 			errs := rule.Errors()
 			l.debug("%s found %d errors", rule.RuleNames(), len(errs))
 			allErrors = append(allErrors, errs...)
+			autoFixers := rule.AutoFixers()
+			allAutoFixers = append(allAutoFixers, autoFixers...)
 		}
 
 		if l.errorFormatter != nil {
@@ -573,18 +604,24 @@ func (l *Linter) validate(
 		}
 	}
 
-	l.filterAndLogErrors(filePath, &allErrors, validationStart)
+	l.filterAndLogErrors(filePath, &allErrors, &allAutoFixers, validationStart)
 
-	return allErrors, nil
+	return &ValidateResult{
+		FilePath:       filePath,
+		Source:         content,
+		ParsedWorkflow: parsedWorkflow,
+		Errors:         allErrors,
+		AutoFixers:     allAutoFixers,
+	}, nil
 }
 
-func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError, validationStart time.Time) {
+func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError, allAutoFixers *[]AutoFixer, validationStart time.Time) {
 	if len(l.errorIgnorePatterns) > 0 {
 		filtered := make([]*LintingError, 0, len(*allErrors))
 		for _, err := range *allErrors {
 			ignored := false
 			for _, pattern := range l.errorIgnorePatterns {
-				if pattern.MatchString(err.Description) {
+				if pattern.MatchString(err.Type) {
 					ignored = true
 					break
 				}
@@ -594,6 +631,20 @@ func (l *Linter) filterAndLogErrors(filePath string, allErrors *[]*LintingError,
 			}
 		}
 		*allErrors = filtered
+		filteredAutoFixers := make([]AutoFixer, 0, len(*allAutoFixers))
+		for _, fixer := range *allAutoFixers {
+			ignored := false
+			for _, pattern := range l.errorIgnorePatterns {
+				if pattern.MatchString(fixer.RuleName()) {
+					ignored = true
+					break
+				}
+			}
+			if !ignored {
+				filteredAutoFixers = append(filteredAutoFixers, fixer)
+			}
+		}
+		*allAutoFixers = filteredAutoFixers
 	}
 	for _, err := range *allErrors {
 		err.FilePath = filePath

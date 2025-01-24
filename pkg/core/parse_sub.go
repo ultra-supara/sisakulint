@@ -56,7 +56,7 @@ func (project *parser) parseMapping(sec string, node *yaml.Node, allowEmpty bool
 
 func (project *parser) parseString(node *yaml.Node, allowEmpty bool) *ast.String {
 	if !project.checkString(node, allowEmpty) {
-		return &ast.String{Value: "", Quoted: false, Pos: positionAt(node)}
+		return &ast.String{Value: "", Quoted: false, Pos: positionAt(node), BaseNode: node}
 	}
 	return newString(node)
 }
