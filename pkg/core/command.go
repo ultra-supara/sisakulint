@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"regexp"
 	"os"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 
@@ -32,8 +32,7 @@ const (
 func printingUsageHeader(out io.Writer) {
 	v := getCommandVersion()
 	b := "main"
-	if 
-  .MustCompile(`^\d+\.\d+\.\d+$`).MatchString(v) {
+	if regexp.MustCompile(`^\d+\.\d+\.\d+$`).MatchString(v) {
 		b = "v" + v
 	}
 	fmt.Fprintf(out, `Usage: sisakulint [FLAGS] [FILES...] [OPTIONS]
