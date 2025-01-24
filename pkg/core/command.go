@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -66,16 +67,28 @@ Flags:
 }
 
 func getCommandVersion() string {
+	var buildInfos []byte
+	toolVersion := "unknown"
 	if versionInfo != "" {
-		return versionInfo
+		toolVersion = versionInfo
 	}
+	buildInfos = fmt.Appendf(buildInfos, "Tool version: %s\n", toolVersion)
+	buildInfos = fmt.Appendf(buildInfos, "Go version: %s\n", runtime.Version())
+	buildInfos = fmt.Appendf(buildInfos, "OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 
 	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "unknown" //sisakulint packageがmoduleの外部でbuildされた場合にのみ到達
+	if ok {
+		buildInfos = fmt.Appendf(buildInfos, "Build info:\n")
+		for _, setting := range info.Settings {
+			if setting.Key == "-buildmode" || setting.Key == "-compiler" ||
+				strings.HasPrefix(setting.Key, "GO") ||
+				strings.HasPrefix(setting.Key, "vcs") {
+				buildInfos = fmt.Appendf(buildInfos, "%s=%s\n", setting.Key, setting.Value)
+			}
+		}
 	}
 
-	return info.Main.Version
+	return string(buildInfos)
 }
 
 // Commandは全体のsisakulintコマンドを表します。与えられたstdin/stdout/stderrは入出力に使用
@@ -197,11 +210,8 @@ func (cmd *Command) Main(args []string) int {
 	if showVersion {
 		fmt.Fprintf(
 			cmd.Stdout,
-			"%s\n%s\nbuilt with %s compiler for %s/%s\n",
+			"%s",
 			getCommandVersion(),
-			runtime.Version(),
-			runtime.GOOS,
-			runtime.GOARCH,
 		)
 		return ExitStatusSuccessNoProblem
 	}
