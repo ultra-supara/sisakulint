@@ -510,7 +510,8 @@ type Step struct {
 	// *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepstimeout-minutes
 	TimeoutMinutes *Float
 	// Pos is a position in source.
-	Pos *Position
+	Pos      *Position
+	BaseNode *yaml.Node
 }
 
 // todo: jobs.<job_id>.container.credentials
@@ -661,6 +662,9 @@ type Job struct {
 	WorkflowCall *WorkflowCall
 	// Pos is a position in source.
 	Pos *Position
+
+	// BaseNode is a base node of the YAML file.
+	BaseNode *yaml.Node
 }
 
 // Workflow is root of workflow syntax tree, which represents one workflow configuration file.

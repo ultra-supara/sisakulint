@@ -248,7 +248,7 @@ func (project *parser) parseConcurrency(pos *ast.Position, node *yaml.Node) *ast
 
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_id
 func (project *parser) parseJob(id *ast.String, n *yaml.Node) *ast.Job {
-	ret := &ast.Job{ID: id, Pos: id.Pos}
+	ret := &ast.Job{ID: id, Pos: id.Pos, BaseNode: n}
 	call := &ast.WorkflowCall{}
 
 	// Only below keys are allowed on reusable workflow call
