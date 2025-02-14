@@ -45,13 +45,13 @@ It supports the SARIF format, which is the output format for static analysis. Th
  	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#permissions
 
 - **workflow call rule**
-       - docs : https://sisakulint.github.io/docs/workflowcall/
-       - github ref : https://docs.github.com/en/actions/sharing-automations/reusing-workflows
+  - docs : https://sisakulint.github.io/docs/workflowcall/
+  - github ref : https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
 - **timeout-minutes-rule**
-       - docs : https://sisakulint.github.io/docs/timeoutminutesrule/
-       - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
-       - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
+  - docs : https://sisakulint.github.io/docs/timeoutminutesrule/
+  - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
+  - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
 
 ## install for macOS user
 

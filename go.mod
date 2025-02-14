@@ -7,8 +7,8 @@ require (
 	github.com/google/go-github/v68 v68.0.0
 	github.com/haya14busa/go-sarif v0.0.0-20240630170108-a3ba8d79599f
 	github.com/mattn/go-colorable v0.1.14
-	github.com/open-policy-agent/opa v1.0.0
-	golang.org/x/sync v0.10.0
+	github.com/open-policy-agent/opa v1.1.0
+	golang.org/x/sync v0.11.0
 	golang.org/x/sys v0.29.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -35,15 +35,15 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
+	github.com/tchap/go-patricia/v2 v2.3.2 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/otel v1.33.0 // indirect
-	go.opentelemetry.io/otel/metric v1.33.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.33.0 // indirect
-	go.opentelemetry.io/otel/trace v1.33.0 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	go.opentelemetry.io/otel v1.34.0 // indirect
+	go.opentelemetry.io/otel/metric v1.34.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
+	go.opentelemetry.io/otel/trace v1.34.0 // indirect
+	google.golang.org/protobuf v1.36.3 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
