@@ -685,7 +685,7 @@ func (project *parser) parseOutputs(node *yaml.Node) map[string]*ast.Output {
 
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idsteps
 func (project *parser) parseStep(node *yaml.Node) *ast.Step {
-	ret := &ast.Step{Pos: positionAt(node)}
+	ret := &ast.Step{Pos: positionAt(node), BaseNode: node}
 	var workDir *ast.String
 
 	for _, kv := range project.parseMapping("element of \"steps\" sequence", node, false, true) {

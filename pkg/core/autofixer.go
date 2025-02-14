@@ -41,3 +41,26 @@ func NewStepFixer(step *ast.Step, fixer StepFixer) AutoFixer {
 		fixer:         fixer,
 	}
 }
+
+type JobFixer interface {
+	RuleNames() string
+	FixJob(node *ast.Job) error
+}
+
+type jobFixer struct {
+	BaseAutoFixer
+	job   *ast.Job
+	fixer JobFixer
+}
+
+func (j *jobFixer) Fix() error {
+	return j.fixer.FixJob(j.job)
+}
+
+func NewJobFixer(job *ast.Job, fixer JobFixer) AutoFixer {
+	return &jobFixer{
+		BaseAutoFixer: BaseAutoFixer{ruleName: fixer.RuleNames()},
+		job:           job,
+		fixer:         fixer,
+	}
+}
