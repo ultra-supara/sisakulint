@@ -128,7 +128,11 @@ func (e *LintingError) DisplayError(output io.Writer, sourceContent []byte) {
 	padding := strings.Repeat(" ", len(lineHeader)-2)
 	printColored(output, GrayStyle, fmt.Sprintf("%s %s", padding, lineHeader))
 	fmt.Fprintln(output, lineContent)
-	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, strings.Repeat(" ", e.ColNumber-1)))
+	colNumber := e.ColNumber
+	if colNumber > 1 {
+		colNumber--
+	}
+	printColored(output, GrayStyle, fmt.Sprintf("%s %s\n", padding, strings.Repeat(" ", colNumber)))
 }
 
 // helper function to print with color

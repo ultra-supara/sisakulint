@@ -38,42 +38,36 @@ func (rule *TimeoutMinutesRule) VisitStep(node *ast.Step) error {
 	return nil
 }
 
-func (rule *TimeoutMinutesRule) FixStep(node *ast.Step) error {
+func addTimeoutMinutes(node *yaml.Node, candidate1, candidate2 string) {
 	// best effort to add timeout-minutes before run or uses
-	for i := 0; i < len(node.BaseNode.Content); i += 2 {
-		if node.BaseNode.Content[i].Value == "run" || node.BaseNode.Content[i].Value == "uses" {
-			node.BaseNode.Content = append(node.BaseNode.Content[:i], append([]*yaml.Node{
-				{
-					Kind:  yaml.ScalarNode,
-					Value: "timeout-minutes",
-				},
-				{
-					Kind:  yaml.ScalarNode,
-					Value: "5",
-				},
-			}, node.BaseNode.Content[i:]...)...)
-			break
+	appendKey := func(i int) {
+		node.Content = append(node.Content[:i], append([]*yaml.Node{
+			{
+				Kind:  yaml.ScalarNode,
+				Value: "timeout-minutes",
+			},
+			{
+				Kind:  yaml.ScalarNode,
+				Value: "5",
+			},
+		}, node.Content[i:]...)...)
+	}
+	for i := 0; i < len(node.Content); i += 2 {
+		if node.Content[i].Value == candidate1 || node.Content[i].Value == candidate2 {
+			appendKey(i)
+			return
 		}
 	}
+	// add timeout-minutes after candidate
+	appendKey(len(node.Content))
+}
+
+func (rule *TimeoutMinutesRule) FixStep(node *ast.Step) error {
+	addTimeoutMinutes(node.BaseNode, "run", "with")
 	return nil
 }
 
 func (rule *TimeoutMinutesRule) FixJob(node *ast.Job) error {
-	// best effort to add timeout-minutes before steps or runs-on
-	for i := 0; i < len(node.BaseNode.Content); i += 2 {
-		if node.BaseNode.Content[i].Value == "steps" || node.BaseNode.Content[i].Value == "runs-on" {
-			node.BaseNode.Content = append(node.BaseNode.Content[:i], append([]*yaml.Node{
-				{
-					Kind:  yaml.ScalarNode,
-					Value: "timeout-minutes",
-				},
-				{
-					Kind:  yaml.ScalarNode,
-					Value: "5",
-				},
-			}, node.BaseNode.Content[i:]...)...)
-			break
-		}
-	}
+	addTimeoutMinutes(node.BaseNode, "steps", "runs-on")
 	return nil
 }
