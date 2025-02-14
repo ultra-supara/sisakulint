@@ -31,7 +31,7 @@ func (rule *TimeoutMinutesRule) VisitJobPre(node *ast.Job) error {
 func (rule *TimeoutMinutesRule) VisitStep(node *ast.Step) error {
 	if node.TimeoutMinutes == nil {
 		rule.Errorf(node.Pos,
-			"timeout-minutes is not set for step %s; see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsnameidtimeout-minutes for more details.",
+			"timeout-minutes is not set for step %s; see https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idstepstimeout-minutes for more details.",
 			node.String())
 		rule.AddAutoFixer(NewStepFixer(node, rule))
 	}
