@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
@@ -9,6 +10,8 @@ import (
 type CredentialRule struct {
 	BaseRule
 }
+
+var isExpr = regexp.MustCompile(`^\$\{.+\}$`)
 
 func CredentialsRule() *CredentialRule {
 	return &CredentialRule{
@@ -30,7 +33,7 @@ func (rule *CredentialRule) VisitJobPre(node *ast.Job) error {
 }
 
 func (rule *CredentialRule) checkCredentials(where string, node *ast.Container) {
-	if node.Credentials.Password != nil {
+	if node.Credentials.Password != nil && !isExpr.MatchString(node.Credentials.Password.Value) {
 		rule.Errorf(node.Credentials.Password.Pos, "Password found in %s, do not paste password direct hardcode", where)
 		rule.AddAutoFixer(NewFuncFixer(rule.RuleName, func() error {
 			return rule.FixCredentials(node.Credentials)

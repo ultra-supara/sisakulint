@@ -65,6 +65,7 @@ func NewJobFixer(job *ast.Job, fixer JobFixer) AutoFixer {
 	}
 }
 
+// arbitrary function fixer
 type funcFixer struct {
 	BaseAutoFixer
 	fixer func() error
