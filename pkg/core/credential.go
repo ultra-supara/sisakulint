@@ -1,68 +1,50 @@
 package core
 
 import (
-	"context"
-	_ "embed"
 	"fmt"
 
-	"github.com/open-policy-agent/opa/rego"
 	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 type CredentialRule struct {
 	BaseRule
-	regoQuery rego.PreparedEvalQuery
 }
 
-//go:embed credential.rego
-var credentialRego string
-
 func CredentialsRule() *CredentialRule {
-	query := mustPrepareRegoQuery("data.core.check_credentials", "credential.rego", credentialRego)
-
 	return &CredentialRule{
 		BaseRule: BaseRule{
 			RuleName: "credentials",
 			RuleDesc: "This rule checks for credentials in the source code",
 		},
-		regoQuery: query,
 	}
 }
 
 func (rule *CredentialRule) VisitJobPre(node *ast.Job) error {
 	if node.Container != nil {
-		rule.checkCredentialsWithRego("\"Container\" section", node.Container)
+		rule.checkCredentials("\"Container\" section", node.Container)
 	}
 	for _, s := range node.Services {
-		err := rule.checkCredentialsWithRego(fmt.Sprintf("\"Service\" section for service %s", s.Name.Value), s.Container)
-		if err != nil {
-			return err
-		}
+		rule.checkCredentials(fmt.Sprintf("\"Service\" section for service %s", s.Name.Value), s.Container)
 	}
 	return nil
 }
 
-func (rule *CredentialRule) checkCredentialsWithRego(where string, node *ast.Container) error {
-	containerData := map[string]interface{}{
-		"credentials": map[string]interface{}{
-			"password": node.Credentials.Password.Value,
-		},
+func (rule *CredentialRule) checkCredentials(where string, node *ast.Container) {
+	if node.Credentials.Password != nil {
+		rule.Errorf(node.Credentials.Password.Pos, "Password found in %s, do not paste password direct hardcode", where)
+		rule.AddAutoFixer(NewFuncFixer(rule.RuleName, func() error {
+			return rule.FixCredentials(node.Credentials)
+		}))
 	}
+}
 
-	input := map[string]interface{}{
-		"jobs": map[string]interface{}{
-			"test": map[string]interface{}{
-				"container": containerData,
-			},
-		},
+func (rule *CredentialRule) FixCredentials(node *ast.Credentials) error {
+	// remove password from container
+	for i := 0; i < len(node.BaseNode.Content); i += 2 {
+		if node.BaseNode.Content[i].Value == "password" {
+			node.BaseNode.Content = append(node.BaseNode.Content[:i], node.BaseNode.Content[i+2:]...)
+			break
+		}
 	}
-
-	results, err := rule.regoQuery.Eval(context.Background(), rego.EvalInput(input))
-	if err != nil {
-		rule.Errorf(nil, "Failed to evaluate policy: %v", err)
-		return err
-	}
-
-	reportRegoError(rule, node.Credentials.Password.Pos, where, results)
 	return nil
 }
