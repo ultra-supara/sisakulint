@@ -273,7 +273,7 @@ func (project *parser) parseMatrixCombinations(sec string, node *yaml.Node) *ast
 // parseContainer
 // *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idcontainer
 func (project *parser) parseContainer(sec string, pos *ast.Position, node *yaml.Node) *ast.Container {
-	ret := &ast.Container{Pos: pos}
+	ret := &ast.Container{Pos: pos, BaseNode: node}
 
 	if node.Kind == yaml.ScalarNode {
 		ret.Image = project.parseString(node, false)
@@ -283,7 +283,7 @@ func (project *parser) parseContainer(sec string, pos *ast.Position, node *yaml.
 			case "image":
 				ret.Image = project.parseString(kv.val, false)
 			case "credentials":
-				cred := &ast.Credentials{Pos: kv.key.Pos}
+				cred := &ast.Credentials{Pos: kv.key.Pos, BaseNode: kv.val}
 				for _, attr := range project.parseSectionMapping("credentials", kv.val, false, true) {
 					switch attr.id {
 					case "username":

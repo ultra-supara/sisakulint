@@ -523,6 +523,8 @@ type Credentials struct {
 	Password *String
 	// Pos is a position in source.
 	Pos *Position
+
+	BaseNode *yaml.Node
 }
 
 // todo: jobs.<job_id>.container
@@ -547,6 +549,8 @@ type Container struct {
 	Options *String
 	// Pos is a position in source.
 	Pos *Position
+
+	BaseNode *yaml.Node
 }
 
 // todo: jobs.<job_id>.services

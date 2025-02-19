@@ -64,3 +64,20 @@ func NewJobFixer(job *ast.Job, fixer JobFixer) AutoFixer {
 		fixer:         fixer,
 	}
 }
+
+// arbitrary function fixer
+type funcFixer struct {
+	BaseAutoFixer
+	fixer func() error
+}
+
+func (f *funcFixer) Fix() error {
+	return f.fixer()
+}
+
+func NewFuncFixer(ruleName string, fixer func() error) AutoFixer {
+	return &funcFixer{
+		BaseAutoFixer: BaseAutoFixer{ruleName: ruleName},
+		fixer:         fixer,
+	}
+}
