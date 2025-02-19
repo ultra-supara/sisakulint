@@ -1,6 +1,6 @@
 module github.com/ultra-supara/sisakulint
 
-go 1.23.3
+go 1.24.0
 
 require (
 	github.com/fatih/color v1.18.0
