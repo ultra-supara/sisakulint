@@ -114,6 +114,7 @@ var BuiltinUntrustedInputs = ContextPropertySearchRoots{
 				NewContextPropertyMap("head",
 					NewContextPropertyMap("ref"),
 					NewContextPropertyMap("label"),
+					NewContextPropertyMap("sha"),
 					NewContextPropertyMap("repo",
 						NewContextPropertyMap("default_branch"),
 					),

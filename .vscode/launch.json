@@ -7,7 +7,7 @@
             "request":"launch",
             "program":"${workspaceFolder}/cmd/sisakulint",
             "cwd": "${workspaceFolder}",
-            "args": ["-format","{{sarif}}","./script/commitsha.yaml"]
+            "args": ["./script/pull_req_target_checkout.yaml"]
         }
     ]
 }
