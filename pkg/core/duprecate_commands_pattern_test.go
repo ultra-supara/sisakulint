@@ -63,7 +63,7 @@ func TestRuleDeprecatedCommands_VisitStep(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: false, // Note: This rule doesn't return an error, it just adds errors to the rule's error list
 		},
 	}
 	for _, tt := range tests {
@@ -71,8 +71,20 @@ func TestRuleDeprecatedCommands_VisitStep(t *testing.T) {
 			rule := &RuleDeprecatedCommands{
 				BaseRule: tt.fields.BaseRule,
 			}
-			if err := rule.VisitStep(tt.args.step); (err != nil) != tt.wantErr {
+			// First, make sure the rule has no errors initially
+			initialErrorCount := len(rule.Errors())
+			
+			// Run the VisitStep method
+			err := rule.VisitStep(tt.args.step)
+			
+			// Verify the error return value matches expectation 
+			if (err != nil) != tt.wantErr {
 				t.Errorf("RuleDeprecatedCommands.VisitStep() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			
+			// Also verify that an error was added to the rule's error list
+			if len(rule.Errors()) <= initialErrorCount {
+				t.Errorf("RuleDeprecatedCommands.VisitStep() failed to add error to rule's error list for deprecated command")
 			}
 		})
 	}

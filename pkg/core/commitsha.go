@@ -107,14 +107,16 @@ func (rule *CommitSha) FixStep(step *ast.Step) error {
 	sha, _, err := gh.Repositories.GetCommitSHA1(context.TODO(), ownerRepo[0], ownerRepo[1], tag, "")
 	if err != nil {
 		// Create a LintingError with position information
-		lintErr := FormattedError(step.Pos, rule.RuleName, "failed to get commit SHA1: %v at step '%s'", err, step.String())
+		// Using error.Error() to include the full error message
+		lintErr := FormattedError(step.Pos, rule.RuleName, "failed to get commit SHA1: %s at step '%s'", err.Error(), step.String())
 		return lintErr
 	}
 	if !isSemver && isShortTag {
 		longVersion, err := getLongVersion(gh, ownerRepo[0], ownerRepo[1], sha, splitTag[1])
 		if err != nil {
 			// Create a LintingError with position information
-			lintErr := FormattedError(step.Pos, rule.RuleName, "failed to get long version: %v at step '%s'", err, step.String())
+			// Using error.Error() to include the full error message
+			lintErr := FormattedError(step.Pos, rule.RuleName, "failed to get long version: %s at step '%s'", err.Error(), step.String())
 			return lintErr
 		}
 		tag = longVersion
