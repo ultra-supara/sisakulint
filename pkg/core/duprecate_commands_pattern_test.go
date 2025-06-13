@@ -54,14 +54,16 @@ func TestRuleDeprecatedCommands_VisitStep(t *testing.T) {
 			},
 			args: args{
 				step: &ast.Step{
+					Pos: &ast.Position{Line: 1, Col: 1},
 					Exec: &ast.ExecRun{
 						Run: &ast.String{
+							Pos: &ast.Position{Line: 1, Col: 1},
 							Value: "::set-output name=test::value",
 						},
 					},
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

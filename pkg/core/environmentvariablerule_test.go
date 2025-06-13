@@ -14,7 +14,12 @@ func TestEnvironmentVariableRule(t *testing.T) {
 	}{
 		{
 			name: "Test case 1",
-			want: &EnvironmentVariableChecker{},
+			want: &EnvironmentVariableChecker{
+				BaseRule: BaseRule{
+					RuleName: "env-var",
+					RuleDesc: "Checks for environment variables configuration at \"env:\"",
+				},
+			},
 		},
 		// Add more test cases here
 	}

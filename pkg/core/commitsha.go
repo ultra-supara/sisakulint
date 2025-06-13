@@ -58,7 +58,7 @@ func getLongVersion(cl *github.Client, owner, repo, sha string, expectedTag stri
 	for i := 0; i < 10; i++ {
 		tags, resp, err := cl.Repositories.ListTags(context.Background(), owner, repo, opts)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to list tags: %w", err)
 		}
 		for _, tag := range tags {
 			if tag.GetCommit().GetSHA() == sha {
@@ -90,11 +90,15 @@ func (rule *CommitSha) FixStep(step *ast.Step) error {
 	gh := ghClient
 	splitTag := strings.Split(usesValue, "@")
 	if len(splitTag) != 2 {
-		return nil // cannot fix...
+		// Create a LintingError with position information
+		lintErr := FormattedError(step.Pos, rule.RuleName, "invalid action reference format: '%s', expected format is 'owner/repo@ref'", usesValue)
+		return lintErr
 	}
 	ownerRepo := strings.Split(splitTag[0], "/")
 	if len(ownerRepo) != 2 {
-		return nil // cannot fix...
+		// Create a LintingError with position information
+		lintErr := FormattedError(step.Pos, rule.RuleName, "invalid action owner/repo format: '%s', expected format is 'owner/repo'", splitTag[0])
+		return lintErr
 	}
 	tag := splitTag[1]
 	isSemver := semverPattern.MatchString(splitTag[1])
@@ -102,12 +106,16 @@ func (rule *CommitSha) FixStep(step *ast.Step) error {
 	//tagComment := action.Uses.BaseNode.LineComment
 	sha, _, err := gh.Repositories.GetCommitSHA1(context.TODO(), ownerRepo[0], ownerRepo[1], tag, "")
 	if err != nil {
-		return fmt.Errorf("failed to get commit SHA1: %w at step '%s'", err, step.String())
+		// Create a LintingError with position information
+		lintErr := FormattedError(step.Pos, rule.RuleName, "failed to get commit SHA1: %v at step '%s'", err, step.String())
+		return lintErr
 	}
 	if !isSemver && isShortTag {
 		longVersion, err := getLongVersion(gh, ownerRepo[0], ownerRepo[1], sha, splitTag[1])
 		if err != nil {
-			return err
+			// Create a LintingError with position information
+			lintErr := FormattedError(step.Pos, rule.RuleName, "failed to get long version: %v at step '%s'", err, step.String())
+			return lintErr
 		}
 		tag = longVersion
 	}
