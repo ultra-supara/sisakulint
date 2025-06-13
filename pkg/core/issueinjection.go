@@ -32,7 +32,7 @@ func (rule *IssueInjection) VisitJobPre(node *ast.Job) error {
 			if run.Run.Literal {
 				base.Line += i + 1
 			}
-			rule.Errorf(&base, msg)
+			rule.Errorf(&base, "%s", msg)
 		}
 		const WarningMessage = "Direct use of ${{ ... }} in run steps; Use env instead. see also https://docs.github.com/ja/enterprise-cloud@latest/actions/security-guides/security-hardening-for-github-actions#example-of-a-script-injection-attack"
 		for i, line := range lines {

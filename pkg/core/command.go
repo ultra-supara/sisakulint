@@ -124,7 +124,12 @@ func (cmd *Command) runAutofix(results []*ValidateResult, isDryRun bool) {
 		}
 		for _, fixer := range res.AutoFixers {
 			if err := fixer.Fix(); err != nil {
-				fmt.Fprintf(cmd.Stderr, "Error while fixing %s: %v\n", fixer.RuleName(), err)
+				if lintErr, ok := err.(*LintingError); ok {
+					lintErr.FilePath = res.FilePath
+					lintErr.DisplayError(cmd.Stderr, res.Source)
+				} else {
+					fmt.Fprintf(cmd.Stderr, "Error while fixing %s: %v\n", fixer.RuleName(), err)
+				}
 			}
 		}
 		var buf bytes.Buffer
