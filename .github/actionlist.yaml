@@ -1,4 +1,3 @@
-# This is updated config
 whitelist:
     - actions/checkout@*
     - actions/setup-node@*

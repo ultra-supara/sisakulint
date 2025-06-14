@@ -508,7 +508,13 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		TimeoutMinuteRule(),
 		// IssueInjectionRule(),
 		CommitShaRule(),
-		NewActionListRule(),
+		// ActionListルールを生成して設定ファイルをロード
+		func() Rule {
+			actionList := NewActionListRule()
+			// デフォルトの設定ファイルから読み込む
+			_ = actionList.LoadConfigFromFile("") // 空文字を渡すとデフォルトパスが使われる
+			return actionList
+		}(),
 	}
 }
 

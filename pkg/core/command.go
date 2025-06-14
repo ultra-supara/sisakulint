@@ -221,12 +221,17 @@ func (cmd *Command) Main(args []string) int {
 	// ActionList設定ファイルの初期化
 	if generateActionList {
 		actionList := NewActionListRule()
-		err := actionList.GenerateDefaultConfig(actionListConfigPath)
+		outputPath := actionListConfigPath
+		if outputPath == "" {
+			// デフォルトパスを使用
+			outputPath = ".github/actionlist.yaml"
+		}
+		err := actionList.GenerateDefaultConfig(outputPath)
 		if err != nil {
 			fmt.Fprintln(cmd.Stderr, err.Error())
 			return ExitStatusFailure
 		}
-		fmt.Fprintf(cmd.Stdout, "Generated default action list config at: %s\n", actionListConfigPath)
+		fmt.Fprintf(cmd.Stdout, "Generated default action list config at: %s\n", outputPath)
 		return ExitStatusSuccessNoProblem
 	}
 

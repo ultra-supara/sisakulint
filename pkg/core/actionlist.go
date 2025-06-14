@@ -173,52 +173,42 @@ func (rule *ActionList) VisitWorkflowPost(node *ast.Workflow) error {
 
 // FixStep は非準拠のアクション参照を修正するためのAutoFixer
 func (rule *ActionList) FixStep(step *ast.Step) error {
-	// この例ではブラックリストに入っているアクションを安全な代替に置き換える例
-	action := step.Exec.(*ast.ExecAction)
-	usesValue := action.Uses.Value
-	
-	// 例: untrusted/* や suspicious/* を安全な代替に置き換える
-	for _, blackPattern := range rule.Config.BlackList {
-		if matchActionPattern(usesValue, blackPattern) {
-			// 簡単な例として、untrusted/* は actions/* に置き換える
-			if strings.HasPrefix(blackPattern, "untrusted/") {
-				newValue := strings.Replace(usesValue, "untrusted/", "actions/", 1)
-				action.Uses.BaseNode.Value = newValue
-				return nil
-			}
-			
-			// もし適切な置き換えがない場合はエラーを返す
-			return FormattedError(step.Pos, rule.RuleName, 
-				"cannot automatically fix blacklisted action: %s", usesValue)
-		}
+	// action が ExecAction かどうかを安全にチェック
+	action, ok := step.Exec.(*ast.ExecAction)
+	if !ok {
+		return FormattedError(step.Pos, rule.RuleName, "expected ExecAction but got %T", step.Exec)
 	}
 	
-	// ホワイトリストの場合は最初のホワイトリストエントリをベースにする
+	usesValue := action.Uses.Value
+	
+	// ブラックリスト対象のアクションがあるかチェック
+	for _, blackPattern := range rule.Config.BlackList {
+		if !matchActionPattern(usesValue, blackPattern) {
+			continue // マッチしなければ次のパターンへ
+		}
+		
+		// ブラックリストされたアクションには自動修正を適用しない
+		// 代わりにエラーを返して手動での修正を促す
+		return FormattedError(step.Pos, rule.RuleName, 
+			"this action is blacklisted and must be replaced manually: %s", usesValue)
+	}
+	
+	// ホワイトリストの場合（ホワイトリストに無いアクションが使われている場合）
 	if len(rule.Config.WhiteList) > 0 {
-		// 簡略化のため、最初のホワイトリストエントリのパターンから推測
-		whitelist := rule.Config.WhiteList[0]
-		if strings.Contains(whitelist, "/") {
-			parts := strings.Split(whitelist, "/")
-			org := parts[0]
-			
-			// 元のアクション参照からrepoとrefを抽出
-			actionParts := strings.Split(usesValue, "/")
-			if len(actionParts) >= 2 {
-				repo := actionParts[len(actionParts)-1]
-				
-				// @が含まれる場合は、repoとrefに分割
-				if strings.Contains(repo, "@") {
-					repoParts := strings.Split(repo, "@")
-					repoName := repoParts[0]
-					newValue := fmt.Sprintf("%s/%s@%s", org, repoName, "v1")
-					action.Uses.BaseNode.Value = newValue
-					return nil
-				}
+		// ホワイトリストにマッチするか確認
+		allowed := false
+		for _, whitePattern := range rule.Config.WhiteList {
+			if matchActionPattern(usesValue, whitePattern) {
+				allowed = true
+				break
 			}
 		}
 		
-		return FormattedError(step.Pos, rule.RuleName, 
-			"cannot automatically determine a safe replacement for: %s", usesValue)
+		// マッチしなかったらエラーを返す
+		if !allowed {
+			return FormattedError(step.Pos, rule.RuleName,
+				"this action is not in the whitelist and must be replaced manually: %s", usesValue)
+		}
 	}
 	
 	return nil
