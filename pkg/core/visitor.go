@@ -33,6 +33,11 @@ func (s *SyntaxTreeVisitor) AddVisitor(visitor TreeVisitor) {
 	s.passes = append(s.passes, visitor)
 }
 
+// AddRuleはルールをvisitorとして追加する
+func (s *SyntaxTreeVisitor) AddRule(rule Rule) {
+	s.passes = append(s.passes, rule)
+}
+
 // EnableDebugOutputはdebug出力を有効にする
 func (s *SyntaxTreeVisitor) EnableDebugOutput(writer io.Writer) {
 	s.debugW = writer

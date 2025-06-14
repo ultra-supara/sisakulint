@@ -48,6 +48,8 @@ const (
 type LinterOptions struct {
 	// IsVerboseOutputEnabledは、詳細なログ出力が有効であるかどうかを示すflag
 	IsVerboseOutputEnabled bool
+	// ActionListConfigPathはアクションリスト設定ファイルのパス
+	ActionListConfigPath string
 	// IsDebugOutputEnabledは、Debuglogの出力が有効であるかどうかを示すflag
 	IsDebugOutputEnabled bool
 	// LogOutputDestinationは、ログ出力を出力するためのio.Writerオブジェクト
@@ -506,6 +508,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		TimeoutMinuteRule(),
 		// IssueInjectionRule(),
 		CommitShaRule(),
+		NewActionListRule(),
 	}
 }
 
