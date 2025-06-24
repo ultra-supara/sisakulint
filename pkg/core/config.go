@@ -19,6 +19,13 @@ type Config struct {
 	// ConfigVariablesはチェックされるworkflowで使用される設定変数の名前を示す
 	//この値がnilの時にvarsのコンテキストのプロパティ名はチェックされない
 	ConfigVariables []string `yaml:"config-variables"`
+	// ActionList は許可/禁止されたアクションのリストを管理する設定
+	ActionList struct {
+		// WhiteList はアクションを制限するホワイトリスト
+		WhiteList []string `yaml:"whitelist,omitempty"`
+		// BlackList はブロックするアクションのブラックリスト
+		BlackList []string `yaml:"blacklist,omitempty"`
+	} `yaml:"action-list"`
 }
 
 // parseConfigは与えられたbyte sliceをConfigにparseする
@@ -60,7 +67,7 @@ func loadRepoConfig(root string) (*Config, error) {
 // writeDefaultConfigFileは指定されたファイルパスにデフォルトの設定ファイルを書き込む
 func writeDefaultConfigFile(path string) error {
 	b := []byte(`
-	# Configuration file for sisakulint
+# Configuration file for sisakulint
 # Use this file to customize the behavior of sisakulint
 # self-hosted-runner section is for configuring self-hosted runners.
 self-hosted-runner:
@@ -76,6 +83,18 @@ self-hosted-runner:
 # 🧠 Example: config-variables: ["CI_ENVIRONMENT", "DEPLOY_TARGET"]
 # Note: List all the configuration variables that are used in your GitHub Actions workflows.
 config-variables: null
+
+# action-list section is for specifying which GitHub Actions are allowed or blocked in your workflows.
+# You can define a whitelist (only these actions are allowed) or a blacklist (these actions are blocked).
+# Using wildcards is supported: actions/checkout@* matches any version of actions/checkout.
+action-list:
+  whitelist:
+    - actions/checkout@*
+    - actions/setup-node@*
+    - actions/cache@*
+  blacklist:
+    - untrusted/*@*
+    - suspicious/*@*
 
 # Add other optional settings below.
 # 🧠 Example: some-option: value

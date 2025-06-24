@@ -1,7 +1,10 @@
-whitelist:
+# Action whitelist/blacklist configuration
+action-list:
+  whitelist:
     - actions/checkout@*
     - actions/setup-node@*
     - actions/cache@*
-blacklist:
+    - hashicorp/*@*
+  blacklist:
     - untrusted/*@*
     - suspicious/*@*

@@ -2,115 +2,41 @@ package core
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/ultra-supara/sisakulint/pkg/ast"
-	"gopkg.in/yaml.v3"
 )
-
-// ActionListConfig は許可/禁止されたアクションのリストを管理する設定
-type ActionListConfig struct {
-	WhiteList []string `yaml:"whitelist,omitempty"`
-	BlackList []string `yaml:"blacklist,omitempty"`
-}
 
 // ActionList はアクション参照のホワイトリスト/ブラックリストを実装するルール
 type ActionList struct {
 	BaseRule
-	Config ActionListConfig
+	Config *Config // Configはsisakulint.yamlからの設定へのポインタ
 }
 
-// configPathDefault は設定ファイルのデフォルトの場所
-const configPathDefault = ".github/actionlist.yaml"
-
 // NewActionListRule は新しい ActionList ルールを作成
-func NewActionListRule() *ActionList {
+func NewActionListRule(config *Config) *ActionList {
 	return &ActionList{
 		BaseRule: BaseRule{
 			RuleName: "action-list",
 			RuleDesc: "Check if action references are in whitelist or not in blacklist",
 		},
-		Config: ActionListConfig{
-			WhiteList: []string{},
-			BlackList: []string{},
-		},
+		Config: config,
 	}
 }
 
-// LoadConfigFromFile は指定されたパスから設定を読み込む
-func (rule *ActionList) LoadConfigFromFile(configPath string) error {
-	if configPath == "" {
-		configPath = configPathDefault
-	}
-
-	// ファイルが存在しなければスキップ
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return fmt.Errorf("failed to read config file: %w", err)
-	}
-
-	var config ActionListConfig
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return fmt.Errorf("failed to parse config file: %w", err)
-	}
-
-	rule.Config = config
-	return nil
-}
-
-// GenerateDefaultConfig はデフォルト設定ファイルを生成
-func (rule *ActionList) GenerateDefaultConfig(outputPath string) error {
-	if outputPath == "" {
-		outputPath = configPathDefault
-	}
-
-	// ディレクトリが存在しなければ作成
-	dir := filepath.Dir(outputPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	config := ActionListConfig{
-		WhiteList: []string{
-			"actions/checkout@*",
-			"actions/setup-node@*",
-			"actions/cache@*",
-		},
-		BlackList: []string{
-			"untrusted/*@*",
-			"suspicious/*@*",
-		},
-	}
-
-	data, err := yaml.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
-	}
-
-	return nil
-}
 
 // isActionAllowed はアクションがルールに基づいて許可されているかチェック
 func (rule *ActionList) isActionAllowed(actionRef string) (bool, string) {
-	// 設定が空の場合は全て許可
-	if len(rule.Config.WhiteList) == 0 && len(rule.Config.BlackList) == 0 {
+	// 設定がnilまたは空の場合は全て許可
+	if rule.Config == nil || 
+	   (len(rule.Config.ActionList.WhiteList) == 0 && len(rule.Config.ActionList.BlackList) == 0) {
 		return true, ""
 	}
 	
 	// ホワイトリストが設定されていて、マッチするなら許可
-	if len(rule.Config.WhiteList) > 0 {
-		for _, pattern := range rule.Config.WhiteList {
+	if len(rule.Config.ActionList.WhiteList) > 0 {
+		for _, pattern := range rule.Config.ActionList.WhiteList {
 			if matchActionPattern(actionRef, pattern) {
 				return true, ""
 			}
@@ -119,7 +45,7 @@ func (rule *ActionList) isActionAllowed(actionRef string) (bool, string) {
 	}
 
 	// ブラックリストがあり、マッチするなら禁止
-	for _, pattern := range rule.Config.BlackList {
+	for _, pattern := range rule.Config.ActionList.BlackList {
 		if matchActionPattern(actionRef, pattern) {
 			return false, fmt.Sprintf("action '%s' is in the blacklist", actionRef)
 		}
@@ -181,8 +107,13 @@ func (rule *ActionList) FixStep(step *ast.Step) error {
 	
 	usesValue := action.Uses.Value
 	
+	// 設定がnilの場合は何もしない
+	if rule.Config == nil {
+		return nil
+	}
+
 	// ブラックリスト対象のアクションがあるかチェック
-	for _, blackPattern := range rule.Config.BlackList {
+	for _, blackPattern := range rule.Config.ActionList.BlackList {
 		if !matchActionPattern(usesValue, blackPattern) {
 			continue // マッチしなければ次のパターンへ
 		}
@@ -194,10 +125,10 @@ func (rule *ActionList) FixStep(step *ast.Step) error {
 	}
 	
 	// ホワイトリストの場合（ホワイトリストに無いアクションが使われている場合）
-	if len(rule.Config.WhiteList) > 0 {
+	if len(rule.Config.ActionList.WhiteList) > 0 {
 		// ホワイトリストにマッチするか確認
 		allowed := false
-		for _, whitePattern := range rule.Config.WhiteList {
+		for _, whitePattern := range rule.Config.ActionList.WhiteList {
 			if matchActionPattern(usesValue, whitePattern) {
 				allowed = true
 				break

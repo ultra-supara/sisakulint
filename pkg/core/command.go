@@ -173,8 +173,6 @@ func (cmd *Command) Main(args []string) int {
 	var ignorePats ignorePatternFlags
 	var initConfig bool
 	var generateBoilerplate bool
-	var generateActionList bool
-	var actionListConfigPath string
 	var autoFixMode string
 
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
@@ -188,8 +186,6 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&linterOpts.IsDebugOutputEnabled, "debug", false, "Enable debug output (for development)")
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
-	flags.BoolVar(&generateActionList, "action-list-init", false, "Generate default action whitelist/blacklist configuration file")
-	flags.StringVar(&actionListConfigPath, "action-list-config", "", "Path to action whitelist/blacklist configuration file")
 	flags.StringVar(&autoFixMode, "fix", "off", "Enable auto-fix mode. Available options: off, on, dry-run")
 
 	flags.Usage = func() {
@@ -218,26 +214,9 @@ func (cmd *Command) Main(args []string) int {
 		return ExitStatusSuccessNoProblem
 	}
 
-	// ActionList設定ファイルの初期化
-	if generateActionList {
-		actionList := NewActionListRule()
-		outputPath := actionListConfigPath
-		if outputPath == "" {
-			// デフォルトパスを使用
-			outputPath = ".github/actionlist.yaml"
-		}
-		err := actionList.GenerateDefaultConfig(outputPath)
-		if err != nil {
-			fmt.Fprintln(cmd.Stderr, err.Error())
-			return ExitStatusFailure
-		}
-		fmt.Fprintf(cmd.Stdout, "Generated default action list config at: %s\n", outputPath)
-		return ExitStatusSuccessNoProblem
-	}
 
 	linterOpts.ErrorIgnorePatterns = ignorePats
 	linterOpts.LogOutputDestination = cmd.Stderr
-	linterOpts.ActionListConfigPath = actionListConfigPath
 
 	errs, err := cmd.runLint(flags.Args(), &linterOpts, initConfig, generateBoilerplate)
 	if err != nil {

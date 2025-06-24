@@ -48,8 +48,6 @@ const (
 type LinterOptions struct {
 	// IsVerboseOutputEnabledは、詳細なログ出力が有効であるかどうかを示すflag
 	IsVerboseOutputEnabled bool
-	// ActionListConfigPathはアクションリスト設定ファイルのパス
-	ActionListConfigPath string
 	// IsDebugOutputEnabledは、Debuglogの出力が有効であるかどうかを示すflag
 	IsDebugOutputEnabled bool
 	// LogOutputDestinationは、ログ出力を出力するためのio.Writerオブジェクト
@@ -491,7 +489,7 @@ func (l *Linter) Lint(filepath string, content []byte, project *Project) (*Valid
 	return result, nil
 }
 
-func makeRules(filePath string, localActions *LocalActionsMetadataCache, localReusableWorkflow *LocalReusableWorkflowCache) []Rule {
+func makeRules(filePath string, localActions *LocalActionsMetadataCache, localReusableWorkflow *LocalReusableWorkflowCache, config *Config) []Rule {
 	return []Rule{
 		// MatrixRule(),
 		CredentialsRule(),
@@ -508,13 +506,8 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		TimeoutMinuteRule(),
 		// IssueInjectionRule(),
 		CommitShaRule(),
-		// ActionListルールを生成して設定ファイルをロード
-		func() Rule {
-			actionList := NewActionListRule()
-			// デフォルトの設定ファイルから読み込む
-			_ = actionList.LoadConfigFromFile("") // 空文字を渡すとデフォルトパスが使われる
-			return actionList
-		}(),
+		// ActionListルールを生成して共通設定を使用
+		NewActionListRule(config),
 	}
 }
 
@@ -558,7 +551,7 @@ func (l *Linter) validate(
 		cfg = project.ProjectConfig()
 	}
 	if cfg != nil {
-		l.debug("setting configration: %#v", cfg)
+		l.debug("setting configuration: %#v", cfg)
 	} else {
 		l.debug("no configuration file")
 	}
@@ -575,7 +568,7 @@ func (l *Linter) validate(
 	if parsedWorkflow != nil {
 		dbg := l.debugWriter()
 
-		rules := makeRules(filePath, localActions, localReusableWorkflow)
+		rules := makeRules(filePath, localActions, localReusableWorkflow, cfg)
 
 		v := NewSyntaxTreeVisitor()
 		for _, rule := range rules {
