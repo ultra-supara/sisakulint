@@ -1,4 +1,4 @@
-# Action whitelist/blacklist configuration
+# Action whitelist configuration
 action-list:
     - actions/*@*
     - docker/build-push-action@*
