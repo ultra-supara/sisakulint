@@ -1,10 +1,7 @@
 # Action whitelist/blacklist configuration
 action-list:
-  whitelist:
-    - actions/checkout@*
-    - actions/setup-node@*
-    - actions/cache@*
-    - hashicorp/*@*
-  blacklist:
-    - untrusted/*@*
-    - suspicious/*@*
+    - actions/*@*
+    - docker/build-push-action@*
+    - reviewdog/action-setup@*
+    - goreleaser/goreleaser-action@*
+    - github/codeql-action/*@*

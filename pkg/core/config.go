@@ -19,13 +19,8 @@ type Config struct {
 	// ConfigVariablesはチェックされるworkflowで使用される設定変数の名前を示す
 	//この値がnilの時にvarsのコンテキストのプロパティ名はチェックされない
 	ConfigVariables []string `yaml:"config-variables"`
-	// ActionList は許可/禁止されたアクションのリストを管理する設定
-	ActionList struct {
-		// WhiteList はアクションを制限するホワイトリスト
-		WhiteList []string `yaml:"whitelist,omitempty"`
-		// BlackList はブロックするアクションのブラックリスト
-		BlackList []string `yaml:"blacklist,omitempty"`
-	} `yaml:"action-list"`
+	// ActionList は許可アクションのリストを管理する設定
+	ActionList []string `yaml:"action-list"`
 }
 
 // parseConfigは与えられたbyte sliceをConfigにparseする

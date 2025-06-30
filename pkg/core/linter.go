@@ -489,7 +489,7 @@ func (l *Linter) Lint(filepath string, content []byte, project *Project) (*Valid
 	return result, nil
 }
 
-func makeRules(filePath string, localActions *LocalActionsMetadataCache, localReusableWorkflow *LocalReusableWorkflowCache, config *Config) []Rule {
+func makeRules(filePath string, localActions *LocalActionsMetadataCache, localReusableWorkflow *LocalReusableWorkflowCache) []Rule {
 	return []Rule{
 		// MatrixRule(),
 		CredentialsRule(),
@@ -506,8 +506,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		TimeoutMinuteRule(),
 		// IssueInjectionRule(),
 		CommitShaRule(),
-		// ActionListルールを生成して共通設定を使用
-		NewActionListRule(config),
+		NewActionListRule(),
 	}
 }
 
@@ -568,7 +567,7 @@ func (l *Linter) validate(
 	if parsedWorkflow != nil {
 		dbg := l.debugWriter()
 
-		rules := makeRules(filePath, localActions, localReusableWorkflow, cfg)
+		rules := makeRules(filePath, localActions, localReusableWorkflow)
 
 		v := NewSyntaxTreeVisitor()
 		for _, rule := range rules {

@@ -125,6 +125,7 @@ func (cmd *Command) runAutofix(results []*ValidateResult, isDryRun bool) {
 		for _, fixer := range res.AutoFixers {
 			if err := fixer.Fix(); err != nil {
 				if lintErr, ok := err.(*LintingError); ok {
+					lintErr.FilePath = res.FilePath
 					lintErr.DisplayError(cmd.Stderr, res.Source)
 				} else {
 					fmt.Fprintf(cmd.Stderr, "Error while fixing %s: %v\n", fixer.RuleName(), err)
@@ -213,7 +214,6 @@ func (cmd *Command) Main(args []string) int {
 		)
 		return ExitStatusSuccessNoProblem
 	}
-
 
 	linterOpts.ErrorIgnorePatterns = ignorePats
 	linterOpts.LogOutputDestination = cmd.Stderr
