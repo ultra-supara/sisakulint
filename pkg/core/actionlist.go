@@ -27,13 +27,13 @@ func NewActionListRule() *ActionList {
 // isActionAllowed はアクションがルールに基づいて許可されているかチェック
 func (rule *ActionList) isActionAllowed(actionRef string) (bool, string) {
 	// 設定がnilまたは空の場合は全て許可
-	if rule.userConfig == nil || len(rule.userConfig.ActionList) == 0 {
+	if rule.userConfig == nil || len(rule.userConfig.actionListRegex) == 0 {
 		return true, ""
 	}
 
 	// ホワイトリストが設定されていて、マッチするなら許可
-	for _, pattern := range rule.userConfig.ActionList {
-		if matchActionPattern(actionRef, pattern) {
+	for _, pattern := range rule.userConfig.actionListRegex {
+		if pattern.MatchString(actionRef) {
 			return true, ""
 		}
 	}
@@ -42,14 +42,14 @@ func (rule *ActionList) isActionAllowed(actionRef string) (bool, string) {
 
 // matchActionPattern はアクション参照がパターンにマッチするかチェック
 // パターン例: "actions/checkout@*", "actions/*@v2", "owner/repo@v1.*"
-func matchActionPattern(actionRef, pattern string) bool {
+func compileActionPattern(pattern string) (*regexp.Regexp, error) {
 	// ワイルドカードをエスケープしてから特定の場所に適用する正規表現に変換
 	regexPattern := strings.ReplaceAll(regexp.QuoteMeta(pattern), "\\*", ".*")
 	re, err := regexp.Compile("^" + regexPattern + "$")
 	if err != nil {
-		return false
+		return nil, err
 	}
-	return re.MatchString(actionRef)
+	return re, nil
 }
 
 // ここにVisitJobPre, VisitJobPost, VisitWorkflowPre, VisitWorkflowPostを実装

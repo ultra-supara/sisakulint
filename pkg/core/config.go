@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -21,6 +22,8 @@ type Config struct {
 	ConfigVariables []string `yaml:"config-variables"`
 	// ActionList は許可アクションのリストを管理する設定
 	ActionList []string `yaml:"action-list"`
+
+	actionListRegex []*regexp.Regexp
 }
 
 // parseConfigは与えられたbyte sliceをConfigにparseする
@@ -29,6 +32,14 @@ func parseConfig(b []byte, path string) (*Config, error) {
 	if err := yaml.Unmarshal(b, &c); err != nil {
 		msg := strings.ReplaceAll(err.Error(), "\n", " ")
 		return nil, fmt.Errorf("failed to parse config file %q: %s", path, msg)
+	}
+	// ActionListのパターンをコンパイル
+	for _, pattern := range c.ActionList {
+		re, err := compileActionPattern(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("failed to compile regex for action list %q: %w", pattern, err)
+		}
+		c.actionListRegex = append(c.actionListRegex, re)
 	}
 	return &c, nil
 }
