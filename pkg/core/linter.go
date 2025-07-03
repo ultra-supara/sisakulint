@@ -506,6 +506,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		TimeoutMinuteRule(),
 		// IssueInjectionRule(),
 		CommitShaRule(),
+		NewActionListRule(),
 	}
 }
 
@@ -549,7 +550,7 @@ func (l *Linter) validate(
 		cfg = project.ProjectConfig()
 	}
 	if cfg != nil {
-		l.debug("setting configration: %#v", cfg)
+		l.debug("setting configuration: %#v", cfg)
 	} else {
 		l.debug("no configuration file")
 	}

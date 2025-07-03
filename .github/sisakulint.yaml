@@ -1,0 +1,7 @@
+# Action whitelist configuration
+action-list:
+    - actions/*@*
+    - docker/build-push-action@*
+    - reviewdog/action-setup@*
+    - goreleaser/goreleaser-action@*
+    - github/codeql-action/*@*
