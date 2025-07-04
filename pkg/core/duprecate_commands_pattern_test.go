@@ -57,7 +57,7 @@ func TestRuleDeprecatedCommands_VisitStep(t *testing.T) {
 					Pos: &ast.Position{Line: 1, Col: 1},
 					Exec: &ast.ExecRun{
 						Run: &ast.String{
-							Pos: &ast.Position{Line: 1, Col: 1},
+							Pos:   &ast.Position{Line: 1, Col: 1},
 							Value: "::set-output name=test::value",
 						},
 					},
@@ -73,15 +73,15 @@ func TestRuleDeprecatedCommands_VisitStep(t *testing.T) {
 			}
 			// First, make sure the rule has no errors initially
 			initialErrorCount := len(rule.Errors())
-			
+
 			// Run the VisitStep method
 			err := rule.VisitStep(tt.args.step)
-			
-			// Verify the error return value matches expectation 
+
+			// Verify the error return value matches expectation
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RuleDeprecatedCommands.VisitStep() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			
+
 			// Also verify that an error was added to the rule's error list
 			if len(rule.Errors()) <= initialErrorCount {
 				t.Errorf("RuleDeprecatedCommands.VisitStep() failed to add error to rule's error list for deprecated command")

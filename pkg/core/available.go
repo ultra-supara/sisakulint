@@ -32,9 +32,9 @@ func WorkflowKeyAvailability(key string) ([]string, []string) {
 		return []string{"github", "inputs", "needs", "vars"}, []string{}
 	case "jobs.<job_id>.if":
 		return []string{"github", "inputs", "needs", "vars"}, []string{"always", "canceled", "failure", "success"}
-	case "env":
+	case AvailableEnv:
 		return []string{"github", "inputs", "secrets", "vars"}, []string{}
-	case "concurrency", "on.workflow_call.inputs.<inputs_id>.default", "run-name":
+	case AvailableConcurrency, "on.workflow_call.inputs.<inputs_id>.default", "run-name":
 		return []string{"github", "inputs", "vars"}, []string{}
 	default:
 		return nil, nil

@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -124,7 +125,8 @@ func (cmd *Command) runAutofix(results []*ValidateResult, isDryRun bool) {
 		}
 		for _, fixer := range res.AutoFixers {
 			if err := fixer.Fix(); err != nil {
-				if lintErr, ok := err.(*LintingError); ok {
+				var lintErr *LintingError
+				if errors.As(err, &lintErr) {
 					lintErr.FilePath = res.FilePath
 					lintErr.DisplayError(cmd.Stderr, res.Source)
 				} else {
@@ -137,7 +139,7 @@ func (cmd *Command) runAutofix(results []*ValidateResult, isDryRun bool) {
 		enc.SetIndent(2)
 		err := enc.Encode(res.ParsedWorkflow.BaseNode)
 		if err != nil {
-			fmt.Fprintf(cmd.Stderr, "Error while marshalling the fixed workflow: %v\n", err)
+			fmt.Fprintf(cmd.Stderr, "Error while marshaling the fixed workflow: %v\n", err)
 		}
 		data := buf.Bytes()
 		if isDryRun {
@@ -194,14 +196,14 @@ func (cmd *Command) Main(args []string) int {
 		flags.PrintDefaults()
 	}
 	if err := flags.Parse(args[1:]); err != nil {
-		if err == flag.ErrHelp {
+		if errors.Is(err, flag.ErrHelp) {
 			// -h or -help
 			return ExitStatusSuccessNoProblem
 		}
 		return ExitStatusInvalidCommandOption
 	}
 
-	if autoFixMode != "off" && autoFixMode != "on" && autoFixMode != "dry-run" {
+	if autoFixMode != "off" && autoFixMode != "on" && autoFixMode != FileFixDryRun {
 		fmt.Fprintf(cmd.Stderr, "Invalid value for -fix: %s\n", autoFixMode)
 		return ExitStatusInvalidCommandOption
 	}
@@ -224,9 +226,9 @@ func (cmd *Command) Main(args []string) int {
 		return ExitStatusFailure
 	}
 	if len(errs) > 0 {
-		enableAutofix := autoFixMode == "on" || autoFixMode == "dry-run"
+		enableAutofix := autoFixMode == "on" || autoFixMode == FileFixDryRun
 		if enableAutofix {
-			cmd.runAutofix(errs, autoFixMode == "dry-run")
+			cmd.runAutofix(errs, autoFixMode == FileFixDryRun)
 		}
 		return ExitStatusSuccessProblemFound
 		//問題があった場合、ここでlinterが指摘してくれる！やったね！

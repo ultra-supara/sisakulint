@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -35,7 +36,7 @@ func (project *parser) parse(node *yaml.Node) *ast.Workflow {
 		valueNode := mapping.val
 
 		switch mapping.id {
-		case "name":
+		case MainName:
 			workflow.Name = project.parseString(valueNode, true)
 
 		//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
@@ -47,7 +48,7 @@ func (project *parser) parse(node *yaml.Node) *ast.Workflow {
 			workflow.Permissions = project.parsePermissions(key.Pos, valueNode)
 
 		//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#env
-		case "env":
+		case AvailableEnv:
 			workflow.Env = project.parseEnv(valueNode)
 
 		//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#defaults
@@ -94,8 +95,9 @@ func handleYamlError(err error) []*LintingError {
 		return &LintingError{msg, "", lineNumber, 0, "syntax"}
 	}
 
-	if typeError, isTypeError := err.(*yaml.TypeError); isTypeError {
-		errors := make([]*LintingError, len(typeError.Errors))
+	var typeError *yaml.TypeError
+	if errors.As(err, &typeError) {
+		errors := make([]*LintingError, 0, len(typeError.Errors))
 		for _, errMsg := range typeError.Errors {
 			errors = append(errors, convertToError(errMsg))
 		}

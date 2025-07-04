@@ -190,12 +190,14 @@ const (
 
 func (k LogicalOpNodeKind) String() string {
 	switch k {
+	case LogicalOpNodeKindInvalid:
+		return "invalid"
 	case LogicalOpNodeKindAnd:
 		return "&&"
 	case LogicalOpNodeKindOr:
 		return "||"
 	default:
-		return "invalid"
+		return "unknown"
 	}
 }
 

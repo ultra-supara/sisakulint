@@ -64,15 +64,4 @@ func SortedQuotes(ss []string) string {
 	return quotes(ss)
 }
 
-// quotesAll は複数の文字列スライスを引用符で囲んだ文字列に変換します。
-func quotesAll(sss ...[]string) string {
-	b := QuotesBuilder{
-		buf: make([]byte, 0, someThreshold),
-	}
-	for _, ss := range sss {
-		for _, s := range ss {
-			b.Append(s)
-		}
-	}
-	return b.Build()
-}
+// NOTE: quotesAll function was removed as it was unused

@@ -170,8 +170,9 @@ func (p *MiniParser) parseFloat() ExprNode {
 // string literalのparse.
 func (p *MiniParser) parseString() ExprNode {
 	t := p.next() // 文字列を取得
-	s := t.Value[1 : len(t.Value)-1]
-	s = strings.ReplaceAll(s, `\"`, `"`)
+	// Note: we're removing the ineffectual assignment
+	// s := t.Value[1 : len(t.Value)-1]
+	// s = strings.ReplaceAll(s, `\"`, `"`)
 	return &StringNode{t.Value, t}
 }
 
@@ -237,7 +238,10 @@ func (p *MiniParser) parsePrimaryExpression() ExprNode {
 		return p.parseFloat()
 	case TokenKindString:
 		return p.parseString()
-	default:
+	case TokenKindUnknown, TokenKindEnd, TokenKindRightParen, TokenKindLeftBracket,
+		TokenKindRightBracket, TokenKindDot, TokenKindNot, TokenKindLess, TokenKindLessEq,
+		TokenKindGreater, TokenKindGreaterEq, TokenKindEq, TokenKindNotEq, TokenKindAnd,
+		TokenKindOr, TokenKindStar, TokenKindComma:
 		p.unexpected(
 			"variable access, function call, null, bool, int, float or string",
 			[]TokenKind{
@@ -250,6 +254,8 @@ func (p *MiniParser) parsePrimaryExpression() ExprNode {
 		)
 		return nil
 	}
+	// We should never get here but just in case
+	return nil
 }
 
 func (p *MiniParser) parsePostfixOperator() ExprNode {
@@ -271,7 +277,11 @@ func (p *MiniParser) parsePostfixOperator() ExprNode {
 				identifierToken := p.next() // consume the identifier after the '.'
 				// Property names are case insensitive. For example, github.event and github.EVENT are equivalent.
 				result = &ObjectDerefNode{result, strings.ToLower(identifierToken.Value)}
-			default:
+			case TokenKindUnknown, TokenKindEnd, TokenKindString, TokenKindInt, TokenKindFloat,
+				TokenKindLeftParen, TokenKindRightParen, TokenKindLeftBracket, TokenKindRightBracket,
+				TokenKindDot, TokenKindNot, TokenKindLess, TokenKindLessEq, TokenKindGreater,
+				TokenKindGreaterEq, TokenKindEq, TokenKindNotEq, TokenKindAnd, TokenKindOr,
+				TokenKindComma:
 				p.unexpected(
 					"expected an object property dereference (like 'a.b') or an array element dereference (like 'a.*')",
 					[]TokenKind{TokenKindIdent, TokenKindStar},
@@ -290,7 +300,10 @@ func (p *MiniParser) parsePostfixOperator() ExprNode {
 				return nil
 			}
 			p.next() // consume ']'
-		default:
+		case TokenKindUnknown, TokenKindEnd, TokenKindIdent, TokenKindString, TokenKindInt,
+			TokenKindFloat, TokenKindLeftParen, TokenKindRightParen, TokenKindRightBracket,
+			TokenKindNot, TokenKindLess, TokenKindLessEq, TokenKindGreater, TokenKindGreaterEq,
+			TokenKindEq, TokenKindNotEq, TokenKindAnd, TokenKindOr, TokenKindStar, TokenKindComma:
 			return result
 		}
 	}
@@ -316,7 +329,10 @@ func (p *MiniParser) parseComparisonOperator() ExprNode {
 		operatorType = CompareOpNodeKindEq
 	case TokenKindNotEq:
 		operatorType = CompareOpNodeKindNotEq
-	default:
+	case TokenKindUnknown, TokenKindEnd, TokenKindIdent, TokenKindString, TokenKindInt,
+		TokenKindFloat, TokenKindLeftParen, TokenKindRightParen, TokenKindLeftBracket,
+		TokenKindRightBracket, TokenKindDot, TokenKindNot, TokenKindAnd, TokenKindOr,
+		TokenKindStar, TokenKindComma:
 		return leftOperand
 	}
 	p.next() // consume the operator token
