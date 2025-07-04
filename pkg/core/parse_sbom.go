@@ -49,7 +49,7 @@ func positionAt(node *yaml.Node) *ast.Position {
 }
 
 func isNull(node *yaml.Node) bool {
-	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == "null"
+	return node.Kind == yaml.ScalarNode && node.Tag == SBOMNullTag && node.Value == ExprNullValue
 }
 
 func newString(node *yaml.Node) *ast.String {
@@ -128,7 +128,7 @@ func (project *parser) parseScheduleEvent(pos *ast.Position, node *yaml.Node) *a
 	project.errorf(node, "expected single ${{...}} or %s but found empty string", expecting)
 } */
 
-func (project *parser) parseExpression(node *yaml.Node, expecting string) *ast.String {
+func (project *parser) parseExpression(node *yaml.Node, _ /* expecting */ string) *ast.String {
 	/* if !isExprAssigned(node.Value) {
 		project.missingExpression(node, expecting)
 		return nil
@@ -137,11 +137,11 @@ func (project *parser) parseExpression(node *yaml.Node, expecting string) *ast.S
 }
 
 func (project *parser) parseBool(node *yaml.Node) *ast.Bool {
-	if node.Kind != yaml.ScalarNode || (node.Tag != "!!bool" && node.Tag != "!!str") {
+	if node.Kind != yaml.ScalarNode || (node.Tag != "!!bool" && node.Tag != SBOMStrTag) {
 		project.errorf(node, "expected bool node but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
 		return nil
 	}
-	if node.Tag == "!!str" {
+	if node.Tag == SBOMStrTag {
 		e := project.parseExpression(node, "boolean literal \"true\" or \"false\"")
 		return &ast.Bool{
 			Expression: e,
@@ -155,11 +155,11 @@ func (project *parser) parseBool(node *yaml.Node) *ast.Bool {
 }
 
 func (project *parser) parseInt(node *yaml.Node) *ast.Int {
-	if node.Kind != yaml.ScalarNode || (node.Tag != "!!int" && node.Tag != "!!str") {
+	if node.Kind != yaml.ScalarNode || (node.Tag != "!!int" && node.Tag != SBOMStrTag) {
 		project.errorf(node, "expected int node but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
 		return nil
 	}
-	if node.Tag == "!!str" {
+	if node.Tag == SBOMStrTag {
 		e := project.parseExpression(node, "integer literal")
 		return &ast.Int{
 			Expression: e,
@@ -178,11 +178,11 @@ func (project *parser) parseInt(node *yaml.Node) *ast.Int {
 }
 
 func (project *parser) parseFloat(node *yaml.Node) *ast.Float {
-	if node.Kind != yaml.ScalarNode || (node.Tag != "!!int" && node.Tag != "!!float" && node.Tag != "!!str") {
+	if node.Kind != yaml.ScalarNode || (node.Tag != SBOMIntTag && node.Tag != SBOMFloatTag && node.Tag != SBOMStrTag) {
 		project.errorf(node, "expected float node but found %s node with %q tag", nodeKindName(node.Kind), node.Tag)
 		return nil
 	}
-	if node.Tag == "!!str" {
+	if node.Tag == SBOMStrTag {
 		e := project.parseExpression(node, "float literal")
 		return &ast.Float{
 			Expression: e,
@@ -211,11 +211,19 @@ func (project *parser) parseTimeoutMinutes(node *yaml.Node) *ast.Float {
 
 func (project *parser) parseRawYAMLValue(node *yaml.Node) ast.RawYAMLValue {
 	switch node.Kind {
+	case yaml.DocumentNode:
+		// DocumentNode not supported here
+		project.errorf(node, "document node not supported in this context")
+		return nil
 	case yaml.ScalarNode:
 		if node.Tag == "!!null" {
 			return nil
 		}
 		return &ast.RawYAMLString{Value: node.Value, Posi: positionAt(node)}
+	case yaml.AliasNode:
+		// AliasNode not supported here
+		project.errorf(node, "alias node not supported in this context")
+		return nil
 	case yaml.SequenceNode:
 		ret := make([]ast.RawYAMLValue, 0, len(node.Content))
 		for _, c := range node.Content {
@@ -299,7 +307,7 @@ func (project *parser) parseContainer(sec string, pos *ast.Position, node *yaml.
 					continue
 				}
 				ret.Credentials = cred
-			case "env":
+			case AvailableEnv:
 				ret.Env = project.parseEnv(kv.val)
 			case "ports":
 				ret.Ports = project.parseStringSequence("ports", kv.val, true, false)
@@ -352,7 +360,10 @@ func (project *parser) parseMatrix(pos *ast.Position, node *yaml.Node) *ast.Matr
 // *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymax-parallel
 func (project *parser) parseMaxParallel(node *yaml.Node) *ast.Int {
 	i := project.parseInt(node)
-	if i == nil && i.Expression == nil && i.Value < 0 {
+	if i == nil {
+		return nil
+	}
+	if i.Expression == nil && i.Value < 0 {
 		project.errorf(node, "expected positive integer for max-parallel but found %v", i.Value)
 	}
 	return i
@@ -397,14 +408,25 @@ func (project *parser) parseStringSequence(sec string, node *yaml.Node, allowEmp
 
 func (project *parser) parseSSSequence(sec string, node *yaml.Node, allowEmpty bool, caseSensitive bool) []*ast.String {
 	switch node.Kind {
+	case yaml.DocumentNode:
+		// DocumentNode not supported here
+		project.errorf(node, "document node not supported in sequence")
+		return []*ast.String{}
 	case yaml.ScalarNode:
 		if allowEmpty && node.Tag == "!!null" {
 			return []*ast.String{}
 		}
 		return []*ast.String{project.parseString(node, caseSensitive)}
-	default:
+	case yaml.SequenceNode:
 		return project.parseStringSequence(sec, node, allowEmpty, caseSensitive)
+	case yaml.MappingNode:
+		project.errorf(node, "mapping node not supported in string sequence")
+		return []*ast.String{}
+	case yaml.AliasNode:
+		project.errorf(node, "alias node not supported in string sequence")
+		return []*ast.String{}
 	}
+	return []*ast.String{}
 }
 
 // *https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_dispatch
@@ -423,14 +445,14 @@ func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.
 			var description *ast.String
 			var required *ast.Bool
 			var def *ast.String
-			var ty ast.WorkflowDispatchEventInputType = ast.WorkflowDispatchEventInputTypeNone
+			var ty = ast.WorkflowDispatchEventInputTypeNone
 			var options []*ast.String
 
 			for _, attract := range project.parseMapping("input setting for \"workflow_dispatch\" event", spec, true, true) {
 				switch attract.id {
-				case "description":
+				case SBOMDescription:
 					description = project.parseString(attract.val, true)
-				case "required":
+				case SBOMRequired:
 					required = project.parseBool(attract.val)
 				case "default":
 					def = project.parseString(attract.val, true)
@@ -439,11 +461,11 @@ func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.
 						continue
 					}
 					switch attract.val.Value {
-					case "string":
+					case SBOMString:
 						ty = ast.WorkflowDispatchEventInputTypeString
-					case "number":
+					case SBOMNumber:
 						ty = ast.WorkflowDispatchEventInputTypeNumber
-					case "boolean":
+					case SBOMBoolean:
 						ty = ast.WorkflowDispatchEventInputTypeBoolean
 					case "choice":
 						ty = ast.WorkflowDispatchEventInputTypeChoice
@@ -503,7 +525,7 @@ func (project *parser) parseWorkflowCallEvent(pos *ast.Position, node *yaml.Node
 
 				for _, attr := range project.parseMapping("input of workflow_call event", spec, true, true) {
 					switch attr.id {
-					case "description":
+					case SBOMDescription:
 						input.Description = project.parseString(attr.val, true)
 					case "required":
 						input.Required = project.parseBool(attr.val)
@@ -653,7 +675,7 @@ func (project *parser) parseEnvironment(pos *ast.Position, node *yaml.Node) *ast
 		nameisfound := false
 		for _, keyvalue := range project.parseSectionMapping("environment", node, false, true) {
 			switch keyvalue.id {
-			case "name":
+			case MainName:
 				ret.Name = project.parseString(keyvalue.val, false)
 				nameisfound = true
 			case "url":
@@ -702,7 +724,7 @@ func (project *parser) parseStep(node *yaml.Node) *ast.Step {
 			ret.ContinueOnError = project.parseBool(kv.val)
 		case "timeout-minutes":
 			ret.TimeoutMinutes = project.parseTimeoutMinutes(kv.val)
-		case "uses", "with":
+		case SBOMUses, SBOMWith:
 			var exec *ast.ExecAction
 			if ret.Exec == nil {
 				exec = &ast.ExecAction{}
@@ -732,7 +754,7 @@ func (project *parser) parseStep(node *yaml.Node) *ast.Step {
 				}
 			}
 			ret.Exec = exec
-		case "run", "shell":
+		case SBOMRun, SBOMShell:
 			var exec *ast.ExecRun
 			if ret.Exec == nil {
 				exec = &ast.ExecRun{}

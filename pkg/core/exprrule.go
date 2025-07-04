@@ -76,6 +76,8 @@ func (rule *ExprRule) VisitWorkflowPre(node *ast.Workflow) error {
 
 				var inputType expressions.ExprType
 				switch inputDetails.Type {
+				case ast.WorkflowDispatchEventInputTypeNone:
+					inputType = expressions.UnknownType{}
 				case ast.WorkflowDispatchEventInputTypeBoolean:
 					inputType = expressions.BoolType{}
 				case ast.WorkflowDispatchEventInputTypeNumber:
@@ -104,6 +106,8 @@ func (rule *ExprRule) VisitWorkflowPre(node *ast.Workflow) error {
 
 				var inputType expressions.ExprType
 				switch input.Type {
+				case ast.WorkflowCallEventInputTypeInvalid:
+					inputType = expressions.UnknownType{}
 				case ast.WorkflowCallEventInputTypeString:
 					inputType = expressions.StringType{}
 				case ast.WorkflowCallEventInputTypeBoolean:

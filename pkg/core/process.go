@@ -42,7 +42,12 @@ func executeWithStdin(exe string, args []string, stdin string) ([]byte, error) {
 }
 
 func (ce *ConcurrentExecutor) execute(eg *errgroup.Group, exe string, args []string, stdin string, callback func([]byte, error) error) {
-	ce.sema.Acquire(ce.ctx, 1)
+	if err := ce.sema.Acquire(ce.ctx, 1); err != nil {
+		eg.Go(func() error {
+			return fmt.Errorf("failed to acquire semaphore: %w", err)
+		})
+		return
+	}
 	ce.wg.Add(1)
 	eg.Go(func() error {
 		defer ce.wg.Done()

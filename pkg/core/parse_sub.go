@@ -64,20 +64,28 @@ func (project *parser) parseString(node *yaml.Node, allowEmpty bool) *ast.String
 // *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
 func (project *parser) parseEvents(pos *ast.Position, node *yaml.Node) []ast.Event {
 	switch node.Kind {
+	case yaml.DocumentNode:
+		// DocumentNode not supported in this context
+		project.errorAt(pos, "document node not supported in event specification")
+		return []ast.Event{}
+	case yaml.AliasNode:
+		// AliasNode not supported in this context
+		project.errorAt(pos, "alias node not supported in event specification")
+		return []ast.Event{}
 	case yaml.ScalarNode:
 		switch node.Value {
-		case "workflow_dispatch":
+		case SubWorkflowDispatch:
 			return []ast.Event{
 				&ast.WorkflowDispatchEvent{Pos: positionAt(node)},
 			}
-		case "repository_dispatch":
+		case SubRepositoryDispatch:
 			return []ast.Event{
 				&ast.RepositoryDispatchEvent{Pos: positionAt(node)},
 			}
-		case "schedule":
+		case SubSchedule:
 			project.errorAt(pos, "schedule event is not supported")
 			return []ast.Event{}
-		case "workflow_call":
+		case SubWorkflowCall:
 			return []ast.Event{
 				&ast.WorkflowCallEvent{Pos: positionAt(node)},
 			}
@@ -114,7 +122,7 @@ func (project *parser) parseEvents(pos *ast.Position, node *yaml.Node) []ast.Eve
 				ret = append(ret, project.parseRepositoryDispatchEvent(pos, kv.val))
 
 			//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
-			case "workflow_call":
+			case SubWorkflowCall:
 				ret = append(ret, project.parseWorkflowCallEvent(pos, kv.val))
 			default:
 				ret = append(ret, project.parseWebhookEvent(kv.key, kv.val))
@@ -138,7 +146,7 @@ func (project *parser) parseEvents(pos *ast.Position, node *yaml.Node) []ast.Eve
 					ret = append(ret, &ast.WorkflowDispatchEvent{Pos: positionAt(c)})
 
 				//*https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#workflow_call
-				case "workflow_call":
+				case SubWorkflowCall:
 					ret = append(ret, &ast.WorkflowCallEvent{Pos: positionAt(c)})
 				default:
 					ret = append(ret, &ast.WebhookEvent{Hook: s, Pos: positionAt(c)})
