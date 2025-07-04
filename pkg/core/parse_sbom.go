@@ -445,7 +445,7 @@ func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.
 			var description *ast.String
 			var required *ast.Bool
 			var def *ast.String
-			var ty ast.WorkflowDispatchEventInputType = ast.WorkflowDispatchEventInputTypeNone
+			var ty = ast.WorkflowDispatchEventInputTypeNone
 			var options []*ast.String
 
 			for _, attract := range project.parseMapping("input setting for \"workflow_dispatch\" event", spec, true, true) {

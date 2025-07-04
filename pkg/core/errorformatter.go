@@ -200,7 +200,7 @@ func unescapeBackslash(input string) string {
 // 文字列をパスカルケースに変換
 func toPascalCase(input string) string {
 	words := strings.FieldsFunc(input, func(r rune) bool {
-		return !('a' <= r && r <= 'z' || 'A' <= r && r <= 'Z' || '0' <= r && r <= '9')
+		return r < 'a' || r > 'z' && r < 'A' || r > 'Z' && r < '0' || r > '9'
 	})
 	for i, word := range words {
 		var firstChar rune

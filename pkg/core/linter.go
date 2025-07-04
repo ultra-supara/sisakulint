@@ -107,15 +107,16 @@ type Linter struct {
 // optsパラメータは、lintの動作を設定するLinterOptionsインスタンス
 func NewLinter(errorOutput io.Writer, options *LinterOptions) (*Linter, error) {
 	//log levelの設定
-	var logLevel LogLevel = LogLevelNoOutput
+	var logLevel = LogLevelNoOutput
 	if options.IsVerboseOutputEnabled {
 		logLevel = LogLevelDetailedOutput
 	} else if options.IsDebugOutputEnabled {
 		logLevel = LogLevelAllOutputIncludingDebug
 	}
-	if options.OutputColorOption == NeverColor {
+	switch options.OutputColorOption {
+	case NeverColor:
 		color.NoColor = true
-	} else if options.OutputColorOption == AlwaysColor {
+	case AlwaysColor:
 		color.NoColor = false
 	}
 	//カラフル出力

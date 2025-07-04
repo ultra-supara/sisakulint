@@ -1,46 +1,56 @@
-run:
-  deadline: 5m
-# Configuration updated by Claude Code as part of issue #167:
-# - Fixed deprecated linter names (replaced exportloopref with copyloopvar, logrlint with loggercheck, tenv with usetesting)
-# - Disabled exhaustive and paralleltest linters as they require extensive changes
-# - Updated to use the new output.formats configuration instead of the deprecated output.format
+version: "2"
 output:
-  sort-results: true
-  # We'll keep the deprecated format option for now as it seems to work
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
 linters:
-  disable-all: true
+  default: none
   enable:
+    - copyloopvar
     - decorder
     - errcheck
     - errname
     - errorlint
-    # - exhaustive  # Disabled due to requiring extensive changes in switch statements
-    - copyloopvar  # Replaced exportloopref
     - goconst
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
-    - loggercheck  # Renamed from logrlint
+    - loggercheck
     - makezero
     - misspell
     - nilerr
     - noctx
-    # - paralleltest  # Disabled due to requiring extensive changes in test files
     - prealloc
     - reassign
     - staticcheck
-    - usetesting  # Replaced tenv
     - tparallel
-    - typecheck
     - unconvert
     - unused
     - usestdlibvars
+    - usetesting
     - whitespace
-linters-settings:
-  misspell:
-    locale: US
+  settings:
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
