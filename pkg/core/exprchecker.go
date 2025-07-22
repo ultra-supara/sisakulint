@@ -9,7 +9,7 @@ import (
 )
 
 // checkOneExpression は単一の式をチェックします。
-func (rule *ExprRule) checkOneExpression(str *ast.String, what, workflowKey string) expressions.ExprType {
+func (rule *ExprRule) checkOneExpression(str *ast.String, _ /* what */, workflowKey string) expressions.ExprType {
 	// checkString は文字列に埋め込まれた値の型をチェックするため、利用できません
 	if str == nil {
 		return nil
@@ -189,9 +189,9 @@ func (rule *ExprRule) checkWorkflowCall(c *ast.WorkflowCall) {
 		switch len(ts) {
 		case 0:
 			switch v {
-			case "null":
+			case ExprNullValue:
 				ty = expressions.NullType{}
-			case "true", "false":
+			case ExprTrueValue, ExprFalseValue:
 				ty = expressions.BoolType{}
 			default:
 				if _, err := strconv.ParseFloat(v, 64); err == nil {

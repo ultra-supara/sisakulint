@@ -161,6 +161,8 @@ func CheckCyclicNode(v *jobNode) *edge {
 			if e := CheckCyclicNode(w); e != nil {
 				return e
 			}
+		case nodeStatusInactive:
+			// Node already processed, no need to check again
 		}
 	}
 	v.status = nodeStatusInactive
