@@ -318,9 +318,6 @@ paste yours `settings.json`
 
 ## Links
 
-![スクリーンショット 2024-08-28 14 20 32](https://github.com/user-attachments/assets/61afb4eb-944a-4d35-9a17-575704282516)
-
-
 - slides
 - [poster](https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf)
 - video
