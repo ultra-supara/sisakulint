@@ -1,12 +1,12 @@
 ARG GOLANG_VER=1.24.0
 ARG ALPINE_VER=latest
 
-FROM golang:${GOLANG_VER} as builder
+FROM golang:${GOLANG_VER} AS builder
 WORKDIR /go/pkg/app
 COPY go.* *.go ./
 COPY cmd cmd/
 COPY pkg pkg/
-ENV CGO_ENABLED 0
+ENV CGO_ENABLED=0
 ARG SISAKULINT_VER=0.0.3
 RUN go mod download
 RUN go build -v -ldflags "-s -w -X github.com/ultra-supara/sisakulint/cmd/sisakulint.version=${SISAKULINT_VER}" ./cmd/sisakulint

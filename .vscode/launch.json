@@ -6,8 +6,7 @@
             "type":"go",
             "request":"launch",
             "program":"${workspaceFolder}/cmd/sisakulint",
-            "cwd": "${workspaceFolder}",
-            "args": ["./script/pull_req_target_checkout.yaml"]
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

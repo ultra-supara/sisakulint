@@ -1,40 +1,56 @@
-run:
-  deadline: 5m
+version: "2"
 output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
 linters:
-  disable-all: true
+  default: none
   enable:
+    - copyloopvar
     - decorder
     - errcheck
     - errname
     - errorlint
-    - exhaustive
-    - exportloopref
     - goconst
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
-    - logrlint
+    - loggercheck
     - makezero
     - misspell
     - nilerr
     - noctx
-    - paralleltest
     - prealloc
     - reassign
     - staticcheck
-    - tenv
     - tparallel
-    - typecheck
     - unconvert
     - unused
     - usestdlibvars
+    - usetesting
     - whitespace
-linters-settings:
-  misspell:
-    locale: US
+  settings:
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

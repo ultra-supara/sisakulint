@@ -107,15 +107,16 @@ type Linter struct {
 // optsパラメータは、lintの動作を設定するLinterOptionsインスタンス
 func NewLinter(errorOutput io.Writer, options *LinterOptions) (*Linter, error) {
 	//log levelの設定
-	var logLevel LogLevel = LogLevelNoOutput
+	var logLevel = LogLevelNoOutput
 	if options.IsVerboseOutputEnabled {
 		logLevel = LogLevelDetailedOutput
 	} else if options.IsDebugOutputEnabled {
 		logLevel = LogLevelAllOutputIncludingDebug
 	}
-	if options.OutputColorOption == NeverColor {
+	switch options.OutputColorOption {
+	case NeverColor:
 		color.NoColor = true
-	} else if options.OutputColorOption == AlwaysColor {
+	case AlwaysColor:
 		color.NoColor = false
 	}
 	//カラフル出力
@@ -285,7 +286,8 @@ func (l *Linter) LintRepository(dir string) ([]*ValidateResult, error) {
 
 // LintDirは、指定されたディレクトリをLint
 func (l *Linter) LintDir(dir string, project *Project) ([]*ValidateResult, error) {
-	var files []string
+	// Preallocate files slice with a reasonable capacity for workflow files
+	files := make([]string, 0, 10)
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -386,7 +388,8 @@ func (l *Linter) LintFiles(filepaths []string, project *Project) ([]*ValidateRes
 	}
 
 	totalErrors := 0
-	var allResult []*ValidateResult
+	// Preallocate allResult with the capacity equal to the number of workspaces
+	allResult := make([]*ValidateResult, 0, len(workspaces))
 	for i := range workspaces {
 		totalErrors += len(workspaces[i].result.Errors)
 		allResult = append(allResult, workspaces[i].result)
@@ -450,7 +453,9 @@ func (l *Linter) LintFile(file string, project *Project) (*ValidateResult, error
 		return nil, err
 	}
 	if l.errorFormatter != nil {
-		l.errorFormatter.PrintErrors(l.errorOutput, result.Errors, source)
+		if err := l.errorFormatter.PrintErrors(l.errorOutput, result.Errors, source); err != nil {
+			return nil, fmt.Errorf("error formatting output: %w", err)
+		}
 	} else {
 		l.displayErrors(result.Errors, source)
 	}
@@ -482,7 +487,9 @@ func (l *Linter) Lint(filepath string, content []byte, project *Project) (*Valid
 	}
 
 	if l.errorFormatter != nil {
-		l.errorFormatter.PrintErrors(l.errorOutput, result.Errors, content)
+		if err := l.errorFormatter.PrintErrors(l.errorOutput, result.Errors, content); err != nil {
+			return nil, fmt.Errorf("error formatting output: %w", err)
+		}
 	} else {
 		l.displayErrors(result.Errors, content)
 	}
@@ -529,7 +536,7 @@ func (l *Linter) validate(
 	filePath string,
 	content []byte,
 	project *Project,
-	proc *ConcurrentExecutor,
+	_ *ConcurrentExecutor, // proc parameter is unused
 	localActions *LocalActionsMetadataCache,
 	localReusableWorkflow *LocalReusableWorkflowCache,
 ) (*ValidateResult, error) {

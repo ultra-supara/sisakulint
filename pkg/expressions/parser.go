@@ -170,8 +170,9 @@ func (p *MiniParser) parseFloat() ExprNode {
 // string literalのparse.
 func (p *MiniParser) parseString() ExprNode {
 	t := p.next() // 文字列を取得
-	s := t.Value[1 : len(t.Value)-1]
-	s = strings.ReplaceAll(s, `\"`, `"`)
+	// Note: we're removing the ineffectual assignment
+	// s := t.Value[1 : len(t.Value)-1]
+	// s = strings.ReplaceAll(s, `\"`, `"`)
 	return &StringNode{t.Value, t}
 }
 

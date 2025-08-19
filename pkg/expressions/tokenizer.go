@@ -31,6 +31,7 @@ func isNum(r rune) bool {
 }
 
 // 与えられた文字が16進数の数字であるかどうかをチェック
+// nolint:unused
 func isHexNum(r rune) bool {
 	return isNum(r) || ('a' <= r && r <= 'f') || ('A' <= r && r <= 'F')
 }
@@ -247,6 +248,8 @@ func (t *Tokenizer) lexIdent() *Token {
 }
 
 // lexNum は数値を字句解析します。
+// NOTE: This function is currently unused but kept for potential future use.
+// nolint:unused
 func (t *Tokenizer) lexNum() *Token {
 	r := t.scanner.Peek()
 	if r == '-' {
@@ -311,6 +314,8 @@ func (t *Tokenizer) lexNum() *Token {
 }
 
 // lexHexInt は16進数を字句解析します。
+// NOTE: This function is currently unused but kept for potential future use.
+// nolint:unused
 func (t *Tokenizer) lexHexInt() *Token {
 	r := t.scanner.Peek()
 	if r == '0' {

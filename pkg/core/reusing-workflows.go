@@ -277,6 +277,8 @@ func (c *LocalReusableWorkflowCache) WriteWorkflowCallEvent(wpath string, event 
 	for _, i := range event.Inputs {
 		var ExprType expressions.ExprType
 		switch i.Type {
+		case ast.WorkflowCallEventInputTypeInvalid:
+			ExprType = expressions.UnknownType{}
 		case ast.WorkflowCallEventInputTypeBoolean:
 			ExprType = expressions.BoolType{}
 		case ast.WorkflowCallEventInputTypeNumber:
@@ -322,6 +324,18 @@ func parseReusableWorkflowMetadata(src []byte) (*ReusableWorkflowMetadata, error
 		return nil, fmt.Errorf("yaml: on.workflow_call is required")
 	}
 	switch node.Kind {
+	case yaml.DocumentNode:
+		// DocumentNode is not expected here
+		return nil, fmt.Errorf("yaml: unexpected document node in on.workflow_call")
+	case yaml.ScalarNode:
+		// ScalarNode is not expected here
+		return nil, fmt.Errorf("yaml: unexpected scalar node in on.workflow_call")
+	case yaml.SequenceNode:
+		// SequenceNode is not expected here
+		return nil, fmt.Errorf("yaml: unexpected sequence node in on.workflow_call")
+	case yaml.AliasNode:
+		// AliasNode is not expected here
+		return nil, fmt.Errorf("yaml: unexpected alias node in on.workflow_call")
 	case yaml.MappingNode:
 		// on:-workflow_call: ...
 		for i := 0; i < len(node.Content); i += 2 {
@@ -334,11 +348,15 @@ func parseReusableWorkflowMetadata(src []byte) (*ReusableWorkflowMetadata, error
 				return &m, nil
 			}
 		}
-	case yaml.SequenceNode:
-		for _, c := range node.Content {
-			e := strings.ToLower(c.Value)
-			if e == "workflow_call" {
-				return &ReusableWorkflowMetadata{}, nil
+		// Fallback for sequence nodes that were previously in a duplicate case
+		if len(node.Content) > 0 {
+			for _, c := range node.Content {
+				if c.Kind == yaml.ScalarNode {
+					e := strings.ToLower(c.Value)
+					if e == "workflow_call" {
+						return &ReusableWorkflowMetadata{}, nil
+					}
+				}
 			}
 		}
 	}

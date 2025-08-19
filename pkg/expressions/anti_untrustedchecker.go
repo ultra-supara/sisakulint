@@ -142,7 +142,8 @@ func (u *UntiChecker) onObjectFilter() {
 // 1つの信頼できない入力のみが見つかった場合、その入力に対してエラーを追加します。
 // 複数の信頼できない入力が見つかった場合、それらすべてに対してエラーを追加します。
 func (u *UntiChecker) end() {
-	var inputs []string
+	// Preallocate inputs slice with a reasonable capacity based on the expected number of inputs
+	inputs := make([]string, 0, len(u.cur))
 	for _, cur := range u.cur {
 		if cur.Children != nil {
 			continue // `Children`がnilの場合、ノードは葉です
