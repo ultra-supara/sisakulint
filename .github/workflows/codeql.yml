@@ -21,7 +21,7 @@ jobs:
         language: ["go"]  # Goのみを指定
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
       - name: Initialize CodeQL
         uses: github/codeql-action/init@f1f6e5f6af878fb37288ce1c627459e94dbf7d01 # v3
         with:
