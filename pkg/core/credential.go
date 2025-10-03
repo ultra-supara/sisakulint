@@ -33,7 +33,7 @@ func (rule *CredentialRule) VisitJobPre(node *ast.Job) error {
 }
 
 func (rule *CredentialRule) checkCredentials(where string, node *ast.Container) {
-	if node.Credentials.Password != nil && !isExpr.MatchString(node.Credentials.Password.Value) {
+	if node.Credentials != nil && node.Credentials.Password != nil && !isExpr.MatchString(node.Credentials.Password.Value) {
 		rule.Errorf(node.Credentials.Password.Pos, "Password found in %s, do not paste password direct hardcode", where)
 		rule.AddAutoFixer(NewFuncFixer(rule.RuleName, func() error {
 			return rule.FixCredentials(node.Credentials)
