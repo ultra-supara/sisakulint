@@ -134,7 +134,7 @@ func (p *MiniParser) parseNested() ExprNode {
 	if nested == nil {
 		return nil
 	}
-	if p.peek().Kind != TokenKindRightParen {
+	if p.peek().Kind == TokenKindRightParen {
 		p.next() // ')' を取得
 	} else {
 		p.unexpected("closing ')' , nested expression (...)", []TokenKind{TokenKindRightParen})

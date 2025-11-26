@@ -204,6 +204,15 @@ func (c *LocalReusableWorkflowCache) FindMetadata(spec string) (*ReusableWorkflo
 		return m, nil
 	}
 	file := filepath.Join(c.proj.RootDirectory(), filepath.FromSlash(spec))
+	file = filepath.Clean(file)
+
+	// Prevent path traversal attacks
+	rootDir := filepath.Clean(c.proj.RootDirectory())
+	if !strings.HasPrefix(file, rootDir+string(filepath.Separator)) && file != rootDir {
+		c.writeCache(spec, nil)
+		return nil, fmt.Errorf("path traversal detected in workflow spec %q", spec)
+	}
+
 	src, err := os.ReadFile(file)
 	if err != nil {
 		c.writeCache(spec, nil) //このworkflowは無効
