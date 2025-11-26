@@ -20,28 +20,3 @@ jobs:
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-
-  docker:
-    name: Dockerfile
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: generatetoken
-        id: generate_token
-        uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 # v2.1.4
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.PRIVATE_KEY }}
-      - name: Build image
-        id: image
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
-        with:
-          build-args: |
-            GOLANG_VER=1.24.0
-            "TOKEN=${{ steps.generate_token.outputs.token }}"
-          push: false
-      # - name: Test Docker image
-      #  run: docker container run
-      #    --mount type=bind,source="$(pwd)",target=/mnt/app
-      #    --workdir /mnt/app
-      #    -- ${{ steps.image.outputs.digest }}  -debug
