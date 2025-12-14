@@ -27,31 +27,87 @@ It also implements an autofix function for errors related to security features a
 
 It supports the SARIF format, which is the output format for static analysis. This allows [reviewdog](https://github.com/reviewdog/reviewdog?tab=readme-ov-file#sarif-format) to provide a rich UI for error triage on GitHub.
 
-## Main Tool features:
-- **id collision detection**
- 	- Environment variable names collision
- 	- docs : https://sisakulint.github.io/docs/idrule/
- 	- github ref https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#using-a-specific-shell
+---
 
-- **Hardcoded credentials detection by rego query language**
+## 🎤 Featured at BlackHat Arsenal
+
+<div align="center">
+  <a href="https://speakerdeck.com/4su_para/sisakulint-ci-friendly-static-linter-with-sast-semantic-analysis-for-github-actions">
+    <img src="https://files.speakerdeck.com/presentations/8047bdafc1db4bdb9a5dbc0a5825e5e2/preview_slide_0.jpg?34808843" alt="sisakulint BlackHat Arsenal 2025 presentation slides" width="600"/>
+  </a>
+
+  **[▶️ View Presentation](https://speakerdeck.com/4su_para/sisakulint-ci-friendly-static-linter-with-sast-semantic-analysis-for-github-actions)** | **[📥 Download PDF](https://files.speakerdeck.com/presentations/8047bdafc1db4bdb9a5dbc0a5825e5e2/BlackHatArsenal2025.pdf)** | **[📄 Poster](https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf)**
+</div>
+
+<details>
+<summary><b>📖 About the Presentation</b></summary>
+
+<br>
+
+sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's leading information security conferences. The presentation demonstrates how sisakulint addresses real-world CI/CD security challenges and helps development teams build more secure GitHub Actions workflows.
+
+**Key topics covered:**
+- 🔒 Security challenges in GitHub Actions workflows
+- 🔍 SAST approach and semantic analysis techniques
+- ⚙️ Practical rule implementations with real-world examples
+- 🤖 Automated security testing and auto-fix capabilities
+- 🛡️ Defense strategies against OWASP Top 10 CI/CD Security Risks
+
+</details>
+
+---
+
+## Main Tool features:
+- **id rule (ID collision detection)**
+ 	- Validates job IDs and environment variable names
+ 	- docs : https://sisakulint.github.io/docs/idrule/
+ 	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#using-a-specific-shell
+
+- **env-var rule (Environment variable validation)**
+ 	- Validates environment variable name formatting
+ 	- Ensures variable names don't include invalid characters like '&', '=', or spaces
+
+- **credentials rule (Hardcoded credentials detection)**
+ 	- Detects hardcoded credentials using Rego query language
  	- docs : https://sisakulint.github.io/docs/credentialsrule/
 
-- **commit-sha rule**
+- **commitsha rule (Commit SHA validation)**
+ 	- Validates proper use of commit SHAs in actions
  	- docs : https://sisakulint.github.io/docs/commitsharule/
- 	- github ref https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-third-party-actions
+ 	- github ref : https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-third-party-actions
 
-- **premissions rule**
+- **permissions rule**
+ 	- Validates permission scopes and values
  	- docs : https://sisakulint.github.io/docs/permissions/
  	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#permissions
 
-- **workflow call rule**
+- **workflow-call rule**
+  - Validates reusable workflow calls
   - docs : https://sisakulint.github.io/docs/workflowcall/
   - github ref : https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
-- **timeout-minutes-rule**
+- **missing-timeout-minutes rule**
+  - Ensures timeout-minutes is set for all jobs
   - docs : https://sisakulint.github.io/docs/timeoutminutesrule/
   - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
-  - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
+
+- **cond rule (Conditional expressions validation)**
+  - Validates conditional expressions in workflow files
+  - Detects conditions that always evaluate to true/false
+
+- **expression rule (Expression syntax validation)**
+  - Validates GitHub Actions expression syntax
+  - Detects invalid characters and syntax errors in expressions
+
+- **issue-injection rule (Script injection detection)**
+  - Detects potential script injection vulnerabilities
+  - Ensures proper use of environment variables instead of direct ${{ }} in run steps
+  - github ref : https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
+
+- **deprecated-commands rule**
+  - Detects use of deprecated workflow commands
+  - Suggests modern alternatives (e.g., GITHUB_OUTPUT instead of set-output)
+  - github ref : https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
 
 ## install for macOS user
 
@@ -64,15 +120,23 @@ $ brew install sisakulint
 
 ```bash
 # visit release page of this repository and download for yours.
-$ cd < sisakulintがあるところ >
+$ cd <directory where sisakulint binary is located>
 $ mv ./sisakulint /usr/local/bin/sisakulint
 ```
 
-## Structure
+## Architecture
 
-![image](https://github.com/user-attachments/assets/4c6fa378-5878-48af-b95f-8b987b3cf7ef)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/4c6fa378-5878-48af-b95f-8b987b3cf7ef" alt="sisakulint architecture diagram" width="600"/>
+</div>
 
-It automatically searches for YAML files in the .github/workflows directory, and the parser traverses the token column of the AST to check many rules. We've made it easy to triage by outputting clear results using a custom error formatter we made and review dog on the GitHub UI in SARIF format.
+sisakulint automatically searches for YAML files in the `.github/workflows` directory. The parser builds an Abstract Syntax Tree (AST) and traverses it to apply various security and best practice rules. Results are output using a custom error formatter, with support for SARIF format for integration with tools like reviewdog.
+
+**Key components:**
+- 📁 **Workflow Discovery** - Automatic detection of GitHub Actions workflow files
+- 🔍 **AST Parser** - Converts YAML into a structured tree representation
+- ⚖️ **Rule Engine** - Applies security and best practice validation rules
+- 📊 **Output Formatters** - Custom error format and SARIF support for CI/CD integration
 
 ## Usage test
 Create a file called test.yaml in the `.github/workflows` directory or go to your repository where your workflows file is located.
@@ -294,30 +358,199 @@ you will likely receive the following result...
 
 8. Missing Timeout Minutes for Additional Jobs
 
-- Error  `timeout-minutes is not set for job test; see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes for more details.`
+- Error: `timeout-minutes is not set for job test; see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes for more details.`
 
 - Scenario: Similar to the first issue, if the `test` job runs indefinitely, it can block the workflow and lead to resource exhaustion. This can delay the entire CI/CD process, affecting deployment timelines and potentially leading to missed deadlines.
 
-Use autofix features
+## SARIF Output & Integration with reviewdog
 
-execute following commands
+sisakulint supports SARIF (Static Analysis Results Interchange Format) output, which enables seamless integration with [reviewdog](https://github.com/reviewdog/reviewdog) for enhanced code review workflows on GitHub.
+
+### Why SARIF + reviewdog?
+
+SARIF format allows sisakulint to provide:
+- **Rich GitHub UI integration** - Errors appear directly in pull request reviews
+- **Inline annotations** - Issues are shown at the exact file location
+- **Automatic triage** - Easy filtering and management of findings
+- **CI/CD pipeline integration** - Automated security checks in your workflow
+
+### Visual Example
+
+<div align="center">
+  <img width="926" height="482" alt="reviewdog integration showing sisakulint findings in GitHub PR" src="https://github.com/user-attachments/assets/66e34b76-63f9-4d30-95b5-206bec0f7d41" />
+  <p><i>sisakulint findings displayed directly in GitHub pull request using reviewdog</i></p>
+</div>
+
+### How to integrate
+
+Add the following step to your GitHub Actions workflow:
+
+```yaml
+name: Lint GitHub Actions Workflows
+on: [pull_request]
+
+jobs:
+  sisakulint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install sisakulint
+        run: |
+          # Download from release page or install via brew
+          # Example: wget https://github.com/ultra-supara/sisakulint/releases/latest/download/sisakulint-linux-amd64
+
+      - name: Run sisakulint with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sisakulint -format "{{sarif .}}" | \
+          reviewdog -f=sarif -reporter=github-pr-review -filter-mode=nofilter
+```
+
+### SARIF format usage
+
+To output results in SARIF format:
+
 ```bash
-$ sisakulint
-$ sisakulint -fix on
+# Output to stdout
+$ sisakulint -format "{{sarif .}}"
+
+# Save to file
+$ sisakulint -format "{{sarif .}}" > results.sarif
+
+# Pipe to reviewdog
+$ sisakulint -format "{{sarif .}}" | reviewdog -f=sarif -reporter=github-pr-review
+```
+
+### Benefits in CI/CD
+
+- ✅ **Automated security reviews** - Every PR is automatically checked
+- ✅ **Early detection** - Find issues before merging
+- ✅ **Clear feedback** - Developers see exactly what needs to be fixed
+- ✅ **Consistent standards** - Enforce security policies across all workflows
+- ✅ **Integration with existing tools** - Works with your current GitHub workflow
+
+## Using autofix features
+
+sisakulint provides an automated fix feature that can automatically resolve certain types of security issues and best practice violations. This feature saves time and ensures consistent fixes across your workflow files.
+
+### Available modes
+
+- **`-fix dry-run`**: Show what changes would be made without actually modifying files
+- **`-fix on`**: Automatically fix issues and save changes to files
+
+### Rules that support autofix
+
+The following rules support automatic fixes:
+
+#### 1. missing-timeout-minutes
+Automatically adds `timeout-minutes: 5` to jobs and steps that don't have it set.
+
+**Before:**
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+```
+
+**After:**
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+```
+
+#### 2. commit-sha
+Converts action references from tags to full-length commit SHAs for enhanced security. The original tag is preserved as a comment.
+
+**Before:**
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - uses: actions/setup-node@v3
+```
+
+**After:**
+```yaml
+steps:
+  - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+  - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v3
+```
+
+#### 3. credentials
+Removes hardcoded passwords from container configurations.
+
+**Before:**
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: myregistry/myimage
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: my-hardcoded-password
+```
+
+**After:**
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: myregistry/myimage
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+```
+
+### Usage examples
+
+#### 1. Check what would be fixed (dry-run mode)
+```bash
 $ sisakulint -fix dry-run
 ```
+This will show all the changes that would be made without actually modifying your files. Use this to preview changes before applying them.
+
+#### 2. Automatically fix issues
+```bash
+$ sisakulint -fix on
+```
+This will automatically fix all supported issues and save the changes to your workflow files.
+
+#### 3. Typical workflow
+```bash
+# First, run without fix to see all issues
+$ sisakulint
+
+# Preview what autofix would change
+$ sisakulint -fix dry-run
+
+# Apply the fixes
+$ sisakulint -fix on
+
+# Verify the changes
+$ git diff .github/workflows/
+```
+
+### Important notes
+
+- **Always review changes**: Even though autofix is automated, always review the changes made to your workflow files before committing them
+- **Commit SHA fixes require internet**: The `commit-sha` rule needs to fetch commit information from GitHub, so it requires an active internet connection
+- **Rate limiting**: The commit SHA autofix makes GitHub API calls, which are subject to rate limiting. For unauthenticated requests, the limit is 60 requests per hour
+- **Backup your files**: Consider committing your changes or backing up your workflow files before running autofix
+- **Not all rules support autofix**: Some rules like `expression`, `permissions`, and `issue-injection` require manual fixes as they depend on your specific use case
 
 ## JSON schema for GitHub Actions syntax
-paste yours `settings.json`
+paste into your `settings.json`:
 
-```
+```json
  "yaml.schemas": {
-     "https://ultra-supara/homebrew-sisakulint/settings.json": "/.github/workflows/*.{yml,yaml}"
+     "https://github.com/ultra-supara/homebrew-sisakulint/raw/main/settings.json": "/.github/workflows/*.{yml,yaml}"
  }
 ```
-
-## Links
-
-- slides
-- [poster](https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf)
-- video
