@@ -38,7 +38,7 @@ func (rule *BaseRule) Errorf(position *ast.Position, format string, args ...inte
 // Debugはルールからのdebug logを出力
 // Enable メソッドの引数によって指定されたio.Writerインスタンスはデバッグ情報をコンソール上に出力するために使用される
 func (rule *BaseRule) Debug(format string, args ...interface{}) {
-	if rule.debugOut != nil {
+	if rule.debugOut == nil {
 		return
 	}
 	debugMsg := fmt.Sprintf("[%s] %s\n", rule.RuleName, format)
