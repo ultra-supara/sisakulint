@@ -13,7 +13,6 @@ import (
 )
 
 // LintFunc はワークフローをスキャンする関数の型
-// Linterが直接出力を行うため、エラーの有無のみを返す
 type LintFunc func(filepath string, content []byte) (hasErrors bool, err error)
 
 // Scanner はリモートリポジトリをスキャンする

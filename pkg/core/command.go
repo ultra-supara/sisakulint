@@ -273,14 +273,12 @@ func (cmd *Command) Main(args []string) int {
 
 // runRemoteScan はリモートリポジトリをスキャンする
 func (cmd *Command) runRemoteScan(input string, linterOpts *LinterOptions, scannerOpts *remote.ScannerOptions) int {
-	// Linterを作成 - 出力先を cmd.Stdout に設定（ローカルスキャンと同じ）
 	linter, err := NewLinter(cmd.Stdout, linterOpts)
 	if err != nil {
 		fmt.Fprintf(cmd.Stderr, "Error initializing linter: %v\n", err)
 		return ExitStatusFailure
 	}
 
-	// LintFuncを設定 - Linterが直接出力を行うのでエラーの有無のみ返す
 	scannerOpts.LintFunc = func(filepath string, content []byte) (bool, error) {
 		result, err := linter.Lint(filepath, content, nil)
 		if err != nil {
@@ -302,7 +300,6 @@ func (cmd *Command) runRemoteScan(input string, linterOpts *LinterOptions, scann
 		return ExitStatusFailure
 	}
 
-	// 結果確認（出力はLinterが既に行っている）
 	hasErrors := false
 	for _, result := range results {
 		if result.Error != nil {
