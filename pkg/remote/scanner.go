@@ -82,13 +82,11 @@ func NewScanner(opts *ScannerOptions) (*Scanner, error) {
 
 // Scan は入力をパースしてリポジトリをスキャンする
 func (s *Scanner) Scan(ctx context.Context, input string) ([]*ScanResult, error) {
-	// 入力をパース
 	parsedInput, err := ParseInput(input)
 	if err != nil {
 		return nil, fmt.Errorf("入力のパースに失敗: %w", err)
 	}
 
-	// リポジトリを取得
 	repos, err := s.fetcher.FetchRepositories(ctx, parsedInput)
 	if err != nil {
 		return nil, fmt.Errorf("リポジトリの取得に失敗: %w", err)
@@ -102,7 +100,6 @@ func (s *Scanner) Scan(ctx context.Context, input string) ([]*ScanResult, error)
 		fmt.Fprintf(s.output, "Found %d repositories to scan\n", len(repos))
 	}
 
-	// リポジトリをスキャン
 	return s.scanRepositories(ctx, repos)
 }
 
@@ -120,7 +117,6 @@ func (s *Scanner) scanRepositories(ctx context.Context, repos []*RepositoryInfo)
 			defer func() { <-sem }()
 
 			result := s.scanRepository(ctx, repo)
-
 			mu.Lock()
 			results = append(results, result)
 			mu.Unlock()
@@ -137,11 +133,17 @@ func (s *Scanner) scanRepositories(ctx context.Context, repos []*RepositoryInfo)
 }
 
 func (s *Scanner) scanRepository(ctx context.Context, repo *RepositoryInfo) *ScanResult {
+	if ctx.Err() != nil {
+		return &ScanResult{
+			Repository: repo,
+			Error:      ctx.Err(),
+		}
+	}
+
 	if s.verbose {
 		fmt.Fprintf(s.output, "Scanning repository: %s\n", repo.FullName)
 	}
 
-	// ワークフローファイルを取得
 	workflows, err := s.fetcher.FetchWorkflows(ctx, repo)
 	if err != nil {
 		return &ScanResult{
@@ -158,11 +160,13 @@ func (s *Scanner) scanRepository(ctx context.Context, repo *RepositoryInfo) *Sca
 	}
 
 	hasErrors := false
-	scanned := make(map[string]bool) // 無限ループ防止用
+	var scanned sync.Map
 
-	// 初期ワークフローをスキャン
 	for _, wf := range workflows {
-		if s.scanWorkflowRecursive(ctx, wf, 0, scanned) {
+		if ctx.Err() != nil {
+			break
+		}
+		if s.scanWorkflowRecursive(ctx, wf, 0, &scanned) {
 			hasErrors = true
 		}
 	}
@@ -173,22 +177,22 @@ func (s *Scanner) scanRepository(ctx context.Context, repo *RepositoryInfo) *Sca
 	}
 }
 
-func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, currentDepth int, scanned map[string]bool) bool {
-	// 仮想パスを構築: "owner/repo/.github/workflows/file.yml"
-	virtualPath := fmt.Sprintf("%s/%s", wf.RepoInfo.FullName, wf.Path)
-
-	// すでにスキャン済みならスキップ
-	if scanned[virtualPath] {
+func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, currentDepth int, scanned *sync.Map) bool {
+	if ctx.Err() != nil {
 		return false
 	}
-	scanned[virtualPath] = true
+
+	virtualPath := fmt.Sprintf("%s/%s", wf.RepoInfo.FullName, wf.Path)
+
+	if _, loaded := scanned.LoadOrStore(virtualPath, true); loaded {
+		return false
+	}
 
 	if s.verbose {
 		indent := strings.Repeat("  ", currentDepth)
 		fmt.Fprintf(s.output, "%sScanning: %s (depth: %d)\n", indent, virtualPath, currentDepth)
 	}
 
-	// lintFuncでスキャン（Linterが直接出力を行う）
 	hasErrors, err := s.lintFunc(virtualPath, wf.Content)
 	if err != nil {
 		if s.verbose {
@@ -197,9 +201,7 @@ func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, c
 		return false
 	}
 
-	// 再帰的スキャンが有効で、まだ深度制限に達していない場合
 	if s.recursive && currentDepth < s.maxDepth {
-		// reusable actionsを抽出
 		reusableActions := extractReusableActions(wf.Content)
 
 		if s.verbose && len(reusableActions) > 0 {
@@ -208,7 +210,10 @@ func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, c
 		}
 
 		for _, action := range reusableActions {
-			// reusable actionのワークフローを取得
+			if ctx.Err() != nil {
+				break
+			}
+
 			actionRepo := &RepositoryInfo{
 				Owner:    action.Owner,
 				Name:     action.Repo,
@@ -217,13 +222,15 @@ func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, c
 
 			actionWorkflow, err := s.fetcher.FetchSingleWorkflow(ctx, actionRepo, action.Path)
 			if err != nil {
+				if ctx.Err() != nil {
+					break
+				}
 				if s.verbose {
-					fmt.Fprintf(s.output, "Failed to fetch reusable action %s: %v\n", action.FullPath, err)
+					fmt.Fprintf(s.output, "Warning: Failed to fetch reusable action %s: %v\n", action.FullPath, err)
 				}
 				continue
 			}
 
-			// 再帰的にスキャン
 			if s.scanWorkflowRecursive(ctx, actionWorkflow, currentDepth+1, scanned) {
 				hasErrors = true
 			}
@@ -238,26 +245,22 @@ func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, c
 func extractReusableActions(content []byte) []ReusableAction {
 	var actions []ReusableAction
 
-	// YAMLをパース
 	var workflow map[string]interface{}
 	if err := yaml.Unmarshal(content, &workflow); err != nil {
 		return actions
 	}
 
-	// jobsセクションを取得
 	jobs, ok := workflow["jobs"].(map[string]interface{})
 	if !ok {
 		return actions
 	}
 
-	// 各ジョブをチェック
 	for _, job := range jobs {
 		jobMap, ok := job.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		// usesフィールドをチェック - reusable workflow用
 		if uses, ok := jobMap["uses"].(string); ok {
 			if action := parseReusableAction(uses); action != nil {
 				actions = append(actions, *action)
@@ -283,7 +286,6 @@ func parseReusableAction(uses string) *ReusableAction {
 	workflow := matches[3]
 	ref := matches[4]
 
-	// refが空の場合はデフォルトブランチを使用
 	if ref == "" {
 		ref = "main"
 	}

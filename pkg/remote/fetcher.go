@@ -134,7 +134,6 @@ func (f *Fetcher) FetchWorkflows(ctx context.Context, repo *RepositoryInfo) ([]*
 
 	workflows := make([]*WorkflowFile, 0)
 	for _, content := range contents {
-		// .yml または .yaml ファイルのみ処理
 		if content.GetType() != "file" {
 			continue
 		}
@@ -143,7 +142,6 @@ func (f *Fetcher) FetchWorkflows(ctx context.Context, repo *RepositoryInfo) ([]*
 			continue
 		}
 
-		// ファイルの内容を取得
 		fileContent, _, _, err := f.client.Repositories.GetContents(
 			ctx,
 			repo.Owner,
@@ -155,7 +153,6 @@ func (f *Fetcher) FetchWorkflows(ctx context.Context, repo *RepositoryInfo) ([]*
 			return nil, fmt.Errorf("ワークフローファイル %s の取得に失敗: %w", content.GetPath(), err)
 		}
 
-		// GetContent()を使用してデコード済みコンテンツを取得
 		decodedContent, err := fileContent.GetContent()
 		if err != nil {
 			return nil, fmt.Errorf("ファイル %s のコンテンツ取得に失敗: %w", content.GetPath(), err)
@@ -184,7 +181,6 @@ func (f *Fetcher) FetchSingleWorkflow(ctx context.Context, repo *RepositoryInfo,
 		return nil, fmt.Errorf("ワークフローファイル %s の取得に失敗: %w", workflowPath, err)
 	}
 
-	// GetContent()を使用してデコード済みコンテンツを取得
 	decodedContent, err := fileContent.GetContent()
 	if err != nil {
 		return nil, fmt.Errorf("ファイル %s のコンテンツ取得に失敗: %w", workflowPath, err)
