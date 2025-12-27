@@ -185,8 +185,6 @@ func (cmd *Command) Main(args []string) int {
 	var initConfig bool
 	var generateBoilerplate bool
 	var autoFixMode string
-
-	// リモートスキャン用フラグ
 	var remoteInput string
 	var recursive bool
 	var maxDepth int
@@ -205,8 +203,6 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
 	flags.StringVar(&autoFixMode, "fix", "off", "Enable auto-fix mode. Available options: off, on, dry-run")
-
-	// リモートスキャン用フラグ
 	flags.StringVar(&remoteInput, "remote", "", "Remote repository to scan (owner/repo, URL, or search query like 'org:kubernetes')")
 	flags.BoolVar(&recursive, "r", false, "Enable recursive scanning of reusable workflows (-remote only)")
 	flags.IntVar(&maxDepth, "D", 3, "Max recursion depth for recursive scanning (-remote only)")
@@ -242,7 +238,6 @@ func (cmd *Command) Main(args []string) int {
 	linterOpts.ErrorIgnorePatterns = ignorePats
 	linterOpts.LogOutputDestination = cmd.Stderr
 
-	// リモートスキャンモード
 	if remoteInput != "" {
 		return cmd.runRemoteScan(remoteInput, &linterOpts, &remote.ScannerOptions{
 			Parallelism: parallelism,
@@ -265,7 +260,6 @@ func (cmd *Command) Main(args []string) int {
 			cmd.runAutofix(errs, autoFixMode == FileFixDryRun)
 		}
 		return ExitStatusSuccessProblemFound
-		//問題があった場合、ここでlinterが指摘してくれる！やったね！
 	}
 
 	return ExitStatusSuccessNoProblem
