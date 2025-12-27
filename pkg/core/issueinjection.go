@@ -65,52 +65,52 @@ func (rule *IssueInjection) extractAndParseExpressions(runStr *ast.String) []par
 
 	value := runStr.Value
 	var result []parsedExpression
+	offset := 0
 
-	// Split into lines for position tracking
-	lines := strings.Split(value, "\n")
-
-	for lineIdx, line := range lines {
-		offset := 0
-		for {
-			// Find next expression
-			idx := strings.Index(line[offset:], "${{")
-			if idx == -1 {
-				break
-			}
-
-			start := offset + idx
-			// Find closing }}
-			endIdx := strings.Index(line[start:], "}}")
-			if endIdx == -1 {
-				// Multi-line expression - skip for now
-				break
-			}
-
-			// Extract expression content (between ${{ and }})
-			exprContent := line[start+3 : start+endIdx]
-			exprContent = strings.TrimSpace(exprContent)
-
-			// Parse the expression
-			expr, parseErr := rule.parseExpression(exprContent)
-			if parseErr == nil && expr != nil {
-				// Calculate position
-				pos := &ast.Position{
-					Line: runStr.Pos.Line + lineIdx,
-					Col:  runStr.Pos.Col + start,
-				}
-				if runStr.Literal {
-					pos.Line += 1
-				}
-
-				result = append(result, parsedExpression{
-					raw:  exprContent,
-					node: expr,
-					pos:  pos,
-				})
-			}
-
-			offset = start + endIdx + 2
+	for {
+		// Find next expression start in the entire string (supports multiline)
+		idx := strings.Index(value[offset:], "${{")
+		if idx == -1 {
+			break
 		}
+
+		start := offset + idx
+		// Find closing }} in the entire string (supports multiline)
+		endIdx := strings.Index(value[start:], "}}")
+		if endIdx == -1 {
+			break
+		}
+
+		// Extract expression content (between ${{ and }})
+		exprContent := value[start+3 : start+endIdx]
+		exprContent = strings.TrimSpace(exprContent)
+
+		// Parse the expression
+		expr, parseErr := rule.parseExpression(exprContent)
+		if parseErr == nil && expr != nil {
+			// Calculate position (count newlines before this expression)
+			lineIdx := strings.Count(value[:start], "\n")
+			col := start
+			if lastNewline := strings.LastIndex(value[:start], "\n"); lastNewline != -1 {
+				col = start - lastNewline - 1
+			}
+
+			pos := &ast.Position{
+				Line: runStr.Pos.Line + lineIdx,
+				Col:  runStr.Pos.Col + col,
+			}
+			if runStr.Literal {
+				pos.Line += 1
+			}
+
+			result = append(result, parsedExpression{
+				raw:  exprContent,
+				node: expr,
+				pos:  pos,
+			})
+		}
+
+		offset = start + endIdx + 2
 	}
 
 	return result
