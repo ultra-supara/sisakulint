@@ -15,7 +15,7 @@ func (rule *ExprRule) checkOneExpression(str *ast.String, _ /* what */, workflow
 		return nil
 	}
 
-	ts, ok := rule.checkExprsIn(str.Value, str.Pos, str.Quoted, true, workflowKey)
+	ts, ok := rule.checkExprsIn(str.Value, str.Pos, str.Quoted, false, workflowKey)
 	if !ok {
 		return nil
 	}
@@ -305,7 +305,7 @@ func (rule *ExprRule) checkString(str *ast.String, workflowKey string) []typedEx
 		return nil
 	}
 
-	ts, ok := rule.checkExprsIn(str.Value, str.Pos, str.Quoted, true, workflowKey)
+	ts, ok := rule.checkExprsIn(str.Value, str.Pos, str.Quoted, false, workflowKey)
 	if !ok {
 		return nil
 	}
@@ -320,7 +320,7 @@ func (rule *ExprRule) checkScriptString(str *ast.String, workflowKey string) {
 		return
 	}
 
-	ts, ok := rule.checkExprsIn(str.Value, str.Pos, str.Quoted, true, workflowKey)
+	ts, ok := rule.checkExprsIn(str.Value, str.Pos, str.Quoted, false, workflowKey)
 	if !ok {
 		return
 	}
