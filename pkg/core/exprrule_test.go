@@ -594,35 +594,35 @@ func TestExprRule_checkRawYAMLValue(t *testing.T) {
 		{
 			name: "string value",
 			setupValue: func() ast.RawYAMLValue {
-				return &ast.RawYAMLString{Value: "test"}
+				return &ast.RawYAMLString{Value: "test", Posi: &ast.Position{Line: 1, Col: 1}}
 			},
 			expectedType: "string",
 		},
 		{
 			name: "boolean value - true",
 			setupValue: func() ast.RawYAMLValue {
-				return &ast.RawYAMLString{Value: "true"}
+				return &ast.RawYAMLString{Value: "true", Posi: &ast.Position{Line: 1, Col: 1}}
 			},
 			expectedType: "bool",
 		},
 		{
 			name: "boolean value - false",
 			setupValue: func() ast.RawYAMLValue {
-				return &ast.RawYAMLString{Value: "false"}
+				return &ast.RawYAMLString{Value: "false", Posi: &ast.Position{Line: 1, Col: 1}}
 			},
 			expectedType: "bool",
 		},
 		{
 			name: "null value",
 			setupValue: func() ast.RawYAMLValue {
-				return &ast.RawYAMLString{Value: "null"}
+				return &ast.RawYAMLString{Value: "null", Posi: &ast.Position{Line: 1, Col: 1}}
 			},
 			expectedType: "null",
 		},
 		{
 			name: "number value",
 			setupValue: func() ast.RawYAMLValue {
-				return &ast.RawYAMLString{Value: "42"}
+				return &ast.RawYAMLString{Value: "42", Posi: &ast.Position{Line: 1, Col: 1}}
 			},
 			expectedType: "number",
 		},
@@ -631,8 +631,9 @@ func TestExprRule_checkRawYAMLValue(t *testing.T) {
 			setupValue: func() ast.RawYAMLValue {
 				return &ast.RawYAMLObject{
 					Props: map[string]ast.RawYAMLValue{
-						"key": &ast.RawYAMLString{Value: "value"},
+						"key": &ast.RawYAMLString{Value: "value", Posi: &ast.Position{Line: 1, Col: 6}},
 					},
+					Posi: &ast.Position{Line: 1, Col: 1},
 				}
 			},
 			expectedType: "{key: string}",
@@ -642,9 +643,10 @@ func TestExprRule_checkRawYAMLValue(t *testing.T) {
 			setupValue: func() ast.RawYAMLValue {
 				return &ast.RawYAMLArray{
 					Elems: []ast.RawYAMLValue{
-						&ast.RawYAMLString{Value: "item1"},
-						&ast.RawYAMLString{Value: "item2"},
+						&ast.RawYAMLString{Value: "item1", Posi: &ast.Position{Line: 1, Col: 3}},
+						&ast.RawYAMLString{Value: "item2", Posi: &ast.Position{Line: 2, Col: 3}},
 					},
+					Posi: &ast.Position{Line: 1, Col: 1},
 				}
 			},
 			expectedType: "array<string>",
