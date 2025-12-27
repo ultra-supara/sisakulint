@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/ultra-supara/sisakulint/pkg/remote"
 	"gopkg.in/yaml.v3"
 )
 
@@ -50,6 +52,12 @@ $ sisakulint -debug
 # "Note": it can be used in reviewdog by supporting sarif output,
 
 $ sisakulint -format "{{sarif .}}"
+
+# Remote scanning: scan GitHub repositories directly via API
+
+$ sisakulint -remote owner/repo
+$ sisakulint -remote "org:kubernetes"
+$ sisakulint -remote owner/repo -r -D 5
 
 # Documents
 - https://sisakulint.github.io/
@@ -178,6 +186,13 @@ func (cmd *Command) Main(args []string) int {
 	var generateBoilerplate bool
 	var autoFixMode string
 
+	// リモートスキャン用フラグ
+	var remoteInput string
+	var recursive bool
+	var maxDepth int
+	var parallelism int
+	var limit int
+
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(cmd.Stderr)
 	flags.Var(&ignorePats, "ignore", "Regular expression matching to error messages you want to ignore. This flag is repeatable")
@@ -190,6 +205,13 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
 	flags.StringVar(&autoFixMode, "fix", "off", "Enable auto-fix mode. Available options: off, on, dry-run")
+
+	// リモートスキャン用フラグ
+	flags.StringVar(&remoteInput, "remote", "", "Remote repository to scan (owner/repo, URL, or search query like 'org:kubernetes')")
+	flags.BoolVar(&recursive, "r", false, "Enable recursive scanning of reusable workflows (-remote only)")
+	flags.IntVar(&maxDepth, "D", 3, "Max recursion depth for recursive scanning (-remote only)")
+	flags.IntVar(&parallelism, "p", 3, "Number of parallel scans (-remote only)")
+	flags.IntVar(&limit, "l", 30, "Max repositories for search queries (-remote only)")
 
 	flags.Usage = func() {
 		printingUsageHeader(cmd.Stderr)
@@ -220,6 +242,18 @@ func (cmd *Command) Main(args []string) int {
 	linterOpts.ErrorIgnorePatterns = ignorePats
 	linterOpts.LogOutputDestination = cmd.Stderr
 
+	// リモートスキャンモード
+	if remoteInput != "" {
+		return cmd.runRemoteScan(remoteInput, &linterOpts, &remote.ScannerOptions{
+			Parallelism: parallelism,
+			Recursive:   recursive,
+			MaxDepth:    maxDepth,
+			Limit:       limit,
+			Verbose:     linterOpts.IsVerboseOutputEnabled,
+			Output:      cmd.Stderr,
+		})
+	}
+
 	errs, err := cmd.runLint(flags.Args(), &linterOpts, initConfig, generateBoilerplate)
 	if err != nil {
 		fmt.Fprintln(cmd.Stderr, err.Error())
@@ -234,5 +268,79 @@ func (cmd *Command) Main(args []string) int {
 		//問題があった場合、ここでlinterが指摘してくれる！やったね！
 	}
 
+	return ExitStatusSuccessNoProblem
+}
+
+// runRemoteScan はリモートリポジトリをスキャンする
+func (cmd *Command) runRemoteScan(input string, linterOpts *LinterOptions, scannerOpts *remote.ScannerOptions) int {
+	// Linterを作成
+	linter, err := NewLinter(io.Discard, linterOpts)
+	if err != nil {
+		fmt.Fprintf(cmd.Stderr, "Error initializing linter: %v\n", err)
+		return ExitStatusFailure
+	}
+
+	// LintFuncを設定
+	scannerOpts.LintFunc = func(filepath string, content []byte) ([]*remote.LintingError, error) {
+		result, err := linter.Lint(filepath, content, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		// core.LintingError を remote.LintingError に変換
+		remoteErrors := make([]*remote.LintingError, len(result.Errors))
+		for i, e := range result.Errors {
+			remoteErrors[i] = &remote.LintingError{
+				FilePath:    e.FilePath,
+				LineNumber:  e.LineNumber,
+				ColNumber:   e.ColNumber,
+				Type:        e.Type,
+				Description: e.Description,
+			}
+		}
+		return remoteErrors, nil
+	}
+
+	scanner, err := remote.NewScanner(scannerOpts)
+	if err != nil {
+		fmt.Fprintf(cmd.Stderr, "Error initializing remote scanner: %v\n", err)
+		return ExitStatusFailure
+	}
+
+	ctx := context.Background()
+	results, err := scanner.Scan(ctx, input)
+	if err != nil {
+		fmt.Fprintf(cmd.Stderr, "Error scanning remote repositories: %v\n", err)
+		return ExitStatusFailure
+	}
+
+	// 結果を表示
+	hasErrors := false
+	for _, result := range results {
+		if result.Error != nil {
+			fmt.Fprintf(cmd.Stderr, "Error scanning %s: %v\n", result.Repository.FullName, result.Error)
+			continue
+		}
+
+		if len(result.Errors) > 0 {
+			hasErrors = true
+			fmt.Fprintf(cmd.Stdout, "\n=== %s ===\n", result.Repository.FullName)
+			for _, lintErr := range result.Errors {
+				fmt.Fprintf(cmd.Stdout, "%s:%d:%d: %s [%s]\n",
+					lintErr.FilePath,
+					lintErr.LineNumber,
+					lintErr.ColNumber,
+					lintErr.Description,
+					lintErr.Type,
+				)
+			}
+		}
+	}
+
+	if hasErrors {
+		return ExitStatusSuccessProblemFound
+	}
+
+	fmt.Fprintf(cmd.Stdout, "No problems found.\n")
 	return ExitStatusSuccessNoProblem
 }
