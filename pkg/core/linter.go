@@ -524,12 +524,14 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 // ParsedWorkflowは、検証されたworkflowの構文木
 // Errorsは、検証中に発生したエラーのリスト
 // AutoFixersは、検証中に生成されたAutoFixerのリスト
+// Repositoryは、リモートスキャン時のリポジトリ名（例: "owner/repo"）
 type ValidateResult struct {
 	FilePath       string
 	Source         []byte
 	ParsedWorkflow *ast.Workflow
 	Errors         []*LintingError
 	AutoFixers     []AutoFixer
+	Repository     string
 }
 
 func (l *Linter) validate(

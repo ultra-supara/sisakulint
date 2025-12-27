@@ -12,17 +12,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// LintingError はリモートスキャン用のエラー情報
-type LintingError struct {
-	FilePath    string
-	LineNumber  int
-	ColNumber   int
-	Type        string
-	Description string
-}
-
 // LintFunc はワークフローをスキャンする関数の型
-type LintFunc func(filepath string, content []byte) ([]*LintingError, error)
+// Linterが直接出力を行うため、エラーの有無のみを返す
+type LintFunc func(filepath string, content []byte) (hasErrors bool, err error)
 
 // Scanner はリモートリポジトリをスキャンする
 type Scanner struct {
@@ -38,7 +30,7 @@ type Scanner struct {
 // ScanResult はスキャン結果を表す
 type ScanResult struct {
 	Repository *RepositoryInfo
-	Errors     []*LintingError
+	HasErrors  bool  // エラーがあったかどうか
 	Error      error // リポジトリ全体のエラー
 }
 
@@ -162,32 +154,33 @@ func (s *Scanner) scanRepository(ctx context.Context, repo *RepositoryInfo) *Sca
 	if len(workflows) == 0 {
 		return &ScanResult{
 			Repository: repo,
-			Errors:     nil,
+			HasErrors:  false,
 		}
 	}
 
-	var allErrors []*LintingError
+	hasErrors := false
 	scanned := make(map[string]bool) // 無限ループ防止用
 
 	// 初期ワークフローをスキャン
 	for _, wf := range workflows {
-		errors := s.scanWorkflowRecursive(ctx, wf, 0, scanned)
-		allErrors = append(allErrors, errors...)
+		if s.scanWorkflowRecursive(ctx, wf, 0, scanned) {
+			hasErrors = true
+		}
 	}
 
 	return &ScanResult{
 		Repository: repo,
-		Errors:     allErrors,
+		HasErrors:  hasErrors,
 	}
 }
 
-func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, currentDepth int, scanned map[string]bool) []*LintingError {
+func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, currentDepth int, scanned map[string]bool) bool {
 	// 仮想パスを構築: "owner/repo/.github/workflows/file.yml"
 	virtualPath := fmt.Sprintf("%s/%s", wf.RepoInfo.FullName, wf.Path)
 
 	// すでにスキャン済みならスキップ
 	if scanned[virtualPath] {
-		return nil
+		return false
 	}
 	scanned[virtualPath] = true
 
@@ -196,16 +189,14 @@ func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, c
 		fmt.Fprintf(s.output, "%sScanning: %s (depth: %d)\n", indent, virtualPath, currentDepth)
 	}
 
-	// lintFuncでスキャン
-	errors, err := s.lintFunc(virtualPath, wf.Content)
+	// lintFuncでスキャン（Linterが直接出力を行う）
+	hasErrors, err := s.lintFunc(virtualPath, wf.Content)
 	if err != nil {
 		if s.verbose {
 			fmt.Fprintf(s.output, "Error scanning %s: %v\n", virtualPath, err)
 		}
-		return nil
+		return false
 	}
-
-	allErrors := errors
 
 	// 再帰的スキャンが有効で、まだ深度制限に達していない場合
 	if s.recursive && currentDepth < s.maxDepth {
@@ -234,12 +225,13 @@ func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, c
 			}
 
 			// 再帰的にスキャン
-			childErrors := s.scanWorkflowRecursive(ctx, actionWorkflow, currentDepth+1, scanned)
-			allErrors = append(allErrors, childErrors...)
+			if s.scanWorkflowRecursive(ctx, actionWorkflow, currentDepth+1, scanned) {
+				hasErrors = true
+			}
 		}
 	}
 
-	return allErrors
+	return hasErrors
 }
 
 // extractReusableActions はワークフローファイルから再利用可能なワークフロー呼び出しを抽出する

@@ -273,32 +273,20 @@ func (cmd *Command) Main(args []string) int {
 
 // runRemoteScan はリモートリポジトリをスキャンする
 func (cmd *Command) runRemoteScan(input string, linterOpts *LinterOptions, scannerOpts *remote.ScannerOptions) int {
-	// Linterを作成
-	linter, err := NewLinter(io.Discard, linterOpts)
+	// Linterを作成 - 出力先を cmd.Stdout に設定（ローカルスキャンと同じ）
+	linter, err := NewLinter(cmd.Stdout, linterOpts)
 	if err != nil {
 		fmt.Fprintf(cmd.Stderr, "Error initializing linter: %v\n", err)
 		return ExitStatusFailure
 	}
 
-	// LintFuncを設定
-	scannerOpts.LintFunc = func(filepath string, content []byte) ([]*remote.LintingError, error) {
+	// LintFuncを設定 - Linterが直接出力を行うのでエラーの有無のみ返す
+	scannerOpts.LintFunc = func(filepath string, content []byte) (bool, error) {
 		result, err := linter.Lint(filepath, content, nil)
 		if err != nil {
-			return nil, err
+			return false, err
 		}
-
-		// core.LintingError を remote.LintingError に変換
-		remoteErrors := make([]*remote.LintingError, len(result.Errors))
-		for i, e := range result.Errors {
-			remoteErrors[i] = &remote.LintingError{
-				FilePath:    e.FilePath,
-				LineNumber:  e.LineNumber,
-				ColNumber:   e.ColNumber,
-				Type:        e.Type,
-				Description: e.Description,
-			}
-		}
-		return remoteErrors, nil
+		return len(result.Errors) > 0, nil
 	}
 
 	scanner, err := remote.NewScanner(scannerOpts)
@@ -314,26 +302,15 @@ func (cmd *Command) runRemoteScan(input string, linterOpts *LinterOptions, scann
 		return ExitStatusFailure
 	}
 
-	// 結果を表示
+	// 結果確認（出力はLinterが既に行っている）
 	hasErrors := false
 	for _, result := range results {
 		if result.Error != nil {
 			fmt.Fprintf(cmd.Stderr, "Error scanning %s: %v\n", result.Repository.FullName, result.Error)
 			continue
 		}
-
-		if len(result.Errors) > 0 {
+		if result.HasErrors {
 			hasErrors = true
-			fmt.Fprintf(cmd.Stdout, "\n=== %s ===\n", result.Repository.FullName)
-			for _, lintErr := range result.Errors {
-				fmt.Fprintf(cmd.Stdout, "%s:%d:%d: %s [%s]\n",
-					lintErr.FilePath,
-					lintErr.LineNumber,
-					lintErr.ColNumber,
-					lintErr.Description,
-					lintErr.Type,
-				)
-			}
 		}
 	}
 
