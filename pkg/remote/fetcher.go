@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/google/go-github/v68/github"
@@ -34,12 +35,7 @@ type Fetcher struct {
 func NewFetcher(limit int) (*Fetcher, error) {
 	var httpClient *http.Client
 
-	// GITHUB_TOKEN または GH_TOKEN から認証トークンを取得
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		token = os.Getenv("GH_TOKEN")
-	}
-
+	token := getToken()
 	if token != "" {
 		httpClient = &http.Client{
 			Transport: &tokenTransport{token: token},
@@ -54,14 +50,57 @@ func NewFetcher(limit int) (*Fetcher, error) {
 	}, nil
 }
 
+// getToken はフォールバックチェーンで認証トークンを取得する
+// 優先順位: 環境変数 → gh CLI → git credential
+func getToken() string {
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		return token
+	}
+	if token := os.Getenv("GH_TOKEN"); token != "" {
+		return token
+	}
+	if token, err := getTokenFromGhCLI(); err == nil && token != "" {
+		return token
+	}
+	if token, err := getTokenFromGitCredential(); err == nil && token != "" {
+		return token
+	}
+	return ""
+}
+
+func getTokenFromGhCLI() (string, error) {
+	cmd := exec.Command("gh", "auth", "token")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func getTokenFromGitCredential() (string, error) {
+	cmd := exec.Command("git", "credential", "fill")
+	cmd.Stdin = strings.NewReader("protocol=https\nhost=github.com\n")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	for _, line := range strings.Split(string(output), "\n") {
+		if strings.HasPrefix(line, "password=") {
+			return strings.TrimPrefix(line, "password="), nil
+		}
+	}
+	return "", fmt.Errorf("credential not found")
+}
+
 // tokenTransport はGitHub APIリクエストにトークンを付与するTransport
 type tokenTransport struct {
 	token string
 }
 
 func (t *tokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", "token "+t.token)
-	return http.DefaultTransport.RoundTrip(req)
+	clonedReq := req.Clone(req.Context())
+	clonedReq.Header.Set("Authorization", "Bearer "+t.token)
+	return http.DefaultTransport.RoundTrip(clonedReq)
 }
 
 // FetchRepositories は入力に基づいてリポジトリを取得する
