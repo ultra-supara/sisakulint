@@ -530,6 +530,7 @@ type ValidateResult struct {
 	ParsedWorkflow *ast.Workflow
 	Errors         []*LintingError
 	AutoFixers     []AutoFixer
+	Repository     string
 }
 
 func (l *Linter) validate(
