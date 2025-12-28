@@ -511,7 +511,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		DeprecatedCommandsRule(),
 		NewConditionalRule(),
 		TimeoutMinuteRule(),
-		// IssueInjectionRule(),
+		IssueInjectionRule(),
 		CommitShaRule(),
 		NewActionListRule(),
 	}
