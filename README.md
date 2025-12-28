@@ -60,7 +60,7 @@ sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's l
 ## Main Tool features:
 - **id rule (ID collision detection)**
  	- Validates job IDs and environment variable names
- 	- docs : https://sisakulint.github.io/docs/idrule/
+ 	- docs : https://sisaku-security.github.io/lint/docs/idrule/
  	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#using-a-specific-shell
 
 - **env-var rule (Environment variable validation)**
@@ -69,26 +69,26 @@ sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's l
 
 - **credentials rule (Hardcoded credentials detection)**
  	- Detects hardcoded credentials using Rego query language
- 	- docs : https://sisakulint.github.io/docs/credentialsrule/
+ 	- docs : https://sisaku-security.github.io/lint/docs/credentialsrule/
 
 - **commitsha rule (Commit SHA validation)**
  	- Validates proper use of commit SHAs in actions
- 	- docs : https://sisakulint.github.io/docs/commitsharule/
+ 	- docs : https://sisaku-security.github.io/lint/docs/commitsharule/
  	- github ref : https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-third-party-actions
 
 - **permissions rule**
  	- Validates permission scopes and values
- 	- docs : https://sisakulint.github.io/docs/permissions/
+ 	- docs : https://sisaku-security.github.io/lint/docs/permissions/
  	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#permissions
 
 - **workflow-call rule**
   - Validates reusable workflow calls
-  - docs : https://sisakulint.github.io/docs/workflowcall/
+  - docs : https://sisaku-security.github.io/lint/docs/workflowcall/
   - github ref : https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
 - **missing-timeout-minutes rule**
   - Ensures timeout-minutes is set for all jobs
-  - docs : https://sisakulint.github.io/docs/timeoutminutesrule/
+  - docs : https://sisaku-security.github.io/lint/docs/timeoutminutesrule/
   - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
 
 - **cond rule (Conditional expressions validation)**
@@ -108,6 +108,95 @@ sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's l
   - Detects use of deprecated workflow commands
   - Suggests modern alternatives (e.g., GITHUB_OUTPUT instead of set-output)
   - github ref : https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+
+## Remote Repository Scanning
+
+sisakulint can scan GitHub repositories remotely via the GitHub API, allowing you to analyze workflows without cloning repositories. This feature supports scanning public repositories, organizations, and even recursive scanning of reusable workflows.
+
+### Features
+
+- **Direct repository scanning** - Scan any public GitHub repository by owner/repo or URL
+- **Search query support** - Find and scan multiple repositories using GitHub search syntax
+- **Recursive scanning** - Automatically follow and scan reusable workflow dependencies
+- **Parallel processing** - Scan multiple repositories concurrently for better performance
+- **Depth control** - Limit recursion depth to prevent excessive API calls
+
+### Usage Examples
+
+```bash
+# Scan a single repository
+$ sisakulint -remote actions/checkout
+
+# Scan with verbose output
+$ sisakulint -remote actions/checkout -verbose
+
+# Scan using GitHub URL
+$ sisakulint -remote https://github.com/actions/checkout
+
+# Recursive scan of reusable workflows (max depth: 3 by default)
+$ sisakulint -remote owner/repo -r
+
+# Recursive scan with custom depth limit
+$ sisakulint -remote owner/repo -r -D 5
+
+# Search and scan multiple repositories
+$ sisakulint -remote "org:kubernetes" -l 10
+
+# Search by topic
+$ sisakulint -remote "topic:github-actions" -l 20
+
+# Parallel scanning with custom concurrency
+$ sisakulint -remote "user:actions" -l 5 -p 3
+```
+
+### Available Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-remote <input>` | Remote repository to scan (owner/repo, URL, or search query) | - |
+| `-r` | Enable recursive scanning of reusable workflows | false |
+| `-D <depth>` | Max recursion depth for recursive scanning | 3 |
+| `-p <n>` | Number of parallel scans | 3 |
+| `-l <limit>` | Max repositories for search queries | 30 |
+| `-verbose` | Enable verbose output to see scan progress | false |
+
+### Search Query Syntax
+
+The `-remote` flag supports GitHub search syntax for finding repositories:
+
+- `org:kubernetes` - All repositories in the kubernetes organization
+- `user:actions` - All repositories owned by the actions user
+- `topic:github-actions` - Repositories tagged with github-actions topic
+- `language:go org:github` - Go repositories in the github organization
+
+For more search syntax, see [GitHub Search Documentation](https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories).
+
+### Recursive Scanning
+
+When you enable recursive scanning with `-r`, sisakulint will:
+
+1. Scan the main repository's workflows
+2. Detect any reusable workflow calls (e.g., `uses: org/repo/.github/workflows/reusable.yml@v1`)
+3. Automatically fetch and scan those reusable workflows
+4. Continue recursively up to the specified depth limit
+
+This is useful for:
+- **Supply chain security** - Detect vulnerabilities in reusable workflows your code depends on
+- **Dependency analysis** - Understand the full workflow dependency tree
+- **Comprehensive auditing** - Ensure security standards across all workflow layers
+
+### Rate Limiting
+
+Remote scanning uses the GitHub API, which has rate limits:
+- **Unauthenticated requests**: 60 requests per hour
+- **Authenticated requests**: 5,000 requests per hour
+
+To use authenticated requests, set the `GITHUB_TOKEN` environment variable:
+
+```bash
+$ export GITHUB_TOKEN=your_github_token
+$ sisakulint -remote owner/repo
+```
 
 ## install for macOS user
 
