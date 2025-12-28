@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/ultra-supara/sisakulint/pkg/remote"
 	"gopkg.in/yaml.v3"
 )
 
@@ -50,6 +52,12 @@ $ sisakulint -debug
 # "Note": it can be used in reviewdog by supporting sarif output,
 
 $ sisakulint -format "{{sarif .}}"
+
+# Remote scanning: scan GitHub repositories directly via API
+
+$ sisakulint -remote owner/repo
+$ sisakulint -remote "org:kubernetes"
+$ sisakulint -remote owner/repo -r -D 5
 
 # Documents
 - https://sisaku-security.github.io/lint/
@@ -177,6 +185,11 @@ func (cmd *Command) Main(args []string) int {
 	var initConfig bool
 	var generateBoilerplate bool
 	var autoFixMode string
+	var remoteInput string
+	var recursive bool
+	var maxDepth int
+	var parallelism int
+	var limit int
 
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	flags.SetOutput(cmd.Stderr)
@@ -190,6 +203,11 @@ func (cmd *Command) Main(args []string) int {
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
 	flags.StringVar(&linterOpts.StdinInputFileName, "stdin-filename", "", "File name when reading input from stdin")
 	flags.StringVar(&autoFixMode, "fix", "off", "Enable auto-fix mode. Available options: off, on, dry-run")
+	flags.StringVar(&remoteInput, "remote", "", "Remote repository to scan (owner/repo, URL, or search query like 'org:kubernetes')")
+	flags.BoolVar(&recursive, "r", false, "Enable recursive scanning of reusable workflows (-remote only)")
+	flags.IntVar(&maxDepth, "D", 3, "Max recursion depth for recursive scanning (-remote only)")
+	flags.IntVar(&parallelism, "p", 3, "Number of parallel scans (-remote only)")
+	flags.IntVar(&limit, "l", 30, "Max repositories for search queries (-remote only)")
 
 	flags.Usage = func() {
 		printingUsageHeader(cmd.Stderr)
@@ -220,6 +238,17 @@ func (cmd *Command) Main(args []string) int {
 	linterOpts.ErrorIgnorePatterns = ignorePats
 	linterOpts.LogOutputDestination = cmd.Stderr
 
+	if remoteInput != "" {
+		return cmd.runRemoteScan(remoteInput, &linterOpts, &remote.ScannerOptions{
+			Parallelism: parallelism,
+			Recursive:   recursive,
+			MaxDepth:    maxDepth,
+			Limit:       limit,
+			Verbose:     linterOpts.IsVerboseOutputEnabled,
+			Output:      cmd.Stderr,
+		})
+	}
+
 	errs, err := cmd.runLint(flags.Args(), &linterOpts, initConfig, generateBoilerplate)
 	if err != nil {
 		fmt.Fprintln(cmd.Stderr, err.Error())
@@ -231,8 +260,55 @@ func (cmd *Command) Main(args []string) int {
 			cmd.runAutofix(errs, autoFixMode == FileFixDryRun)
 		}
 		return ExitStatusSuccessProblemFound
-		//問題があった場合、ここでlinterが指摘してくれる！やったね！
 	}
 
+	return ExitStatusSuccessNoProblem
+}
+
+// runRemoteScan はリモートリポジトリをスキャンする
+func (cmd *Command) runRemoteScan(input string, linterOpts *LinterOptions, scannerOpts *remote.ScannerOptions) int {
+	linter, err := NewLinter(cmd.Stdout, linterOpts)
+	if err != nil {
+		fmt.Fprintf(cmd.Stderr, "Error initializing linter: %v\n", err)
+		return ExitStatusFailure
+	}
+
+	scannerOpts.LintFunc = func(filepath string, content []byte) (bool, error) {
+		result, err := linter.Lint(filepath, content, nil)
+		if err != nil {
+			return false, err
+		}
+		return len(result.Errors) > 0, nil
+	}
+
+	scanner, err := remote.NewScanner(scannerOpts)
+	if err != nil {
+		fmt.Fprintf(cmd.Stderr, "Error initializing remote scanner: %v\n", err)
+		return ExitStatusFailure
+	}
+
+	ctx := context.Background()
+	results, err := scanner.Scan(ctx, input)
+	if err != nil {
+		fmt.Fprintf(cmd.Stderr, "Error scanning remote repositories: %v\n", err)
+		return ExitStatusFailure
+	}
+
+	hasErrors := false
+	for _, result := range results {
+		if result.Error != nil {
+			fmt.Fprintf(cmd.Stderr, "Error scanning %s: %v\n", result.Repository.FullName, result.Error)
+			continue
+		}
+		if result.HasErrors {
+			hasErrors = true
+		}
+	}
+
+	if hasErrors {
+		return ExitStatusSuccessProblemFound
+	}
+
+	fmt.Fprintf(cmd.Stdout, "No problems found.\n")
 	return ExitStatusSuccessNoProblem
 }
