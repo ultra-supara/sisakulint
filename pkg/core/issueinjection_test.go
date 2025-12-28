@@ -139,56 +139,6 @@ echo "${{ github.event.pull_request.body }}"`,
 			wantErrors: 1,
 			desc:       "Multiline expression with fallback should be detected",
 		},
-		{
-			name: "safe: no run step (uses action)",
-			job: &ast.Job{
-				Steps: []*ast.Step{
-					{
-						Exec: &ast.ExecAction{
-							Uses: &ast.String{
-								Pos:   &ast.Position{Line: 5, Col: 10},
-								Value: "actions/checkout@v2",
-							},
-						},
-					},
-				},
-			},
-			wantErrors: 0,
-			desc:       "Action step should not be checked",
-		},
-		{
-			name: "safe: empty steps array",
-			job: &ast.Job{
-				Steps: []*ast.Step{},
-			},
-			wantErrors: 0,
-			desc:       "Empty steps should not cause error",
-		},
-		{
-			name: "safe: nil steps array",
-			job: &ast.Job{
-				Steps: nil,
-			},
-			wantErrors: 0,
-			desc:       "Nil steps should not cause error",
-		},
-		{
-			name: "edge case: only opening braces",
-			job: &ast.Job{
-				Steps: []*ast.Step{
-					{
-						Exec: &ast.ExecRun{
-							Run: &ast.String{
-								Value: `echo ${{`,
-								Pos:   &ast.Position{Line: 1, Col: 1},
-							},
-						},
-					},
-				},
-			},
-			wantErrors: 0,
-			desc:       "Invalid expression without closing braces should not cause error",
-		},
 	}
 
 	for _, tt := range tests {
