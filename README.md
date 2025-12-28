@@ -60,7 +60,7 @@ sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's l
 ## Main Tool features:
 - **id rule (ID collision detection)**
  	- Validates job IDs and environment variable names
- 	- docs : https://sisakulint.github.io/docs/idrule/
+ 	- docs : https://sisaku-security.github.io/lint/docs/idrule/
  	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#using-a-specific-shell
 
 - **env-var rule (Environment variable validation)**
@@ -69,26 +69,26 @@ sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's l
 
 - **credentials rule (Hardcoded credentials detection)**
  	- Detects hardcoded credentials using Rego query language
- 	- docs : https://sisakulint.github.io/docs/credentialsrule/
+ 	- docs : https://sisaku-security.github.io/lint/docs/credentialsrule/
 
 - **commitsha rule (Commit SHA validation)**
  	- Validates proper use of commit SHAs in actions
- 	- docs : https://sisakulint.github.io/docs/commitsharule/
+ 	- docs : https://sisaku-security.github.io/lint/docs/commitsharule/
  	- github ref : https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-third-party-actions
 
 - **permissions rule**
  	- Validates permission scopes and values
- 	- docs : https://sisakulint.github.io/docs/permissions/
+ 	- docs : https://sisaku-security.github.io/lint/docs/permissions/
  	- github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#permissions
 
 - **workflow-call rule**
   - Validates reusable workflow calls
-  - docs : https://sisakulint.github.io/docs/workflowcall/
+  - docs : https://sisaku-security.github.io/lint/docs/workflowcall/
   - github ref : https://docs.github.com/en/actions/sharing-automations/reusing-workflows
 
 - **missing-timeout-minutes rule**
   - Ensures timeout-minutes is set for all jobs
-  - docs : https://sisakulint.github.io/docs/timeoutminutesrule/
+  - docs : https://sisaku-security.github.io/lint/docs/timeoutminutesrule/
   - github ref : https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes
 
 - **cond rule (Conditional expressions validation)**

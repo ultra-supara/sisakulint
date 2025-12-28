@@ -52,7 +52,7 @@ $ sisakulint -debug
 $ sisakulint -format "{{sarif .}}"
 
 # Documents
-- https://sisakulint.github.io/
+- https://sisaku-security.github.io/lint/
 
 # Poster
 - https://sechack365.nict.go.jp/achievement/2023/pdf/14C.pdf
