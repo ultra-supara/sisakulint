@@ -12,10 +12,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// LintFunc はワークフローをスキャンする関数の型
+// LintFunc is the function type that scans workflows
 type LintFunc func(filepath string, content []byte) (hasErrors bool, err error)
 
-// Scanner はリモートリポジトリをスキャンする
+// Scanner scans remote repositories
 type Scanner struct {
 	fetcher     *Fetcher
 	parallelism int
@@ -26,14 +26,14 @@ type Scanner struct {
 	lintFunc    LintFunc
 }
 
-// ScanResult はスキャン結果を表す
+// ScanResult represents scan result
 type ScanResult struct {
 	Repository *RepositoryInfo
-	HasErrors  bool  // エラーがあったかどうか
-	Error      error // リポジトリ全体のエラー
+	HasErrors  bool  // whether there were errors
+	Error      error // errors for the entire repository
 }
 
-// ReusableAction は再利用可能なワークフローを表す
+// ReusableAction represents a reusable workflow
 type ReusableAction struct {
 	Owner    string
 	Repo     string
@@ -42,7 +42,7 @@ type ReusableAction struct {
 	FullPath string // owner/repo/.github/workflows/workflow.yml@ref
 }
 
-// ScannerOptions はスキャナーのオプションを表す
+// ScannerOptions represents scanner options
 type ScannerOptions struct {
 	Parallelism int
 	Recursive   bool
@@ -53,11 +53,11 @@ type ScannerOptions struct {
 	LintFunc    LintFunc
 }
 
-// NewScanner は新しいScannerを作成する
+// NewScanner creates a new Scanner
 func NewScanner(opts *ScannerOptions) (*Scanner, error) {
 	fetcher, err := NewFetcher(opts.Limit)
 	if err != nil {
-		return nil, fmt.Errorf("Fetcherの初期化に失敗: %w", err)
+		return nil, fmt.Errorf("failed to initialize Fetcher: %w", err)
 	}
 
 	output := opts.Output
@@ -66,7 +66,7 @@ func NewScanner(opts *ScannerOptions) (*Scanner, error) {
 	}
 
 	if opts.LintFunc == nil {
-		return nil, fmt.Errorf("LintFuncが指定されていません")
+		return nil, fmt.Errorf("LintFunc is not specified")
 	}
 
 	return &Scanner{
@@ -80,20 +80,20 @@ func NewScanner(opts *ScannerOptions) (*Scanner, error) {
 	}, nil
 }
 
-// Scan は入力をパースしてリポジトリをスキャンする
+// Scan parses input and scans repositories
 func (s *Scanner) Scan(ctx context.Context, input string) ([]*ScanResult, error) {
 	parsedInput, err := ParseInput(input)
 	if err != nil {
-		return nil, fmt.Errorf("入力のパースに失敗: %w", err)
+		return nil, fmt.Errorf("failed to parse input: %w", err)
 	}
 
 	repos, err := s.fetcher.FetchRepositories(ctx, parsedInput)
 	if err != nil {
-		return nil, fmt.Errorf("リポジトリの取得に失敗: %w", err)
+		return nil, fmt.Errorf("failed to fetch repositories: %w", err)
 	}
 
 	if len(repos) == 0 {
-		return nil, fmt.Errorf("対象のリポジトリが見つかりませんでした")
+		return nil, fmt.Errorf("no target repositories found")
 	}
 
 	if s.verbose {
@@ -148,7 +148,7 @@ func (s *Scanner) scanRepository(ctx context.Context, repo *RepositoryInfo) *Sca
 	if err != nil {
 		return &ScanResult{
 			Repository: repo,
-			Error:      fmt.Errorf("ワークフローの取得に失敗: %w", err),
+			Error:      fmt.Errorf("failed to fetch workflows: %w", err),
 		}
 	}
 
@@ -240,7 +240,7 @@ func (s *Scanner) scanWorkflowRecursive(ctx context.Context, wf *WorkflowFile, c
 	return hasErrors
 }
 
-// extractReusableActions はワークフローファイルから再利用可能なワークフロー呼び出しを抽出する
+// extractReusableActions extracts reusable workflow calls from workflow file
 // Format: owner/repo/.github/workflows/workflow.yml@ref
 func extractReusableActions(content []byte) []ReusableAction {
 	var actions []ReusableAction
@@ -271,7 +271,7 @@ func extractReusableActions(content []byte) []ReusableAction {
 	return actions
 }
 
-// parseReusableAction は再利用可能なワークフロー参照をパースする
+// parseReusableAction parses reusable workflow reference
 // Format: owner/repo/.github/workflows/workflow.yml@ref
 var reusableActionRegex = regexp.MustCompile(`^([^/]+)/([^/]+)/\.github/workflows/([^@]+)@?(.*)$`)
 

@@ -11,27 +11,27 @@ import (
 	"github.com/google/go-github/v68/github"
 )
 
-// RepositoryInfo はリポジトリ情報を表す
+// RepositoryInfo represents repository information
 type RepositoryInfo struct {
 	Owner    string
 	Name     string
 	FullName string // "owner/repo"
 }
 
-// WorkflowFile はワークフローファイル情報を表す
+// WorkflowFile represents workflow file information
 type WorkflowFile struct {
 	Path     string // .github/workflows/ci.yml
 	Content  []byte
 	RepoInfo *RepositoryInfo
 }
 
-// Fetcher はGitHub APIからリポジトリやワークフローを取得する
+// Fetcher retrieves repositories and workflows from GitHub API
 type Fetcher struct {
 	client *github.Client
 	limit  int
 }
 
-// NewFetcher は新しいFetcherを作成する
+// NewFetcher creates a new Fetcher
 func NewFetcher(limit int) (*Fetcher, error) {
 	var httpClient *http.Client
 
@@ -50,8 +50,8 @@ func NewFetcher(limit int) (*Fetcher, error) {
 	}, nil
 }
 
-// getToken はフォールバックチェーンで認証トークンを取得する
-// 優先順位: 環境変数 → gh CLI → git credential
+// getToken retrieves authentication token using a fallback chain
+// Priority: environment variable → gh CLI → git credential
 func getToken() string {
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
 		return token
@@ -92,7 +92,7 @@ func getTokenFromGitCredential() (string, error) {
 	return "", fmt.Errorf("credential not found")
 }
 
-// tokenTransport はGitHub APIリクエストにトークンを付与するTransport
+// tokenTransport is a Transport that adds token to GitHub API requests
 type tokenTransport struct {
 	token string
 }
@@ -103,7 +103,7 @@ func (t *tokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(clonedReq)
 }
 
-// FetchRepositories は入力に基づいてリポジトリを取得する
+// FetchRepositories retrieves repositories based on input
 func (f *Fetcher) FetchRepositories(ctx context.Context, input *ParsedInput) ([]*RepositoryInfo, error) {
 	switch input.Type {
 	case InputTypeURL, InputTypeOwnerRepo:
@@ -111,14 +111,14 @@ func (f *Fetcher) FetchRepositories(ctx context.Context, input *ParsedInput) ([]
 	case InputTypeSearchQuery:
 		return f.searchRepositories(ctx, input.Query)
 	default:
-		return nil, fmt.Errorf("未知の入力タイプ: %d", input.Type)
+		return nil, fmt.Errorf("unknown input type: %d", input.Type)
 	}
 }
 
 func (f *Fetcher) fetchSingleRepo(ctx context.Context, owner, repo string) ([]*RepositoryInfo, error) {
 	r, _, err := f.client.Repositories.Get(ctx, owner, repo)
 	if err != nil {
-		return nil, fmt.Errorf("リポジトリの取得に失敗: %w", err)
+		return nil, fmt.Errorf("failed to fetch repository: %w", err)
 	}
 
 	return []*RepositoryInfo{
@@ -139,7 +139,7 @@ func (f *Fetcher) searchRepositories(ctx context.Context, query string) ([]*Repo
 
 	result, _, err := f.client.Search.Repositories(ctx, query, opts)
 	if err != nil {
-		return nil, fmt.Errorf("リポジトリの検索に失敗: %w", err)
+		return nil, fmt.Errorf("failed to search repositories: %w", err)
 	}
 
 	repos := make([]*RepositoryInfo, 0, len(result.Repositories))
@@ -158,7 +158,7 @@ func (f *Fetcher) searchRepositories(ctx context.Context, query string) ([]*Repo
 	return repos, nil
 }
 
-// FetchWorkflows はリポジトリからワークフローファイルを取得する
+// FetchWorkflows retrieves workflow files from repository
 func (f *Fetcher) FetchWorkflows(ctx context.Context, repo *RepositoryInfo) ([]*WorkflowFile, error) {
 	_, contents, _, err := f.client.Repositories.GetContents(
 		ctx,
@@ -168,7 +168,7 @@ func (f *Fetcher) FetchWorkflows(ctx context.Context, repo *RepositoryInfo) ([]*
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("ワークフローディレクトリの取得に失敗: %w", err)
+		return nil, fmt.Errorf("failed to fetch workflow directory: %w", err)
 	}
 
 	workflows := make([]*WorkflowFile, 0)
@@ -189,12 +189,12 @@ func (f *Fetcher) FetchWorkflows(ctx context.Context, repo *RepositoryInfo) ([]*
 			nil,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("ワークフローファイル %s の取得に失敗: %w", content.GetPath(), err)
+			return nil, fmt.Errorf("failed to fetch workflow file %s: %w", content.GetPath(), err)
 		}
 
 		decodedContent, err := fileContent.GetContent()
 		if err != nil {
-			return nil, fmt.Errorf("ファイル %s のコンテンツ取得に失敗: %w", content.GetPath(), err)
+			return nil, fmt.Errorf("failed to get content for file %s: %w", content.GetPath(), err)
 		}
 
 		workflows = append(workflows, &WorkflowFile{
@@ -207,7 +207,7 @@ func (f *Fetcher) FetchWorkflows(ctx context.Context, repo *RepositoryInfo) ([]*
 	return workflows, nil
 }
 
-// FetchSingleWorkflow は単一のワークフローファイルを取得する
+// FetchSingleWorkflow retrieves a single workflow file
 func (f *Fetcher) FetchSingleWorkflow(ctx context.Context, repo *RepositoryInfo, workflowPath string) (*WorkflowFile, error) {
 	fileContent, _, _, err := f.client.Repositories.GetContents(
 		ctx,
@@ -217,12 +217,12 @@ func (f *Fetcher) FetchSingleWorkflow(ctx context.Context, repo *RepositoryInfo,
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("ワークフローファイル %s の取得に失敗: %w", workflowPath, err)
+		return nil, fmt.Errorf("failed to fetch workflow file %s: %w", workflowPath, err)
 	}
 
 	decodedContent, err := fileContent.GetContent()
 	if err != nil {
-		return nil, fmt.Errorf("ファイル %s のコンテンツ取得に失敗: %w", workflowPath, err)
+		return nil, fmt.Errorf("failed to get content for file %s: %w", workflowPath, err)
 	}
 
 	return &WorkflowFile{
