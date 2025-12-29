@@ -184,6 +184,7 @@ func (cmd *Command) Main(args []string) int {
 	var ignorePats ignorePatternFlags
 	var initConfig bool
 	var generateBoilerplate bool
+	var generateActionList bool
 	var autoFixMode string
 	var remoteInput string
 	var recursive bool
@@ -198,6 +199,7 @@ func (cmd *Command) Main(args []string) int {
 	flags.StringVar(&linterOpts.CustomErrorMessageFormat, "format", "", "Custom template to format error messages in Go template syntax.")
 	flags.StringVar(&linterOpts.ConfigurationFilePath, "config-file", "", "File path to config file")
 	flags.BoolVar(&initConfig, "init", false, "Generate default config file at .github/action.yaml in current project. see : https://docs.github.com/ja/actions/creating-actions/metadata-syntax-for-github-actions#github-actions%E3%81%AEyaml%E6%A7%8B%E6%96%87%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6")
+	flags.BoolVar(&generateActionList, "generate-action-list", false, "Generate action list configuration from existing workflow files")
 	flags.BoolVar(&linterOpts.IsVerboseOutputEnabled, "verbose", false, "Enable verbose output")
 	flags.BoolVar(&linterOpts.IsDebugOutputEnabled, "debug", false, "Enable debug output (for development)")
 	flags.BoolVar(&showVersion, "version", false, "Show version and how this binary was installed")
@@ -237,6 +239,14 @@ func (cmd *Command) Main(args []string) int {
 
 	linterOpts.ErrorIgnorePatterns = ignorePats
 	linterOpts.LogOutputDestination = cmd.Stderr
+
+	if generateActionList {
+		if err := GenerateActionListConfig("."); err != nil {
+			fmt.Fprintf(cmd.Stderr, "Error generating action list: %v\n", err)
+			return ExitStatusFailure
+		}
+		return ExitStatusSuccessNoProblem
+	}
 
 	if remoteInput != "" {
 		return cmd.runRemoteScan(remoteInput, &linterOpts, &remote.ScannerOptions{
