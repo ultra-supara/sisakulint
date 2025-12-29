@@ -167,10 +167,7 @@ func GenerateActionListConfig(root string) error {
 	}
 
 	fmt.Printf("Generated action list configuration at %s\n", configPath)
-	fmt.Printf("Found %d unique action patterns:\n", len(actions))
-	for _, action := range actions {
-		fmt.Printf("  - %s\n", action)
-	}
+	fmt.Printf("Found %d unique action patterns\n", len(actions))
 
 	return nil
 }
