@@ -49,7 +49,7 @@ func positionAt(node *yaml.Node) *ast.Position {
 }
 
 func isNull(node *yaml.Node) bool {
-	return node.Kind == yaml.ScalarNode && node.Tag == SBOMNullTag && node.Value == ExprNullValue
+	return node.Kind == yaml.ScalarNode && node.Tag == SBOMNullTag
 }
 
 func newString(node *yaml.Node) *ast.String {
