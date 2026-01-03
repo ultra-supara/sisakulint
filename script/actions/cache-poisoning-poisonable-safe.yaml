@@ -1,0 +1,65 @@
+# Safe workflow for testing cache-poisoning-poisonable-step rule
+# This workflow demonstrates safe patterns that should NOT trigger the rule
+name: Safe Code Execution
+
+on:
+  # Safe trigger - uses pull_request, not pull_request_target
+  pull_request:
+    branches: [main]
+
+jobs:
+  safe-with-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      # Safe because trigger is pull_request (not pull_request_target)
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - run: ./build.sh
+      - run: npm install
+
+---
+# Another safe workflow - unsafe trigger but no unsafe checkout
+name: Safe - No Unsafe Checkout
+
+on:
+  pull_request_target:
+    branches: [main]
+
+jobs:
+  safe-without-unsafe-checkout:
+    runs-on: ubuntu-latest
+    steps:
+      # Safe checkout (default ref = base branch)
+      - uses: actions/checkout@v4
+
+      # These are safe because checkout didn't use PR head
+      - run: ./build.sh
+      - run: npm install
+      - uses: ./.github/actions/my-action
+
+---
+# Another safe workflow - unsafe trigger but only external actions
+name: Safe - External Actions Only
+
+on:
+  pull_request_target:
+    branches: [main]
+
+jobs:
+  safe-external-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      # External action without cache - safe (for this rule)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Safe commands that don't execute local code
+      - run: echo "Hello World"
+      - run: ls -la
+      - run: node --version

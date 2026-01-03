@@ -515,6 +515,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		CommitShaRule(),
 		NewActionListRule(),
 		NewCachePoisoningRule(),
+		NewCachePoisoningPoisonableStepRule(),
 	}
 }
 
