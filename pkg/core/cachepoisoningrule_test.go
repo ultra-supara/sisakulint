@@ -374,6 +374,49 @@ func TestCachePoisoningRule_DetectsSetupNodeWithCache(t *testing.T) {
 	}
 }
 
+func TestCachePoisoningRule_AutoFixer(t *testing.T) {
+	rule := NewCachePoisoningRule()
+
+	workflow := &ast.Workflow{
+		On: []ast.Event{
+			&ast.WebhookEvent{Hook: &ast.String{Value: "pull_request_target"}},
+		},
+	}
+	_ = rule.VisitWorkflowPre(workflow)
+
+	job := &ast.Job{}
+	_ = rule.VisitJobPre(job)
+
+	checkoutStep := &ast.Step{
+		Pos: &ast.Position{Line: 10, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses: &ast.String{Value: "actions/checkout@v4"},
+			Inputs: map[string]*ast.Input{
+				"ref": {Value: &ast.String{Value: "${{ github.head_ref }}"}},
+			},
+		},
+	}
+	_ = rule.VisitStep(checkoutStep)
+
+	cacheStep := &ast.Step{
+		Pos: &ast.Position{Line: 15, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses:   &ast.String{Value: "actions/cache@v3"},
+			Inputs: map[string]*ast.Input{},
+		},
+	}
+	_ = rule.VisitStep(cacheStep)
+
+	autoFixers := rule.AutoFixers()
+	if len(autoFixers) != 1 {
+		t.Errorf("Expected 1 auto-fixer, got %d", len(autoFixers))
+	}
+
+	if len(autoFixers) > 0 && autoFixers[0].RuleName() != "cache-poisoning" {
+		t.Errorf("AutoFixer rule name = %q, want %q", autoFixers[0].RuleName(), "cache-poisoning")
+	}
+}
+
 func TestCachePoisoningRule_JobIsolation(t *testing.T) {
 	rule := NewCachePoisoningRule()
 

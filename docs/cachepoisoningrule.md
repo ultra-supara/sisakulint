@@ -130,6 +130,33 @@ jobs:
       - uses: actions/cache@v3  # Safe: different job, no unsafe checkout here
 ```
 
+### Auto-fix Support
+
+The cache-poisoning rule supports auto-fixing by removing the unsafe `ref` input from `actions/checkout`:
+
+```bash
+# Preview changes without applying
+sisakulint -fix dry-run
+
+# Apply fixes
+sisakulint -fix on
+```
+
+The auto-fix removes the `ref` input that checks out untrusted PR code, causing the workflow to checkout the base branch instead. This ensures the cached content is based on trusted code.
+
+**Before fix:**
+```yaml
+- uses: actions/checkout@v4
+  with:
+    ref: ${{ github.head_ref }}  # Unsafe: checks out PR code
+```
+
+**After fix:**
+```yaml
+- uses: actions/checkout@v4
+# ref removed: now checks out base branch (safe)
+```
+
 ### Mitigation Strategies
 
 1. **Validate Cached Content**: Verify integrity of restored cache before use
