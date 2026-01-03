@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/ultra-supara/sisakulint/pkg/core"
+	"github.com/sisaku-security/sisakulint/pkg/core"
 )
 
 func main() {

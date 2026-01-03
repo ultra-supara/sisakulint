@@ -10,7 +10,7 @@ before:
 builds:
   - <<: &build_defaults
       main: ./cmd/sisakulint
-      ldflags: -s -w -X github.com/ultra-supara/sisakulint/pkg/core.versionInfo={{.Version}}"
+      ldflags: -s -w -X github.com/sisaku-security/sisakulint/pkg/core.versionInfo={{.Version}}"
       env:
         - CGO_ENABLED=0
     id: macos
@@ -24,11 +24,11 @@ builds:
 
 brews:
   - name: sisakulint
-    url_template: "https://github.com/ultra-supara/sisakulint/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/sisaku-security/sisakulint/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     commit_author:
       name: "github-actions[bot]"
       email: "41898282+github-actions[bot]@users.noreply.github.com"
-    homepage: https://github.com/ultra-supara/sisakulint
+    homepage: https://github.com/sisaku-security/sisakulint
     description: Support tools for GitHub Actions workflow files
     download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
     install: |
@@ -36,6 +36,6 @@ brews:
     test: |
       system "#{bin}/sisakulint -version"
     repository:
-      owner: ultra-supara # Homebrew Taps 用のリポジトリのオーナー名
+      owner: sisaku-security # Homebrew Taps 用のリポジトリのオーナー名
       name: homebrew-sisakulint # Homebrew Taps 用のリポジトリ名
       token: "{{ .Env.TAP_GITHUB_TOKEN }}" # `TAP_GITHUB_TOKEN` 環境変数をトークンとして使うようにする

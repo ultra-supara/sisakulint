@@ -1,4 +1,4 @@
-module github.com/ultra-supara/sisakulint
+module github.com/sisaku-security/sisakulint
 
 go 1.24.0
 

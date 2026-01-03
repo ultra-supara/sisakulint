@@ -1,6 +1,6 @@
 package core
 
-import "github.com/ultra-supara/sisakulint/pkg/ast"
+import "github.com/sisaku-security/sisakulint/pkg/ast"
 
 type AutoFixer interface {
 	RuleName() string

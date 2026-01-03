@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/pkg/ast"
+	"github.com/sisaku-security/sisakulint/pkg/ast"
 )
 
 // ActionListGenerator は既存のワークフローファイルからアクションリストを生成する

@@ -12,7 +12,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/pkg/remote"
+	"github.com/sisaku-security/sisakulint/pkg/remote"
 	"gopkg.in/yaml.v3"
 )
 

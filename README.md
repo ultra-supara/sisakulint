@@ -2,7 +2,7 @@
 
 Before moving on, please consider giving us a GitHub star ⭐️. Thank you!
 
-<img src="https://github.com/ultra-supara/homebrew-sisakulint/assets/67861004/e9801cbb-fbe1-4822-a5cd-d1daac33e90f" alt="sisakulint logo" width="160" height="160"/> 
+<img src="https://github.com/sisaku-security/homebrew-sisakulint/assets/67861004/e9801cbb-fbe1-4822-a5cd-d1daac33e90f" alt="sisakulint logo" width="160" height="160"/> 
 
 ## what is this?
 
@@ -137,7 +137,7 @@ sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's l
 ## install for macOS user
 
 ```bash
-$ brew tap ultra-supara/homebrew-sisakulint
+$ brew tap sisaku-security/homebrew-sisakulint
 $ brew install sisakulint
 ```
 
@@ -423,7 +423,7 @@ jobs:
       - name: Install sisakulint
         run: |
           # Download from release page or install via brew
-          # Example: wget https://github.com/ultra-supara/sisakulint/releases/latest/download/sisakulint-linux-amd64
+          # Example: wget https://github.com/sisaku-security/sisakulint/releases/latest/download/sisakulint-linux-amd64
 
       - name: Run sisakulint with reviewdog
         env:
@@ -635,6 +635,6 @@ paste into your `settings.json`:
 
 ```json
  "yaml.schemas": {
-     "https://github.com/ultra-supara/homebrew-sisakulint/raw/main/settings.json": "/.github/workflows/*.{yml,yaml}"
+     "https://github.com/sisaku-security/homebrew-sisakulint/raw/main/settings.json": "/.github/workflows/*.{yml,yaml}"
  }
 ```

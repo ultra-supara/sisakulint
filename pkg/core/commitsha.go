@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/google/go-github/v68/github"
-	"github.com/ultra-supara/sisakulint/pkg/ast"
+	"github.com/sisaku-security/sisakulint/pkg/ast"
 )
 
 type CommitSha struct {

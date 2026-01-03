@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/pkg/ast"
+	"github.com/sisaku-security/sisakulint/pkg/ast"
 )
 
 var jobIDPattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*$`)

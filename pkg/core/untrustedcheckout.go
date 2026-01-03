@@ -3,8 +3,8 @@ package core
 import (
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/pkg/ast"
-	"github.com/ultra-supara/sisakulint/pkg/expressions"
+	"github.com/sisaku-security/sisakulint/pkg/ast"
+	"github.com/sisaku-security/sisakulint/pkg/expressions"
 )
 
 // UntrustedCheckoutRule checks for dangerous combinations of privileged triggers
@@ -266,7 +266,7 @@ func (rule *UntrustedCheckoutRule) parseExpression(exprStr string) (expressions.
 // are potential attack vectors but are less commonly used with checkout actions.
 // These patterns could be detected in a future enhancement or by the issue-injection rule.
 //
-// See: https://github.com/ultra-supara/sisakulint/pull/226#discussion_r2658869719
+// See: https://github.com/sisaku-security/sisakulint/pull/226#discussion_r2658869719
 func (rule *UntrustedCheckoutRule) isUntrustedPRExpression(_ expressions.ExprNode, rawExpr string) bool {
 	// Simple string-based check for common dangerous patterns
 	// These patterns access pull request HEAD code which is untrusted
@@ -320,7 +320,7 @@ func (rule *UntrustedCheckoutRule) VisitJobPost(node *ast.Job) error {
 // This is intentional - security takes priority over preserving custom ref formats.
 // Users can review and adjust the fix if needed, as auto-fix is opt-in with -fix flag.
 //
-// See: https://github.com/ultra-supara/sisakulint/pull/226#discussion_r2658870256
+// See: https://github.com/sisaku-security/sisakulint/pull/226#discussion_r2658870256
 func (rule *UntrustedCheckoutRule) FixStep(step *ast.Step) error {
 	// Get the action from the step
 	action, ok := step.Exec.(*ast.ExecAction)

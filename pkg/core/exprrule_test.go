@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ultra-supara/sisakulint/pkg/ast"
-	"github.com/ultra-supara/sisakulint/pkg/expressions"
+	"github.com/sisaku-security/sisakulint/pkg/ast"
+	"github.com/sisaku-security/sisakulint/pkg/expressions"
 )
 
 // TestExpressionRule tests the creation of ExpressionRule

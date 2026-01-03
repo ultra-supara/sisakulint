@@ -4,8 +4,8 @@ package core
 import (
 	"strings"
 
-	"github.com/ultra-supara/sisakulint/pkg/ast"
-	"github.com/ultra-supara/sisakulint/pkg/expressions"
+	"github.com/sisaku-security/sisakulint/pkg/ast"
+	"github.com/sisaku-security/sisakulint/pkg/expressions"
 )
 
 type typedExpression struct {
