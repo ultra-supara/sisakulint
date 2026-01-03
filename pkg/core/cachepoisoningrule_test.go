@@ -462,3 +462,62 @@ func TestCachePoisoningRule_JobIsolation(t *testing.T) {
 		t.Errorf("Expected 0 errors due to job isolation, got %d", len(errors))
 	}
 }
+
+func TestCachePoisoningRule_AutoFixerRegisteredOnce(t *testing.T) {
+	rule := NewCachePoisoningRule()
+
+	workflow := &ast.Workflow{
+		On: []ast.Event{
+			&ast.WebhookEvent{Hook: &ast.String{Value: "pull_request_target"}},
+		},
+	}
+	_ = rule.VisitWorkflowPre(workflow)
+
+	job := &ast.Job{}
+	_ = rule.VisitJobPre(job)
+
+	checkoutStep := &ast.Step{
+		Pos: &ast.Position{Line: 10, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses: &ast.String{Value: "actions/checkout@v4"},
+			Inputs: map[string]*ast.Input{
+				"ref": {Value: &ast.String{Value: "${{ github.head_ref }}"}},
+			},
+		},
+	}
+	_ = rule.VisitStep(checkoutStep)
+
+	// First cache action
+	setupNodeStep := &ast.Step{
+		Pos: &ast.Position{Line: 15, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses: &ast.String{Value: "actions/setup-node@v4"},
+			Inputs: map[string]*ast.Input{
+				"cache": {Value: &ast.String{Value: "npm"}},
+			},
+		},
+	}
+	_ = rule.VisitStep(setupNodeStep)
+
+	// Second cache action
+	cacheStep := &ast.Step{
+		Pos: &ast.Position{Line: 20, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses:   &ast.String{Value: "actions/cache@v3"},
+			Inputs: map[string]*ast.Input{},
+		},
+	}
+	_ = rule.VisitStep(cacheStep)
+
+	// Should have 2 errors (one for each cache action)
+	errors := rule.Errors()
+	if len(errors) != 2 {
+		t.Errorf("Expected 2 errors, got %d", len(errors))
+	}
+
+	// But only 1 auto-fixer (for the checkout step)
+	autoFixers := rule.AutoFixers()
+	if len(autoFixers) != 1 {
+		t.Errorf("Expected 1 auto-fixer even with multiple cache actions, got %d", len(autoFixers))
+	}
+}

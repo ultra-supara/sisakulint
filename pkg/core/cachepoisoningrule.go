@@ -14,9 +14,10 @@ import (
 // 3. Using cache actions (actions/cache or setup-* with cache enabled)
 type CachePoisoningRule struct {
 	BaseRule
-	unsafeTriggers     []string
-	checkoutUnsafeRef  bool
-	unsafeCheckoutStep *ast.Step
+	unsafeTriggers      []string
+	checkoutUnsafeRef   bool
+	unsafeCheckoutStep  *ast.Step
+	autoFixerRegistered bool
 }
 
 // NewCachePoisoningRule creates a new cache poisoning detection rule.
@@ -109,6 +110,7 @@ func (rule *CachePoisoningRule) VisitWorkflowPost(node *ast.Workflow) error {
 func (rule *CachePoisoningRule) VisitJobPre(node *ast.Job) error {
 	rule.checkoutUnsafeRef = false
 	rule.unsafeCheckoutStep = nil
+	rule.autoFixerRegistered = false
 	return nil
 }
 
@@ -152,8 +154,10 @@ func (rule *CachePoisoningRule) VisitStep(node *ast.Step) error {
 			uses,
 			triggers,
 		)
-		if rule.unsafeCheckoutStep != nil {
+		// Only register auto-fixer once per job (for the checkout step)
+		if rule.unsafeCheckoutStep != nil && !rule.autoFixerRegistered {
 			rule.AddAutoFixer(NewStepFixer(rule.unsafeCheckoutStep, rule))
+			rule.autoFixerRegistered = true
 		}
 	}
 
