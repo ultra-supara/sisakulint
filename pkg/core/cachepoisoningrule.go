@@ -182,7 +182,6 @@ func (rule *CachePoisoningRule) VisitStep(node *ast.Step) error {
 		return nil
 	}
 
-	// Check for cache action usage after unsafe checkout
 	if rule.checkoutUnsafeRef && isCacheAction(uses, action.Inputs) {
 		triggers := strings.Join(rule.unsafeTriggers, ", ")
 		rule.Errorf(
@@ -191,7 +190,6 @@ func (rule *CachePoisoningRule) VisitStep(node *ast.Step) error {
 			uses,
 			triggers,
 		)
-		// Only register auto-fixer once per job (for the checkout step)
 		if rule.unsafeCheckoutStep != nil && !rule.autoFixerRegistered {
 			rule.AddAutoFixer(NewStepFixer(rule.unsafeCheckoutStep, rule))
 			rule.autoFixerRegistered = true
@@ -201,7 +199,6 @@ func (rule *CachePoisoningRule) VisitStep(node *ast.Step) error {
 	return nil
 }
 
-// FixStep removes the unsafe ref input from checkout step to use the default (base) branch
 func (rule *CachePoisoningRule) FixStep(node *ast.Step) error {
 	if node.BaseNode == nil {
 		return nil
@@ -229,7 +226,6 @@ func removeRefFromWith(stepNode *yaml.Node) error {
 				}
 			}
 			if len(newContent) == 0 {
-				// Remove entire 'with' section if empty
 				stepNode.Content = append(stepNode.Content[:i], stepNode.Content[i+2:]...)
 			} else {
 				val.Content = newContent

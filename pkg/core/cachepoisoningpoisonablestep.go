@@ -35,13 +35,11 @@ func NewCachePoisoningPoisonableStepRule() *CachePoisoningPoisonableStepRule {
 	}
 }
 
-// Regular expressions for detecting poisonable commands
 var (
-	// Local script execution patterns
 	localScriptPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`^\s*\./`),                    // ./script.sh
-		regexp.MustCompile(`\s+\./`),                     // command ./script
-		regexp.MustCompile(`(?i)^\s*(bash|sh|zsh)\s+\.`), // bash ./script.sh
+		regexp.MustCompile(`^\s*\./`),
+		regexp.MustCompile(`\s+\./`),
+		regexp.MustCompile(`(?i)^\s*(bash|sh|zsh)\s+\.`),
 		regexp.MustCompile(`(?i)^\s*(python|python3)\s+\.`),
 		regexp.MustCompile(`(?i)^\s*(node|npx)\s+\.`),
 		regexp.MustCompile(`(?i)^\s*(ruby)\s+\.`),
@@ -49,7 +47,6 @@ var (
 		regexp.MustCompile(`(?i)^\s*(php)\s+\.`),
 	}
 
-	// Build command patterns (npm, yarn, pip, make, etc.)
 	buildCommandPatterns = []*regexp.Regexp{
 		regexp.MustCompile(`(?i)^\s*npm\s+(install|ci|run|test|build)`),
 		regexp.MustCompile(`(?i)^\s*yarn(\s|$)`),
@@ -70,11 +67,9 @@ var (
 		regexp.MustCompile(`(?i)^\s*composer\s+install`),
 	}
 
-	// GitHub Script import patterns
 	githubScriptImportPattern = regexp.MustCompile(`(?i)(require|import)\s*\(\s*['"](\.\/|\$\{\{\s*github\.workspace)`)
 )
 
-// isPoisonableLocalScript checks if the script contains local script execution
 func isPoisonableLocalScript(script string) bool {
 	lines := strings.Split(script, "\n")
 	for _, line := range lines {
@@ -91,7 +86,6 @@ func isPoisonableLocalScript(script string) bool {
 	return false
 }
 
-// isPoisonableBuildCommand checks if the script contains build commands
 func isPoisonableBuildCommand(script string) bool {
 	lines := strings.Split(script, "\n")
 	for _, line := range lines {
@@ -108,16 +102,13 @@ func isPoisonableBuildCommand(script string) bool {
 	return false
 }
 
-// isPoisonableLocalAction checks if the action is a local action
 func isPoisonableLocalAction(uses string) bool {
 	if uses == "" {
 		return false
 	}
-	// Local actions start with "./" or ".\"
 	return strings.HasPrefix(uses, "./") || strings.HasPrefix(uses, ".\\")
 }
 
-// isPoisonableGitHubScript checks if github-script imports local files
 func isPoisonableGitHubScript(uses string, inputs map[string]*ast.Input) bool {
 	if uses == "" {
 		return false
@@ -139,7 +130,6 @@ func isPoisonableGitHubScript(uses string, inputs map[string]*ast.Input) bool {
 	return false
 }
 
-// getStepDescription returns a human-readable description of the step
 func getStepDescription(node *ast.Step) string {
 	if node.Name != nil && node.Name.Value != "" {
 		return node.Name.Value
@@ -149,7 +139,6 @@ func getStepDescription(node *ast.Step) string {
 	case *ast.ExecRun:
 		if exec.Run != nil {
 			script := exec.Run.Value
-			// First line, truncated to 50 chars
 			if idx := strings.Index(script, "\n"); idx != -1 {
 				script = script[:idx]
 			}
@@ -202,7 +191,6 @@ func (rule *CachePoisoningPoisonableStepRule) VisitStep(node *ast.Step) error {
 		return nil
 	}
 
-	// Check for actions (checkout and poisonable actions)
 	if action, ok := node.Exec.(*ast.ExecAction); ok && action.Uses != nil {
 		uses := action.Uses.Value
 
@@ -211,7 +199,6 @@ func (rule *CachePoisoningPoisonableStepRule) VisitStep(node *ast.Step) error {
 			actionName = uses[:idx]
 		}
 
-		// Check for unsafe checkout
 		if actionName == "actions/checkout" {
 			if refInput, ok := action.Inputs["ref"]; ok && refInput != nil && refInput.Value != nil {
 				if isUnsafeCheckoutRef(refInput.Value.Value) {
@@ -222,7 +209,6 @@ func (rule *CachePoisoningPoisonableStepRule) VisitStep(node *ast.Step) error {
 			return nil
 		}
 
-		// Check for poisonable actions after unsafe checkout
 		if rule.checkoutUnsafeRef {
 			isPoisonable := false
 			var reason string
@@ -250,7 +236,6 @@ func (rule *CachePoisoningPoisonableStepRule) VisitStep(node *ast.Step) error {
 		return nil
 	}
 
-	// Check for run steps (local scripts and build commands)
 	if run, ok := node.Exec.(*ast.ExecRun); ok && run.Run != nil {
 		if !rule.checkoutUnsafeRef {
 			return nil
@@ -284,7 +269,6 @@ func (rule *CachePoisoningPoisonableStepRule) VisitStep(node *ast.Step) error {
 	return nil
 }
 
-// registerAutoFixer registers an auto-fixer for the unsafe checkout step
 func (rule *CachePoisoningPoisonableStepRule) registerAutoFixer() {
 	if rule.unsafeCheckoutStep != nil && !rule.autoFixerRegistered {
 		rule.AddAutoFixer(NewStepFixer(rule.unsafeCheckoutStep, rule))
@@ -292,7 +276,6 @@ func (rule *CachePoisoningPoisonableStepRule) registerAutoFixer() {
 	}
 }
 
-// FixStep removes the unsafe ref input from checkout step to use the default (base) branch
 func (rule *CachePoisoningPoisonableStepRule) FixStep(node *ast.Step) error {
 	if node.BaseNode == nil {
 		return nil
@@ -320,7 +303,6 @@ func removeRefFromWithForPoisonableStep(stepNode *yaml.Node) error {
 				}
 			}
 			if len(newContent) == 0 {
-				// Remove entire 'with' section if empty
 				stepNode.Content = append(stepNode.Content[:i], stepNode.Content[i+2:]...)
 			} else {
 				val.Content = newContent
