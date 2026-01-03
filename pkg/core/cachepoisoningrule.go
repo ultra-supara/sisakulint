@@ -30,11 +30,6 @@ func NewCachePoisoningRule() *CachePoisoningRule {
 	}
 }
 
-var unsafeTriggerNames = map[string]bool{
-	"issue_comment":       true,
-	"pull_request_target": true,
-	"workflow_run":        true,
-}
 
 var unsafePatternsLower = []string{
 	"github.event.pull_request.head.sha",
@@ -58,7 +53,7 @@ var safePatternsLower = []string{
 }
 
 func isUnsafeTrigger(eventName string) bool {
-	return unsafeTriggerNames[eventName]
+	return UntrustedTriggers[eventName]
 }
 
 // isUnsafeCheckoutRef checks if the ref input contains patterns that indicate

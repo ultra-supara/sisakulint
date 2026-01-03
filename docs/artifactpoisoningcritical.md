@@ -1,5 +1,5 @@
 ---
-title: "Artifact Poisoning Rule"
+title: "Artifact Poisoning Rule（Critical）"
 weight: 8
 # bookFlatSection: false
 # bookToc: true
@@ -9,7 +9,7 @@ weight: 8
 # bookSearchExclude: false
 ---
 
-### Artifact Poisoning Rule Overview
+### Artifact Poisoning Rule （Critical） Overview
 
 This rule detects unsafe artifact download practices that may allow artifact poisoning attacks. Artifact poisoning occurs when malicious artifacts from untrusted sources overwrite existing files in the runner workspace, potentially leading to code execution in privileged contexts.
 
