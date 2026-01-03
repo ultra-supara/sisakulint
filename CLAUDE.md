@@ -9,9 +9,11 @@ sisakulint is a static analysis tool for GitHub Actions workflow files. It analy
 **Key Features:**
 - Detects injection vulnerabilities, credential exposure, and supply chain attacks
 - Validates permissions, timeouts, and workflow configurations
-- Supports auto-fixing for many security issues
+- Supports auto-fixing for many security issues (5 rules with auto-fix as of Jan 2026)
 - SARIF output format for CI/CD integration (e.g., reviewdog)
 - Fast parallel analysis with Go concurrency
+- Specialized detection for privileged workflow contexts (pull_request_target, issue_comment, workflow_run)
+- Artifact and cache poisoning detection
 
 ## Quick Start
 
@@ -62,18 +64,20 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
 3. **Rules System**:
    - Each rule is implemented in a separate file (all implementing the `Rule` interface):
      - `pkg/core/idrule.go` - **RuleID**: ID collision detection for jobs and environment variables
-     - `pkg/core/credential.go` - **CredentialRule**: Hardcoded credentials detection
+     - `pkg/core/credential.go` - **CredentialRule**: Hardcoded credentials detection (with auto-fix)
      - `pkg/core/permissionrule.go` - **PermissionRule**: Permissions scope and value validation
-     - `pkg/core/commitsha.go` - **CommitSHARule**: Validates commit SHA usage in actions (not visible in struct grep but exists)
+     - `pkg/core/commitsha.go` - **CommitSHARule**: Validates commit SHA usage in actions (with auto-fix)
      - `pkg/core/workflowcall.go` - **RuleWorkflowCall**: Reusable workflow call validation
-     - `pkg/core/timeout_minutes.go` - **TimeoutMinutesRule**: Ensures timeout-minutes is set
-     - `pkg/core/environmentvariablerule.go` - **EnvironmentVariableRule**: Environment variable name formatting (not visible in struct grep but exists)
+     - `pkg/core/timeout_minutes.go` - **TimeoutMinutesRule**: Ensures timeout-minutes is set (with auto-fix)
+     - `pkg/core/environmentvariablerule.go` - **EnvironmentVariableRule**: Environment variable name formatting
      - `pkg/core/exprrule.go` - **ExprRule**: GitHub Actions expression syntax validation
      - `pkg/core/conditionalrule.go` - **ConditionalRule**: Conditional expression validation
      - `pkg/core/issueinjection.go` - **IssueInjection**: Script injection and untrusted input detection
-     - `pkg/core/untrustedcheckout.go` - **UntrustedCheckoutRule**: Detects checkout of untrusted PR code in privileged workflow contexts (pull_request_target, issue_comment, workflow_run)
+     - `pkg/core/untrustedcheckout.go` - **UntrustedCheckoutRule**: Detects checkout of untrusted PR code in privileged workflow contexts (with auto-fix)
      - `pkg/core/duprecate_commands_pattern.go` - **RuleDeprecatedCommands**: Deprecated workflow commands detection
      - `pkg/core/actionlist.go` - **ActionList**: Action whitelist/blacklist enforcement
+     - `pkg/core/artifactpoisoningcritical.go` - **ArtifactPoisoningRule**: Detects artifact poisoning and path traversal vulnerabilities (with auto-fix)
+     - `pkg/core/cachepoisoningrule.go` - **CachePoisoningRule**: Detects cache poisoning with untrusted inputs
      - `pkg/core/rule_add_temp_normal.go` - **AddRule**: Template rule for adding new rules
 
 4. **AST Processing**:
@@ -106,7 +110,7 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - **StepFixer** interface - Fixes issues at the step level
      - **JobFixer** interface - Fixes issues at the job level
      - **funcFixer** - Generic function-based fixer
-   - Rules implementing auto-fix: TimeoutMinutesRule, CommitSHARule, CredentialRule
+   - Rules implementing auto-fix: TimeoutMinutesRule, CommitSHARule, CredentialRule, UntrustedCheckoutRule, ArtifactPoisoningRule
 
 8. **Remote Analysis**:
    - `pkg/remote/fetcher.go` - GitHub API integration for fetching workflows
@@ -186,7 +190,7 @@ See `docs/RULES_GUIDE.md` for detailed guide.
 
 sisakulint includes the following security rules (as of pkg/core/linter.go:500-519):
 
-1. **CredentialsRule** - Detects hardcoded credentials and tokens
+1. **CredentialsRule** - Detects hardcoded credentials and tokens (auto-fix supported)
 2. **JobNeedsRule** - Validates job dependencies
 3. **EnvironmentVariableRule** - Checks environment variable usage
 4. **IDRule** - Validates workflow/job/step IDs
@@ -195,12 +199,13 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 7. **ExpressionRule** - Parses and validates `${{ }}` expressions
 8. **DeprecatedCommandsRule** - Detects deprecated GitHub Actions commands
 9. **ConditionalRule** - Validates conditional expressions
-10. **TimeoutMinuteRule** - Enforces timeout configurations
+10. **TimeoutMinuteRule** - Enforces timeout configurations (auto-fix supported)
 11. **IssueInjectionRule** - Detects script injection vulnerabilities
-12. **CommitShaRule** - Validates action version pinning
-13. **ArtifactPoisoningRule** - Detects artifact poisoning risks
+12. **CommitShaRule** - Validates action version pinning (auto-fix supported)
+13. **ArtifactPoisoningRule** - Detects artifact poisoning risks (auto-fix supported)
 14. **ActionListRule** - Validates allowed/blocked actions
 15. **CachePoisoningRule** - Detects cache poisoning vulnerabilities
+16. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
 
 ## Key Files
 
@@ -296,6 +301,40 @@ Rules can implement auto-fix by:
 3. Testing with: `sisakulint -fix dry-run`
 
 See `pkg/core/permissionrule.go` for auto-fix example.
+
+### Current Auto-Fix Implementations
+
+1. **TimeoutMinutesRule** (`timeout_minutes.go`) - Adds default timeout-minutes: 5
+2. **CommitSHARule** (`commitsha.go`) - Converts action tags to commit SHAs with comment preservation
+3. **CredentialRule** (`credential.go`) - Removes hardcoded passwords from container configs
+4. **UntrustedCheckoutRule** (`untrustedcheckout.go`) - Adds explicit ref to checkout in privileged contexts
+5. **ArtifactPoisoningRule** (`artifactpoisoningcritical.go`) - Adds validation steps for artifact downloads
+
+## Recent Security Enhancements
+
+### Privileged Workflow Context Detection
+The tool now has specialized detection for dangerous patterns in privileged workflow contexts:
+- **pull_request_target** - Has write access and secrets, but triggered by untrusted PRs
+- **issue_comment** - Triggered by untrusted issue/PR comments
+- **workflow_run** - Executes with elevated privileges
+
+These contexts are risky because they combine elevated privileges with untrusted input.
+
+### Untrusted Checkout Rule
+Detects when `actions/checkout` in privileged contexts doesn't specify an explicit `ref`, which could lead to checking out untrusted PR code with elevated privileges. The auto-fix adds appropriate ref specifications.
+
+### Poisoning Attack Detection
+Two new rules detect supply chain attacks:
+
+1. **Artifact Poisoning** - Detects unsafe artifact download patterns and path traversal risks
+   - Checks for validation of downloaded artifacts
+   - Detects use of artifacts in privileged operations
+   - Auto-fix adds validation steps
+
+2. **Cache Poisoning** - Detects unsafe cache patterns with untrusted inputs
+   - Validates cache key construction
+   - Identifies untrusted inputs in cache keys (e.g., `github.event.pull_request.head.ref`)
+   - Prevents attackers from poisoning build caches
 
 ## Additional Documentation
 

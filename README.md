@@ -109,6 +109,31 @@ sisakulint was showcased at **BlackHat Asia 2025 Arsenal**, one of the world's l
   - Suggests modern alternatives (e.g., GITHUB_OUTPUT instead of set-output)
   - github ref : https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
 
+- **untrusted-checkout rule**
+  - Detects checkout of untrusted PR code in privileged workflow contexts
+  - Flags risky patterns in pull_request_target, issue_comment, and workflow_run events
+  - Supports auto-fix to add explicit ref specifications
+  - docs : https://sisaku-security.github.io/lint/docs/untrustedcheckout/
+  - github ref : https://docs.github.com/en/actions/security-for-github-actions/security-guides/keeping-your-github-actions-and-workflows-secure-preventing-pwn-requests
+
+- **artifact-poisoning rule**
+  - Detects artifact poisoning vulnerabilities in workflows
+  - Identifies unsafe artifact download patterns and path traversal risks
+  - Supports auto-fix to add validation steps
+  - docs : https://sisaku-security.github.io/lint/docs/artifactpoisoningcritical/
+
+- **cache-poisoning rule**
+  - Detects cache poisoning vulnerabilities
+  - Identifies unsafe cache patterns with untrusted inputs
+  - Validates cache key construction for security risks
+  - docs : https://sisaku-security.github.io/lint/docs/cachepoisoningrule/
+
+- **action-list rule**
+  - Validates actions against organization-specific allowlists/blocklists
+  - Enforces action usage policies across workflows
+  - Configurable via `.github/action.yaml`
+  - docs : https://sisaku-security.github.io/lint/docs/actionlist/
+
 ## install for macOS user
 
 ```bash
@@ -444,7 +469,7 @@ sisakulint provides an automated fix feature that can automatically resolve cert
 
 The following rules support automatic fixes:
 
-#### 1. missing-timeout-minutes
+#### 1. missing-timeout-minutes (timeout-minutes)
 Automatically adds `timeout-minutes: 5` to jobs and steps that don't have it set.
 
 **Before:**
@@ -466,7 +491,7 @@ jobs:
       - uses: actions/checkout@v4
 ```
 
-#### 2. commit-sha
+#### 2. commit-sha (commitsha)
 Converts action references from tags to full-length commit SHAs for enhanced security. The original tag is preserved as a comment.
 
 **Before:**
@@ -509,6 +534,64 @@ jobs:
         username: ${{ secrets.REGISTRY_USERNAME }}
 ```
 
+#### 4. untrusted-checkout
+Adds explicit ref specifications to checkout actions in privileged workflow contexts to prevent checking out untrusted PR code.
+
+**Before:**
+```yaml
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install
+```
+
+**After:**
+```yaml
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+      - run: npm install
+```
+
+#### 5. artifact-poisoning
+Adds validation steps to artifact download operations to prevent path traversal and poisoning attacks.
+
+**Before:**
+```yaml
+steps:
+  - uses: actions/download-artifact@v4
+    with:
+      name: build-output
+  - run: bash ./scripts/deploy.sh
+```
+
+**After:**
+```yaml
+steps:
+  - uses: actions/download-artifact@v4
+    with:
+      name: build-output
+  - name: Validate artifact paths
+    run: |
+      # Validate no path traversal attempts
+      find . -name ".." -o -name "../*" | grep . && exit 1 || true
+  - run: bash ./scripts/deploy.sh
+```
+
 ### Usage examples
 
 #### 1. Check what would be fixed (dry-run mode)
@@ -544,7 +627,8 @@ $ git diff .github/workflows/
 - **Commit SHA fixes require internet**: The `commit-sha` rule needs to fetch commit information from GitHub, so it requires an active internet connection
 - **Rate limiting**: The commit SHA autofix makes GitHub API calls, which are subject to rate limiting. For unauthenticated requests, the limit is 60 requests per hour
 - **Backup your files**: Consider committing your changes or backing up your workflow files before running autofix
-- **Not all rules support autofix**: Some rules like `expression`, `permissions`, and `issue-injection` require manual fixes as they depend on your specific use case
+- **Not all rules support autofix**: Some rules like `expression`, `permissions`, `issue-injection`, `cache-poisoning`, and `deprecated-commands` require manual fixes as they depend on your specific use case
+- **Auto-fix capabilities**: Currently, `timeout-minutes`, `commit-sha`, `credentials`, `untrusted-checkout`, and `artifact-poisoning` rules support auto-fix. More rules will support auto-fix in future releases
 
 ## JSON schema for GitHub Actions syntax
 paste into your `settings.json`:
