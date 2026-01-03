@@ -20,6 +20,47 @@ func ArtifactPoisoningRule() *ArtifactPoisoning {
 	}
 }
 
+// isUnsafePath checks if the provided path is unsafe for artifact extraction.
+// Safe paths must use runner.temp to isolate artifacts from the workspace.
+func isUnsafePath(path string) bool {
+	if path == "" {
+		return true
+	}
+
+	// Trim whitespace
+	path = strings.TrimSpace(path)
+
+	// Workspace-relative paths are unsafe
+	if path == "." || path == "./" {
+		return true
+	}
+
+	// Relative paths (even if not directly in workspace root) are unsafe
+	if strings.HasPrefix(path, "./") || strings.HasPrefix(path, "../") {
+		return true
+	}
+
+	// Check for github.workspace reference (unsafe)
+	if strings.Contains(path, "github.workspace") {
+		return true
+	}
+
+	// Check for GITHUB_WORKSPACE env var (unsafe)
+	if strings.Contains(path, "GITHUB_WORKSPACE") {
+		return true
+	}
+
+	// Only runner.temp is considered safe
+	if !strings.Contains(path, "runner.temp") {
+		// Allow RUNNER_TEMP as well
+		if !strings.Contains(path, "RUNNER_TEMP") {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (rule *ArtifactPoisoning) VisitStep(step *ast.Step) error {
 	action, ok := step.Exec.(*ast.ExecAction)
 	if !ok {
@@ -31,13 +72,30 @@ func (rule *ArtifactPoisoning) VisitStep(step *ast.Step) error {
 	}
 
 	pathInput, hasPath := action.Inputs["path"]
-	if !hasPath || pathInput == nil || pathInput.Value == nil || pathInput.Value.Value == "" {
-		rule.Errorf(
-			step.Pos,
-			"artifact is downloaded without specifying a safe extraction path at step %q. This may allow artifact poisoning where malicious files overwrite existing files. Consider extracting to a temporary folder like '${{ runner.temp }}/artifacts' to prevent overwriting existing files. See https://codeql.github.com/codeql-query-help/actions/actions-artifact-poisoning-critical/",
-			step.String(),
-		)
-		rule.AddAutoFixer(NewStepFixer(step, rule))
+	var pathValue string
+	if hasPath && pathInput != nil && pathInput.Value != nil {
+		pathValue = pathInput.Value.Value
+	}
+
+	if isUnsafePath(pathValue) {
+		if pathValue == "" {
+			// Missing or empty path - safe to auto-fix
+			rule.Errorf(
+				step.Pos,
+				"artifact is downloaded without specifying a safe extraction path at step %q. This may allow artifact poisoning where malicious files overwrite existing files. Consider extracting to a temporary folder like '${{ runner.temp }}/artifacts' to prevent overwriting existing files. See https://codeql.github.com/codeql-query-help/actions/actions-artifact-poisoning-critical/",
+				step.String(),
+			)
+			rule.AddAutoFixer(NewStepFixer(step, rule))
+		} else {
+			// Unsafe path exists - report error but don't auto-fix (user might have reasons)
+			rule.Errorf(
+				step.Pos,
+				"artifact is downloaded to an unsafe path %q at step %q. Workspace-relative paths allow malicious artifacts to overwrite source code, scripts, or dependencies, creating a critical supply chain vulnerability. Extract to '${{ runner.temp }}/artifacts' instead. See https://codeql.github.com/codeql-query-help/actions/actions-artifact-poisoning-critical/",
+				pathValue,
+				step.String(),
+			)
+			// No auto-fixer for existing unsafe paths to avoid breaking intentional configurations
+		}
 	}
 
 	return nil

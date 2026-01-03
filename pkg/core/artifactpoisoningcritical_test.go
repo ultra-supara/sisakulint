@@ -20,6 +20,44 @@ func TestArtifactPoisoningRule(t *testing.T) {
 	}
 }
 
+// TestIsUnsafePath tests the isUnsafePath function with various path inputs
+func TestIsUnsafePath(t *testing.T) {
+	tests := []struct {
+		name       string
+		path       string
+		wantUnsafe bool
+	}{
+		// Unsafe paths
+		{name: "empty path", path: "", wantUnsafe: true},
+		{name: "whitespace only", path: "   ", wantUnsafe: true},
+		{name: "current directory", path: ".", wantUnsafe: true},
+		{name: "current directory with slash", path: "./", wantUnsafe: true},
+		{name: "relative path", path: "./artifacts", wantUnsafe: true},
+		{name: "parent relative path", path: "../artifacts", wantUnsafe: true},
+		{name: "github.workspace", path: "${{ github.workspace }}/artifacts", wantUnsafe: true},
+		{name: "GITHUB_WORKSPACE env", path: "$GITHUB_WORKSPACE/artifacts", wantUnsafe: true},
+		{name: "absolute path without runner.temp", path: "/tmp/artifacts", wantUnsafe: true},
+		{name: "simple directory name", path: "artifacts", wantUnsafe: true},
+		{name: "nested directory", path: "build/artifacts", wantUnsafe: true},
+
+		// Safe paths
+		{name: "runner.temp basic", path: "${{ runner.temp }}/artifacts", wantUnsafe: false},
+		{name: "runner.temp nested", path: "${{ runner.temp }}/build/artifacts", wantUnsafe: false},
+		{name: "RUNNER_TEMP env var", path: "$RUNNER_TEMP/artifacts", wantUnsafe: false},
+		{name: "RUNNER_TEMP nested", path: "$RUNNER_TEMP/build/artifacts", wantUnsafe: false},
+		{name: "runner.temp with spaces", path: "  ${{ runner.temp }}/artifacts  ", wantUnsafe: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isUnsafePath(tt.path)
+			if got != tt.wantUnsafe {
+				t.Errorf("isUnsafePath(%q) = %v, want %v", tt.path, got, tt.wantUnsafe)
+			}
+		})
+	}
+}
+
 func TestArtifactPoisoning_VisitStep(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -83,6 +121,159 @@ func TestArtifactPoisoning_VisitStep(t *testing.T) {
 				Pos: &ast.Position{Line: 10, Col: 5},
 			},
 			wantErrors: 0,
+		},
+		{
+			name: "download-artifact with current directory path - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "."},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
+		},
+		{
+			name: "download-artifact with current directory slash path - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "./"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
+		},
+		{
+			name: "download-artifact with relative path - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "./artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
+		},
+		{
+			name: "download-artifact with parent relative path - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "../artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
+		},
+		{
+			name: "download-artifact with github.workspace path - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "${{ github.workspace }}/artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
+		},
+		{
+			name: "download-artifact with GITHUB_WORKSPACE env var - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "$GITHUB_WORKSPACE/artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
+		},
+		{
+			name: "download-artifact with absolute path (no runner.temp) - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "/tmp/artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
+		},
+		{
+			name: "download-artifact with RUNNER_TEMP env var - no error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "$RUNNER_TEMP/artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 0,
+		},
+		{
+			name: "download-artifact with whitespace path - should error",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "  "},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors: 1,
 		},
 		{
 			name: "download-artifact v3 without path - should error",
@@ -273,7 +464,7 @@ func TestArtifactPoisoning_Integration(t *testing.T) {
 		wantAutoFixers int
 	}{
 		{
-			name: "unsafe download creates error and autofixer",
+			name: "missing path creates error and autofixer",
 			step: &ast.Step{
 				ID: &ast.String{Value: "download"},
 				Exec: &ast.ExecAction{
@@ -302,6 +493,60 @@ func TestArtifactPoisoning_Integration(t *testing.T) {
 			},
 			wantErrors:     0,
 			wantAutoFixers: 0,
+		},
+		{
+			name: "unsafe path (current dir) creates error but NO autofixer",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "."},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors:     1,
+			wantAutoFixers: 0, // No auto-fix for existing unsafe paths
+		},
+		{
+			name: "unsafe path (relative) creates error but NO autofixer",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "./artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors:     1,
+			wantAutoFixers: 0, // No auto-fix for existing unsafe paths
+		},
+		{
+			name: "unsafe path (workspace) creates error but NO autofixer",
+			step: &ast.Step{
+				ID: &ast.String{Value: "download"},
+				Exec: &ast.ExecAction{
+					Uses: &ast.String{Value: "actions/download-artifact@v4"},
+					Inputs: map[string]*ast.Input{
+						"path": {
+							Name:  &ast.String{Value: "path"},
+							Value: &ast.String{Value: "${{ github.workspace }}/artifacts"},
+						},
+					},
+				},
+				Pos: &ast.Position{Line: 10, Col: 5},
+			},
+			wantErrors:     1,
+			wantAutoFixers: 0, // No auto-fix for existing unsafe paths
 		},
 	}
 
