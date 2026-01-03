@@ -1,0 +1,33 @@
+# Vulnerable workflow for testing cache-poisoning-poisonable-step rule
+# This workflow runs untrusted code after checking out PR head code
+name: Vulnerable Code Execution
+
+on:
+  pull_request_target:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Local script execution - VULNERABLE
+      - name: Run build script
+        run: ./build.sh
+
+      # Build command - VULNERABLE
+      - name: Install dependencies
+        run: npm install
+
+      # Local action - VULNERABLE
+      - uses: ./.github/actions/my-action
+
+      # github-script with local import - VULNERABLE
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./scripts/test.js')
+            await script()
