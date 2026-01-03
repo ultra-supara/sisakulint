@@ -12,3 +12,4 @@ action-list:
   - github/codeql-action/init@*
   - goreleaser/goreleaser-action@*
   - reviewdog/action-setup@*
+  - actions/*
