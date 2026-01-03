@@ -9,7 +9,7 @@ import (
 
 // UntrustedCheckoutRule checks for dangerous combinations of privileged triggers
 // and untrusted code checkout. This rule detects the pattern where workflows
-// triggered by pull_request_target, issue_comment, or workflow_run events
+// triggered by pull_request_target, issue_comment, workflow_run, or workflow_call events
 // explicitly check out code from pull request HEAD, which can allow malicious
 // actors to execute code with access to repository secrets.
 //
@@ -55,7 +55,7 @@ func NewUntrustedCheckoutRule() *UntrustedCheckoutRule {
 }
 
 // VisitWorkflowPre checks if the workflow uses dangerous triggers
-// Dangerous triggers: pull_request_target, issue_comment, workflow_run
+// Dangerous triggers: pull_request_target, issue_comment, workflow_run, workflow_call
 // These triggers run in the context of the base repository with access to secrets
 func (rule *UntrustedCheckoutRule) VisitWorkflowPre(n *ast.Workflow) error {
 	// Reset state for each workflow
@@ -65,21 +65,32 @@ func (rule *UntrustedCheckoutRule) VisitWorkflowPre(n *ast.Workflow) error {
 
 	// Check all workflow triggers
 	for _, event := range n.On {
-		// Only WebhookEvents can be dangerous (pull_request_target, issue_comment, workflow_run)
-		if webhookEvent, ok := event.(*ast.WebhookEvent); ok {
-			triggerName := webhookEvent.EventName()
+		var triggerName string
+		var triggerPos *ast.Position
 
+		// Check for WebhookEvent (pull_request_target, issue_comment, workflow_run)
+		if webhookEvent, ok := event.(*ast.WebhookEvent); ok {
+			triggerName = webhookEvent.EventName()
+			triggerPos = webhookEvent.Pos
+		} else if workflowCallEvent, ok := event.(*ast.WorkflowCallEvent); ok {
+			// Check for WorkflowCallEvent (workflow_call)
+			triggerName = workflowCallEvent.EventName()
+			triggerPos = workflowCallEvent.Pos
+		}
+
+		if triggerName != "" {
 			// Check if this is a dangerous trigger
 			// pull_request_target: Runs in base repo context with write permissions and secrets
 			// issue_comment: Runs in base repo context, can be triggered by external contributors
 			// workflow_run: Runs in base repo context with access to secrets
+			// workflow_call: Inherits security context from caller, can be privileged if called from privileged workflow
 			switch triggerName {
-			case "pull_request_target", "issue_comment", "workflow_run":
+			case "pull_request_target", "issue_comment", "workflow_run", "workflow_call":
 				rule.hasDangerousTrigger = true
-				rule.dangerousTriggerPos = webhookEvent.Pos
+				rule.dangerousTriggerPos = triggerPos
 				rule.dangerousTriggerName = triggerName
-				rule.Debug("Found dangerous trigger '%s' at %s", triggerName, webhookEvent.Pos)
-				// Don't break - we might find multiple dangerous triggers but we only need one
+				rule.Debug("Found dangerous trigger '%s' at %s", triggerName, triggerPos)
+				// Don't break - keep checking remaining triggers (though we only need to find one)
 			}
 		}
 	}
@@ -131,7 +142,7 @@ func (rule *UntrustedCheckoutRule) VisitStep(step *ast.Step) error {
 			refValue.Pos,
 			"checking out untrusted code from pull request in workflow with privileged trigger '%s' (line %d). This allows potentially malicious code from external contributors to execute with access to repository secrets. "+
 				"Use 'pull_request' trigger instead, or avoid checking out PR code when using '%s'. "+
-				"See https://codeql.github.com/codeql-query-help/actions/actions-untrusted-checkout-critical/ for more details [untrusted-checkout]",
+				"See https://codeql.github.com/codeql-query-help/actions/actions-untrusted-checkout-critical/ for more details",
 			rule.dangerousTriggerName,
 			rule.dangerousTriggerPos.Line,
 			rule.dangerousTriggerName,
@@ -172,6 +183,10 @@ type refParsedExpression struct {
 }
 
 // extractAndParseRefExpressions extracts all expressions from a string and parses them
+//
+// NOTE: This implementation is similar to extractAndParseExpressions in issueinjection.go.
+// Future work could extract this into a shared utility function in pkg/expressions/ or pkg/core/util.go
+// to reduce code duplication and ensure consistent expression parsing across rules.
 func (rule *UntrustedCheckoutRule) extractAndParseRefExpressions(str *ast.String) []refParsedExpression {
 	if str == nil {
 		return nil
@@ -239,13 +254,26 @@ func (rule *UntrustedCheckoutRule) parseExpression(exprStr string) (expressions.
 }
 
 // isUntrustedPRExpression checks if an expression accesses untrusted PR data
+//
+// NOTE: The ExprNode parameter is currently unused but reserved for future AST-based detection.
+// Currently using string-based matching which is simpler and covers the most common attack patterns.
+//
+// SCOPE: This rule focuses on github.event.pull_request.head.* patterns which are the most
+// common and dangerous patterns for checkout actions. Other untrusted inputs like:
+// - github.event.issue.* (issue context)
+// - github.event.comment.* (comment body)
+// - github.event.workflow_run.head_branch (workflow_run context)
+// are potential attack vectors but are less commonly used with checkout actions.
+// These patterns could be detected in a future enhancement or by the issue-injection rule.
+//
+// See: https://github.com/ultra-supara/sisakulint/pull/226#discussion_r2658869719
 func (rule *UntrustedCheckoutRule) isUntrustedPRExpression(_ expressions.ExprNode, rawExpr string) bool {
 	// Simple string-based check for common dangerous patterns
 	// These patterns access pull request HEAD code which is untrusted
 	dangerousPatterns := []string{
 		"github.event.pull_request.head.sha",
 		"github.event.pull_request.head.ref",
-		"github.event.pull_request.head.",
+		"github.event.pull_request.head.", // Catches head.number, head.label, etc.
 	}
 
 	for _, pattern := range dangerousPatterns {
@@ -279,6 +307,20 @@ func (rule *UntrustedCheckoutRule) VisitJobPost(node *ast.Job) error {
 
 // FixStep implements the StepFixer interface to auto-fix untrusted checkout issues
 // The fix replaces the dangerous ref parameter with a safe default (github.sha)
+//
+// BEHAVIOR WITH MIXED LITERALS AND EXPRESSIONS:
+// When the ref contains both literals and expressions (e.g., "pr-${{ github.event.pull_request.head.ref }}"),
+// the auto-fixer will replace the ENTIRE value with "${{ github.sha }}". This ensures security
+// but may change the workflow behavior if the literal prefix was meaningful.
+//
+// Example:
+//   Before: ref: pr-${{ github.event.pull_request.head.ref }}
+//   After:  ref: ${{ github.sha }}
+//
+// This is intentional - security takes priority over preserving custom ref formats.
+// Users can review and adjust the fix if needed, as auto-fix is opt-in with -fix flag.
+//
+// See: https://github.com/ultra-supara/sisakulint/pull/226#discussion_r2658870256
 func (rule *UntrustedCheckoutRule) FixStep(step *ast.Step) error {
 	// Get the action from the step
 	action, ok := step.Exec.(*ast.ExecAction)

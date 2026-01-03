@@ -149,6 +149,22 @@ jobs:
 			errMsg:  "checking out untrusted code from pull request",
 		},
 		{
+			name: "Vulnerable: workflow_call with PR checkout",
+			yaml: `
+name: Test
+on: workflow_call
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+`,
+			wantErr: true,
+			errMsg:  "checking out untrusted code from pull request",
+		},
+		{
 			name: "Safe: Multiple triggers with only safe ones",
 			yaml: `
 name: Test
@@ -231,6 +247,105 @@ jobs:
 `,
 			wantErr: false,
 		},
+		{
+			name: "Vulnerable: Mixed literal and expression in ref",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pr-${{ github.event.pull_request.head.ref }}
+`,
+			wantErr: true,
+			errMsg:  "checking out untrusted code from pull request",
+		},
+		{
+			name: "Vulnerable: PR HEAD SHA with extra whitespace",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{   github.event.pull_request.head.sha   }}
+`,
+			wantErr: true,
+			errMsg:  "checking out untrusted code from pull request",
+		},
+		{
+			name: "Vulnerable: Multiple dangerous checkouts in different steps",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: echo "test"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+`,
+			wantErr: true,
+			errMsg:  "checking out untrusted code from pull request",
+		},
+		{
+			name: "Vulnerable: Using head.sha in concatenated string",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/heads/${{ github.event.pull_request.head.sha }}
+`,
+			wantErr: true,
+			errMsg:  "checking out untrusted code from pull request",
+		},
+		{
+			name: "Safe: Using github.sha in concatenated string",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/heads/${{ github.sha }}
+`,
+			wantErr: false,
+		},
+		{
+			name: "Vulnerable: Using github.event.pull_request.head.number",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.number }}
+`,
+			wantErr: true,
+			errMsg:  "checking out untrusted code from pull request",
+		},
 	}
 
 	for _, tt := range tests {
@@ -285,6 +400,7 @@ func TestUntrustedCheckoutDetectsAllDangerousTriggers(t *testing.T) {
 		"pull_request_target",
 		"issue_comment",
 		"workflow_run",
+		"workflow_call",
 	}
 
 	for _, trigger := range dangerousTriggers {

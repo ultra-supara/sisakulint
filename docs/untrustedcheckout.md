@@ -42,8 +42,9 @@ GitHub Actions provides different trigger types that run with different permissi
 | `pull_request_target` | Base repo context | ✅ Yes | ✅ Yes |
 | `issue_comment` | Base repo context | ✅ Yes | ✅ Yes |
 | `workflow_run` | Base repo context | ✅ Yes | ✅ Yes |
+| `workflow_call` | Inherits from caller | ✅ Yes (if caller has) | ✅ Yes (if caller has) |
 
-**The Vulnerability:** When a workflow uses `pull_request_target`, `issue_comment`, or `workflow_run` triggers and explicitly checks out code from the pull request HEAD, it creates a **Poisoned Pipeline Execution** vulnerability. External attackers can:
+**The Vulnerability:** When a workflow uses `pull_request_target`, `issue_comment`, `workflow_run`, or `workflow_call` triggers and explicitly checks out code from the pull request HEAD, it creates a **Poisoned Pipeline Execution** vulnerability. External attackers can:
 
 1. **Exfiltrate Secrets:** Access `${{ secrets.* }}` values
 2. **Modify Repository:** Push malicious commits or tags
@@ -136,6 +137,12 @@ if refInput != nil && refInput.Value.ContainsExpression() {
    - Triggered after another workflow completes
    - Runs in base repository context with secrets access
    - Used for trusted workflow separation, but dangerous if misused
+
+4. **`workflow_call`**
+   - Enables workflow reuse by allowing one workflow to call another
+   - Inherits the security context of the calling workflow
+   - Can be privileged if called from a privileged workflow (e.g., one triggered by `pull_request_target`)
+   - Dangerous when it checks out untrusted PR code
 
 #### Untrusted Ref Patterns
 
@@ -292,7 +299,7 @@ When this rule triggers:
    - If using `pull_request_target` for labeling or commenting, use GitHub API instead of checking out code
 
 5. **Review existing workflows**
-   - Audit all workflows using `pull_request_target`, `issue_comment`, or `workflow_run`
+   - Audit all workflows using `pull_request_target`, `issue_comment`, `workflow_run`, or `workflow_call`
    - Ensure no PR code is executed in privileged contexts
 
 ### Additional Resources
