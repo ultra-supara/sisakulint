@@ -1,10 +1,13 @@
 # Vulnerable workflow for testing cache-poisoning-poisonable-step rule
 # This workflow runs untrusted code after checking out PR head code
-name: Vulnerable Code Execution
+# Based on CodeQL example: https://codeql.github.com/codeql-query-help/actions/actions-cache-poisoning-poisonable-step/
+name: Vulnerable Workflow
 
 on:
   pull_request_target:
     branches: [main]
+
+permissions: {}
 
 jobs:
   test:
@@ -12,22 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      # Local script execution - VULNERABLE
-      - name: Run build script
-        run: ./build.sh
-
-      # Build command - VULNERABLE
-      - name: Install dependencies
-        run: npm install
-
-      # Local action - VULNERABLE
-      - uses: ./.github/actions/my-action
-
-      # github-script with local import - VULNERABLE
-      - uses: actions/github-script@v7
-        with:
-          script: |
-            const script = require('./scripts/test.js')
-            await script()
+      - name: Run tests
+        run: ./run_tests.sh

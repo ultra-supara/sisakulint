@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/ultra-supara/sisakulint/pkg/ast"
-	"gopkg.in/yaml.v3"
 )
 
 // CachePoisoningPoisonableStepRule detects potential cache poisoning vulnerabilities
@@ -280,35 +279,5 @@ func (rule *CachePoisoningPoisonableStepRule) FixStep(node *ast.Step) error {
 	if node.BaseNode == nil {
 		return nil
 	}
-	return removeRefFromWithForPoisonableStep(node.BaseNode)
-}
-
-func removeRefFromWithForPoisonableStep(stepNode *yaml.Node) error {
-	for i := 0; i < len(stepNode.Content); i += 2 {
-		if i+1 >= len(stepNode.Content) {
-			break
-		}
-		key := stepNode.Content[i]
-		val := stepNode.Content[i+1]
-
-		if key.Value == "with" && val.Kind == yaml.MappingNode {
-			newContent := make([]*yaml.Node, 0, len(val.Content))
-			for j := 0; j < len(val.Content); j += 2 {
-				if j+1 >= len(val.Content) {
-					break
-				}
-				withKey := val.Content[j]
-				if withKey.Value != "ref" {
-					newContent = append(newContent, val.Content[j], val.Content[j+1])
-				}
-			}
-			if len(newContent) == 0 {
-				stepNode.Content = append(stepNode.Content[:i], stepNode.Content[i+2:]...)
-			} else {
-				val.Content = newContent
-			}
-			return nil
-		}
-	}
-	return nil
+	return RemoveRefFromWith(node.BaseNode)
 }

@@ -69,33 +69,47 @@ The rule triggers when **all three conditions** are met:
 
 ## Vulnerable Example
 
+This workflow is vulnerable because it runs in the `pull_request_target` context (default branch permissions) while checking out and executing untrusted PR code.
+
 ```yaml
 name: Vulnerable Workflow
 on:
   pull_request_target:
     branches: [main]
 
+permissions: {}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}  # Unsafe checkout
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      - run: ./build.sh  # VULNERABLE: executes untrusted code
-
-      - run: npm install  # VULNERABLE: executes untrusted package.json scripts
+      - name: Run tests
+        run: ./run_tests.sh
 ```
+
+**Why this is vulnerable:**
+- `pull_request_target` event runs the workflow with default branch credentials
+- `actions/checkout` with PR head reference checks out attacker-controlled code
+- `./run_tests.sh` from the untrusted PR is executed with elevated permissions
+- Attacker can steal `ACTIONS_RUNTIME_TOKEN` and poison cache for the default branch
 
 ## Safe Examples
 
-### Using Safe Trigger
+### Correct: Using Safe Trigger
+
+The key difference is using `pull_request` instead of `pull_request_target`. This scopes the cache to the PR branch, preventing attackers from poisoning the main branch cache.
+
 ```yaml
-name: Safe - Pull Request Trigger
+name: Secure Workflow
 on:
-  pull_request:  # Safe trigger (not pull_request_target)
+  pull_request:
     branches: [main]
+
+permissions: {}
 
 jobs:
   test:
@@ -103,32 +117,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
-      - run: ./build.sh  # Safe because trigger is pull_request
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run tests
+        run: ./run_tests.sh
 ```
 
-### Safe Checkout
+**Why this is safe:**
+- `pull_request` event restricts cache scope to the PR branch
+- Cache is not shared with the default branch
+- Attacker cannot poison the default branch cache even if they steal tokens
+
+### Safe Checkout (Base Branch)
+
+If you must use `pull_request_target`, ensure `actions/checkout` does NOT specify a PR head reference. By default, it checks out the base branch, preventing code execution on attacker-controlled files.
+
 ```yaml
 name: Safe - Base Branch Checkout
 on:
   pull_request_target:
     branches: [main]
 
+permissions: {}
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4  # Safe: checks out base branch
+      - uses: actions/checkout@v4
+        # No 'ref' input: defaults to base branch (main)
 
-      - run: ./build.sh  # Safe because checked out base branch code
+      - run: ./build.sh
+        # Safe: checked out base branch code, not PR code
 ```
 
-### External Commands Only
+**Why this is safe:**
+- `actions/checkout` without `ref` defaults to base branch
+- Execution happens on repository code, not untrusted PR code
+- Attacker cannot influence which code gets executed
+
+### Safe: External Commands Only
+
+Even with unsafe checkout, limiting steps to safe external commands prevents code execution vulnerabilities.
+
 ```yaml
-name: Safe - No Local Code Execution
+name: Safe - External Commands Only
 on:
   pull_request_target:
     branches: [main]
+
+permissions: {}
 
 jobs:
   test:
@@ -136,11 +174,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      - run: echo "Hello"  # Safe: doesn't execute local code
-      - run: node --version  # Safe: external command only
+      - run: echo "Hello World"
+        # Safe: doesn't execute local code
+      - run: node --version
+        # Safe: external command only
 ```
+
+**Why this is safe:**
+- No local scripts are executed (`./build.sh`, etc.)
+- No build tools that read local files (`npm install`, `pip install`, etc.)
+- No local actions
+- No github-script with local imports
 
 ## Auto-fix
 
