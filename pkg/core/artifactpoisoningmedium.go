@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/ultra-supara/sisakulint/pkg/ast"
-	"gopkg.in/yaml.v3"
 )
 
 // ArtifactPoisoningMedium detects potential artifact poisoning vulnerabilities
@@ -35,12 +34,6 @@ func NewArtifactPoisoningMediumRule() *ArtifactPoisoningMedium {
 	}
 }
 
-// untrustedTriggersMap defines workflow triggers that may execute with untrusted input.
-var untrustedTriggersMap = map[string]bool{
-	"workflow_run":        true, // Triggered by completion of another workflow (may be from PR)
-	"pull_request_target": true, // Runs in the context of the base branch but with PR info
-	"issue_comment":       true, // Triggered by comments which can be from external contributors
-}
 
 // knownThirdPartyArtifactActions lists known third-party actions that download artifacts.
 // These actions may have unsafe default behavior (e.g., overwriting existing files).
@@ -90,7 +83,7 @@ func (rule *ArtifactPoisoningMedium) VisitWorkflowPre(node *ast.Workflow) error 
 	for _, event := range node.On {
 		switch e := event.(type) {
 		case *ast.WebhookEvent:
-			if e.Hook != nil && untrustedTriggersMap[e.Hook.Value] {
+			if e.Hook != nil && UntrustedTriggers[e.Hook.Value] {
 				rule.unsafeTriggers = append(rule.unsafeTriggers, e.Hook.Value)
 			}
 		}
@@ -187,70 +180,6 @@ func (rule *ArtifactPoisoningMedium) FixStep(node *ast.Step) error {
 	}
 
 	// Update the YAML node to reflect the change (must be called for file to be modified)
-	addPathToWithMedium(node.BaseNode)
+	AddPathToWithSection(node.BaseNode, "${{ runner.temp }}/artifacts")
 	return nil
-}
-
-// addPathToWithMedium adds or updates the path input in the with section of the step
-func addPathToWithMedium(stepNode *yaml.Node) {
-	if stepNode == nil || stepNode.Kind != yaml.MappingNode {
-		return
-	}
-
-	// Find the 'with' section
-	withIndex := -1
-	for i := 0; i < len(stepNode.Content); i += 2 {
-		if stepNode.Content[i].Value == "with" {
-			withIndex = i
-			break
-		}
-	}
-
-	pathKey := &yaml.Node{Kind: yaml.ScalarNode, Value: "path"}
-	pathValue := &yaml.Node{Kind: yaml.ScalarNode, Value: "${{ runner.temp }}/artifacts"}
-
-	if withIndex >= 0 {
-		// 'with' section exists, add or update 'path'
-		withNode := stepNode.Content[withIndex+1]
-		if withNode.Kind == yaml.MappingNode {
-			// Check if path already exists
-			for i := 0; i < len(withNode.Content); i += 2 {
-				if withNode.Content[i].Value == "path" {
-					// Update existing path (overwrite unsafe path)
-					withNode.Content[i+1] = pathValue
-					return
-				}
-			}
-			// Add new path entry
-			withNode.Content = append(withNode.Content, pathKey, pathValue)
-		}
-		return
-	}
-
-	// 'with' section doesn't exist, create it after 'uses'
-	usesIndex := -1
-	for i := 0; i < len(stepNode.Content); i += 2 {
-		if stepNode.Content[i].Value == "uses" {
-			usesIndex = i
-			break
-		}
-	}
-
-	withKey := &yaml.Node{Kind: yaml.ScalarNode, Value: "with"}
-	withValue := &yaml.Node{
-		Kind:    yaml.MappingNode,
-		Content: []*yaml.Node{pathKey, pathValue},
-	}
-
-	if usesIndex >= 0 {
-		// Insert 'with' section after 'uses'
-		insertIndex := usesIndex + 2
-		stepNode.Content = append(
-			stepNode.Content[:insertIndex],
-			append([]*yaml.Node{withKey, withValue}, stepNode.Content[insertIndex:]...)...,
-		)
-	} else {
-		// 'uses' not found, append at the end
-		stepNode.Content = append(stepNode.Content, withKey, withValue)
-	}
 }

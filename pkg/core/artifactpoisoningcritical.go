@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/ultra-supara/sisakulint/pkg/ast"
-	"gopkg.in/yaml.v3"
 )
 
 type ArtifactPoisoning struct {
@@ -119,60 +118,6 @@ func (rule *ArtifactPoisoning) FixStep(step *ast.Step) error {
 		},
 	}
 
-	addPathToWith(step.BaseNode)
+	AddPathToWithSection(step.BaseNode, "${{ runner.temp }}/artifacts")
 	return nil
-}
-
-func addPathToWith(node *yaml.Node) {
-	if node == nil || node.Kind != yaml.MappingNode {
-		return
-	}
-
-	withIndex := -1
-	for i := 0; i < len(node.Content); i += 2 {
-		if node.Content[i].Value == "with" {
-			withIndex = i
-			break
-		}
-	}
-
-	pathKey := &yaml.Node{Kind: yaml.ScalarNode, Value: "path"}
-	pathValue := &yaml.Node{Kind: yaml.ScalarNode, Value: "${{ runner.temp }}/artifacts"}
-
-	if withIndex >= 0 {
-		withNode := node.Content[withIndex+1]
-		if withNode.Kind == yaml.MappingNode {
-			for i := 0; i < len(withNode.Content); i += 2 {
-				if withNode.Content[i].Value == "path" {
-					return
-				}
-			}
-			withNode.Content = append(withNode.Content, pathKey, pathValue)
-		}
-		return
-	}
-
-	usesIndex := -1
-	for i := 0; i < len(node.Content); i += 2 {
-		if node.Content[i].Value == "uses" {
-			usesIndex = i
-			break
-		}
-	}
-
-	withKey := &yaml.Node{Kind: yaml.ScalarNode, Value: "with"}
-	withValue := &yaml.Node{
-		Kind:    yaml.MappingNode,
-		Content: []*yaml.Node{pathKey, pathValue},
-	}
-
-	if usesIndex >= 0 {
-		insertIndex := usesIndex + 2
-		node.Content = append(
-			node.Content[:insertIndex],
-			append([]*yaml.Node{withKey, withValue}, node.Content[insertIndex:]...)...,
-		)
-	} else {
-		node.Content = append(node.Content, withKey, withValue)
-	}
 }
