@@ -1,0 +1,29 @@
+name: Safe Cache Usage Example
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+# この例では、キャッシュの安全な使用パターンを示しています。
+#
+# 安全な理由:
+# 1. pull_request トリガーはPRのコンテキストで実行されます（デフォルトブランチではない）
+# 2. キャッシュスコープがPRブランチに限定されるため、デフォルトブランチのキャッシュを汚染できません
+#
+# 期待される結果:
+# - cache-poisoning 警告は発生しません

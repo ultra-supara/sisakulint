@@ -1,0 +1,39 @@
+name: Vulnerable Cache Poisoning Example
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+# この例では、キャッシュポイズニング攻撃の脆弱なパターンを示しています。
+#
+# 脆弱性の説明:
+# 1. pull_request_target トリガーはデフォルトブランチのコンテキストで実行されます
+# 2. actions/checkout で github.head_ref を使用して、信頼されていないPRコードをチェックアウトしています
+# 3. actions/setup-node と actions/cache でキャッシュを操作しています
+#
+# 攻撃シナリオ:
+# - 攻撃者がPRを作成し、悪意のあるコードを含める
+# - PRコードがチェックアウトされ、実行される
+# - 悪意のあるコードがキャッシュを汚染する
+# - 汚染されたキャッシュが他の特権ワークフローで復元され、攻撃者のコードが実行される
+#
+# 期待される検出:
+# - actions/setup-node@v4 に対して cache-poisoning 警告
+# - actions/cache@v3 に対して cache-poisoning 警告
