@@ -25,7 +25,6 @@ When `action-list:` is not configured, sisakulint will not check action referenc
 - **Whitelist Enforcement**: Only actions matching configured patterns are allowed
 - **Wildcard Support**: Use `*` wildcards to match multiple versions (e.g., `actions/checkout@*`)
 - **Auto-generation**: Automatically generate whitelist from existing workflows
-- **Auto-fix**: Automatically remove non-compliant action steps from workflows
 
 ### Generating Action List Configuration (First-Time Setup)
 
@@ -117,19 +116,7 @@ $ sisakulint
        12 👈|      - uses: unauthorized/suspicious-action@v1
 ```
 
-### Auto-fix Support
-
-The action-list rule supports auto-fixing by removing non-compliant action steps:
-
-```bash
-# Preview changes without applying
-sisakulint -fix dry-run
-
-# Apply fixes
-sisakulint -fix on
-```
-
-After auto-fix, the unauthorized action step will be completely removed from the workflow file.
+**Note**: This rule does not support auto-fixing. You must manually review and update workflow files to use only approved actions from your whitelist.
 
 ### Feature Background
 
