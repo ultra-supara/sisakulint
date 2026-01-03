@@ -518,6 +518,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		NewActionListRule(),
 		NewUntrustedCheckoutRule(),
 		NewCachePoisoningRule(),
+		NewCachePoisoningPoisonableStepRule(),
 	}
 }
 
