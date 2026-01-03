@@ -136,6 +136,8 @@ func (rule *UntrustedCheckoutRule) VisitStep(step *ast.Step) error {
 			rule.dangerousTriggerPos.Line,
 			rule.dangerousTriggerName,
 		)
+		// Add auto-fixer to replace dangerous ref with safe default
+		rule.AddAutoFixer(NewStepFixer(step, rule))
 	}
 
 	return nil
@@ -237,7 +239,7 @@ func (rule *UntrustedCheckoutRule) parseExpression(exprStr string) (expressions.
 }
 
 // isUntrustedPRExpression checks if an expression accesses untrusted PR data
-func (rule *UntrustedCheckoutRule) isUntrustedPRExpression(node expressions.ExprNode, rawExpr string) bool {
+func (rule *UntrustedCheckoutRule) isUntrustedPRExpression(_ expressions.ExprNode, rawExpr string) bool {
 	// Simple string-based check for common dangerous patterns
 	// These patterns access pull request HEAD code which is untrusted
 	dangerousPatterns := []string{
@@ -272,5 +274,43 @@ func (rule *UntrustedCheckoutRule) VisitJobPre(node *ast.Job) error {
 
 // VisitJobPost is required by the TreeVisitor interface but not used
 func (rule *UntrustedCheckoutRule) VisitJobPost(node *ast.Job) error {
+	return nil
+}
+
+// FixStep implements the StepFixer interface to auto-fix untrusted checkout issues
+// The fix replaces the dangerous ref parameter with a safe default (github.sha)
+func (rule *UntrustedCheckoutRule) FixStep(step *ast.Step) error {
+	// Get the action from the step
+	action, ok := step.Exec.(*ast.ExecAction)
+	if !ok {
+		return FormattedError(step.Pos, rule.RuleName, "step is not an action")
+	}
+
+	// Check if this is actions/checkout
+	if !strings.HasPrefix(action.Uses.Value, "actions/checkout@") {
+		return FormattedError(step.Pos, rule.RuleName, "not a checkout action")
+	}
+
+	// Check if the checkout has inputs
+	if action.Inputs == nil {
+		return FormattedError(step.Pos, rule.RuleName, "checkout action has no inputs")
+	}
+
+	// Get the ref input
+	refInput, exists := action.Inputs["ref"]
+	if !exists {
+		return FormattedError(step.Pos, rule.RuleName, "checkout action has no ref parameter")
+	}
+
+	// Replace the dangerous ref with a safe default (github.sha)
+	// github.sha is the SHA of the base branch, which is safe to checkout
+	// This is equivalent to removing the ref parameter, but more explicit
+	if refInput.Value.BaseNode != nil {
+		refInput.Value.BaseNode.Value = "${{ github.sha }}"
+	}
+	refInput.Value.Value = "${{ github.sha }}"
+
+	rule.Debug("Fixed untrusted checkout at %s: replaced ref with github.sha", step.Pos)
+
 	return nil
 }

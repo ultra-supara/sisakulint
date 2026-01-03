@@ -239,20 +239,59 @@ The rule has very few false positives because:
 #### OWASP Resources
 - {{< popup_link2 href="https://owasp.org/www-project-top-10-ci-cd-security-risks/" >}}
 
+### Auto-Fix
+
+This rule supports automatic fixing. When you run sisakulint with the `-fix on` flag, it will automatically replace dangerous `ref` parameters with a safe default.
+
+**Auto-fix behavior:**
+- Replaces `ref: ${{ github.event.pull_request.head.sha }}` with `ref: ${{ github.sha }}`
+- Replaces `ref: ${{ github.event.pull_request.head.ref }}` with `ref: ${{ github.sha }}`
+- `github.sha` points to the base branch SHA, which is safe to checkout
+
+**Example:**
+
+Before auto-fix:
+```yaml
+on: pull_request_target
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+```
+
+After running `sisakulint -fix on`:
+```yaml
+on: pull_request_target
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+```
+
+**Note:** Auto-fix provides a safe default, but you should review whether your workflow actually needs to checkout code at all when using privileged triggers. Consider using the two-workflow pattern or removing the checkout step entirely if appropriate.
+
 ### Remediation Steps
 
 When this rule triggers:
 
-1. **Assess if you need privileged access**
+1. **Use auto-fix for quick remediation**
+   - Run `sisakulint -fix on` to automatically replace dangerous refs with safe defaults
+   - Review the changes to ensure they meet your workflow requirements
+
+2. **Assess if you need privileged access**
    - If you don't need secrets or write permissions, switch to `pull_request` trigger
 
-2. **Use the two-workflow pattern**
+3. **Use the two-workflow pattern**
    - Separate untrusted execution (PR code) from privileged operations (secrets access)
 
-3. **Avoid checking out PR code**
+4. **Avoid checking out PR code**
    - If using `pull_request_target` for labeling or commenting, use GitHub API instead of checking out code
 
-4. **Review existing workflows**
+5. **Review existing workflows**
    - Audit all workflows using `pull_request_target`, `issue_comment`, or `workflow_run`
    - Ensure no PR code is executed in privileged contexts
 

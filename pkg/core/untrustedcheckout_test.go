@@ -2,6 +2,8 @@ package core
 
 import (
 	"testing"
+
+	"github.com/ultra-supara/sisakulint/pkg/ast"
 )
 
 func TestUntrustedCheckoutRule(t *testing.T) {
@@ -393,4 +395,227 @@ func findSubstring(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// TestUntrustedCheckoutAutoFixer tests that auto-fixer is added when needed
+func TestUntrustedCheckoutAutoFixer(t *testing.T) {
+	tests := []struct {
+		name           string
+		yaml           string
+		expectAutoFix  bool
+		autoFixerCount int
+	}{
+		{
+			name: "Auto-fixer added for pull_request_target with dangerous ref",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+`,
+			expectAutoFix:  true,
+			autoFixerCount: 1,
+		},
+		{
+			name: "No auto-fixer for safe pull_request trigger",
+			yaml: `
+name: Test
+on: pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+`,
+			expectAutoFix:  false,
+			autoFixerCount: 0,
+		},
+		{
+			name: "No auto-fixer for pull_request_target without ref",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+`,
+			expectAutoFix:  false,
+			autoFixerCount: 0,
+		},
+		{
+			name: "Auto-fixer added for issue_comment with dangerous ref",
+			yaml: `
+name: Test
+on: issue_comment
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+`,
+			expectAutoFix:  true,
+			autoFixerCount: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Parse the workflow
+			workflow, errs := Parse([]byte(tt.yaml))
+			if len(errs) > 0 {
+				t.Fatalf("Failed to parse workflow: %v", errs)
+			}
+
+			// Create rule instance
+			rule := NewUntrustedCheckoutRule()
+
+			// Create visitor and add rule
+			visitor := NewSyntaxTreeVisitor()
+			visitor.AddVisitor(rule)
+
+			// Visit the workflow
+			if err := visitor.VisitTree(workflow); err != nil {
+				t.Fatalf("Failed to visit tree: %v", err)
+			}
+
+			// Check auto-fixer count
+			autoFixerCount := len(rule.AutoFixers())
+			if autoFixerCount != tt.autoFixerCount {
+				t.Errorf("Expected %d auto-fixer(s), but got %d", tt.autoFixerCount, autoFixerCount)
+			}
+
+			if tt.expectAutoFix && autoFixerCount == 0 {
+				t.Error("Expected auto-fixer to be added, but none was added")
+			}
+
+			if !tt.expectAutoFix && autoFixerCount > 0 {
+				t.Errorf("Expected no auto-fixer, but %d was added", autoFixerCount)
+			}
+		})
+	}
+}
+
+// TestUntrustedCheckoutFixStep tests the FixStep method
+func TestUntrustedCheckoutFixStep(t *testing.T) {
+	tests := []struct {
+		name          string
+		yaml          string
+		expectedRef   string
+		expectError   bool
+	}{
+		{
+			name: "Fix dangerous ref by replacing with github.sha",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+`,
+			expectedRef: "${{ github.sha }}",
+			expectError: false,
+		},
+		{
+			name: "Fix another dangerous ref pattern",
+			yaml: `
+name: Test
+on: issue_comment
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+`,
+			expectedRef: "${{ github.sha }}",
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Parse the workflow
+			workflow, errs := Parse([]byte(tt.yaml))
+			if len(errs) > 0 {
+				t.Fatalf("Failed to parse workflow: %v", errs)
+			}
+
+			// Create rule instance
+			rule := NewUntrustedCheckoutRule()
+
+			// Create visitor and add rule
+			visitor := NewSyntaxTreeVisitor()
+			visitor.AddVisitor(rule)
+
+			// Visit the workflow to detect issues and add auto-fixers
+			if err := visitor.VisitTree(workflow); err != nil {
+				t.Fatalf("Failed to visit tree: %v", err)
+			}
+
+			// Get auto-fixers
+			autoFixers := rule.AutoFixers()
+			if len(autoFixers) == 0 {
+				t.Fatal("No auto-fixer was added")
+			}
+
+			// Apply the fix
+			if err := autoFixers[0].Fix(); err != nil {
+				if !tt.expectError {
+					t.Errorf("FixStep() unexpected error = %v", err)
+				}
+				return
+			}
+
+			if tt.expectError {
+				t.Error("Expected error but got none")
+				return
+			}
+
+			// Verify the fix was applied
+			// Navigate to the step and check the ref value
+			var foundJob *ast.Job
+			for _, job := range workflow.Jobs {
+				foundJob = job
+				break
+			}
+			if foundJob == nil {
+				t.Fatal("No job found in workflow")
+			}
+
+			if len(foundJob.Steps) == 0 {
+				t.Fatal("No steps found in job")
+			}
+
+			step := foundJob.Steps[0]
+			action, ok := step.Exec.(*ast.ExecAction)
+			if !ok {
+				t.Fatal("Step is not an ExecAction")
+			}
+
+			refInput, exists := action.Inputs["ref"]
+			if !exists {
+				t.Fatal("No ref input found")
+			}
+
+			if refInput.Value.Value != tt.expectedRef {
+				t.Errorf("Expected ref to be %q, but got %q", tt.expectedRef, refInput.Value.Value)
+			}
+		})
+	}
 }
