@@ -44,11 +44,97 @@ sisakulint -init
 
 ### Architecture
 
+
+## Code Architecture
+
+sisakulint is a static analysis tool for GitHub Actions workflow files (.github/workflows/*.yml or .yaml). It analyzes these files for security issues and best practices.
+
+### Key Components
+
+1. **Command Structure**:
+   - Entry point is in `cmd/sisakulint/main.go`
+   - Core command handling in `pkg/core/command.go`
+
+2. **Linting Engine**:
+   - `pkg/core/linter.go` - Main linting logic
+   - `pkg/core/validate.go` - Workflow validation
+
+3. **Rules System**:
+   - Each rule is implemented in a separate file (all implementing the `Rule` interface):
+     - `pkg/core/idrule.go` - **RuleID**: ID collision detection for jobs and environment variables
+     - `pkg/core/credential.go` - **CredentialRule**: Hardcoded credentials detection
+     - `pkg/core/permissionrule.go` - **PermissionRule**: Permissions scope and value validation
+     - `pkg/core/commitsha.go` - **CommitSHARule**: Validates commit SHA usage in actions (not visible in struct grep but exists)
+     - `pkg/core/workflowcall.go` - **RuleWorkflowCall**: Reusable workflow call validation
+     - `pkg/core/timeout_minutes.go` - **TimeoutMinutesRule**: Ensures timeout-minutes is set
+     - `pkg/core/environmentvariablerule.go` - **EnvironmentVariableRule**: Environment variable name formatting (not visible in struct grep but exists)
+     - `pkg/core/exprrule.go` - **ExprRule**: GitHub Actions expression syntax validation
+     - `pkg/core/conditionalrule.go` - **ConditionalRule**: Conditional expression validation
+     - `pkg/core/issueinjection.go` - **IssueInjection**: Script injection and untrusted input detection
+     - `pkg/core/untrustedcheckout.go` - **UntrustedCheckoutRule**: Detects checkout of untrusted PR code in privileged workflow contexts (pull_request_target, issue_comment, workflow_run)
+     - `pkg/core/duprecate_commands_pattern.go` - **RuleDeprecatedCommands**: Deprecated workflow commands detection
+     - `pkg/core/actionlist.go` - **ActionList**: Action whitelist/blacklist enforcement
+     - `pkg/core/rule_add_temp_normal.go` - **AddRule**: Template rule for adding new rules
+
+4. **AST Processing**:
+   - `pkg/ast/ast_type.go` - AST node type definitions (Workflow, Job, Step, etc.)
+   - `pkg/ast/ast_func.go` - AST utility functions
+   - `pkg/core/visitor.go` - **SyntaxTreeVisitor**: Orchestrates tree traversal with depth-first order
+   - `pkg/core/visit.go` - Visit helper functions
+   - `pkg/core/parse_main.go` - Main workflow file parsing
+   - `pkg/core/parse_sub.go` - Sub-component parsing (jobs, steps, etc.)
+   - `pkg/core/parse_sbom.go` - SBOM (Software Bill of Materials) parsing
+
+5. **Expression Handling**:
+   - `pkg/expressions/parser.go` - Expression parser for `${{ }}` syntax
+   - `pkg/expressions/expression.go` - Expression evaluation logic
+   - `pkg/expressions/semantic.go` - Semantic analysis
+   - `pkg/expressions/tokenizer.go` - Tokenization of expressions
+   - `pkg/expressions/ast.go` - Expression AST nodes
+   - `pkg/expressions/anti_untrustedchecker.go` - Untrusted input detection
+   - `pkg/expressions/anti_untrustedmap.go` - Mapping of untrusted contexts
+   - `pkg/core/exprchecker.go` - Expression validation logic
+   - `pkg/core/needs.go` - Job dependency (needs) validation
+
+6. **Output Handling**:
+   - `pkg/core/errorformatter.go` - Formatting error output
+   - `pkg/core/sarif.go` - SARIF output support for reviewdog integration
+
+7. **Auto-fixing**:
+   - `pkg/core/autofixer.go` - Auto-fixing framework with three fixer types:
+     - **AutoFixer** interface - Base interface for all fixers
+     - **StepFixer** interface - Fixes issues at the step level
+     - **JobFixer** interface - Fixes issues at the job level
+     - **funcFixer** - Generic function-based fixer
+   - Rules implementing auto-fix: TimeoutMinutesRule, CommitSHARule, CredentialRule
+
+8. **Remote Analysis**:
+   - `pkg/remote/fetcher.go` - GitHub API integration for fetching workflows
+   - `pkg/remote/scanner.go` - Remote repository scanning logic
+   - `pkg/remote/input.go` - Input parsing for remote repository specifications
+   - Supports multiple input formats:
+     - `owner/repo` - Single repository
+     - `org:organization` - All repositories in an organization
+     - With flags for recursive scanning and depth control
+
+### Data Flow
+
+1. The tool scans a directory for GitHub Actions workflow files
+2. Files are parsed into AST representation
+3. Rules are applied to the AST
+4. Issues are collected and reported
+5. Auto-fix is applied if requested
+
+## Configuration
+
+The tool can be configured using a `.github/action.yaml` file (created using `sisakulint -init`).
+
 1. **Entry point**: `cmd/sisakulint/main.go` → `pkg/core/command.go`
 2. **Workflow files** are parsed into **AST** (`pkg/ast/`)
 3. **Rules** (`pkg/core/*rule.go`) visit the AST using the **Visitor pattern**
 4. **Issues** are collected and reported (optionally in SARIF format)
 5. **Auto-fix** can apply corrections to the AST
+
 
 ### The Rule Interface
 
