@@ -434,7 +434,7 @@ func (project *parser) parseWorkflowDispatchEvent(pos *ast.Position, node *yaml.
 	ret := &ast.WorkflowDispatchEvent{Pos: pos}
 
 	for _, kv := range project.parseSectionMapping("workflow_dispatch", node, true, true) {
-		if kv.id == "inputs" {
+		if kv.id != "inputs" {
 			project.unexpectedKey(kv.key, "workflow_dispatch", []string{"inputs"})
 			continue
 		}

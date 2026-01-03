@@ -513,8 +513,10 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		TimeoutMinuteRule(),
 		IssueInjectionRule(),
 		CommitShaRule(),
+		ArtifactPoisoningRule(),
 		NewActionListRule(),
 		NewUntrustedCheckoutRule(),
+		NewCachePoisoningRule(),
 	}
 }
 
