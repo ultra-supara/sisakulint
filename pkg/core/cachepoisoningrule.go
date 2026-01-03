@@ -41,6 +41,20 @@ var unsafePatternsLower = []string{
 	"github.event.pull_request.head.ref",
 	"github.head_ref",
 	"refs/pull/",
+	".head_sha",  // Detects steps.*.outputs.head_sha
+	".head_ref",  // Detects steps.*.outputs.head_ref
+	".head.sha",  // Detects nested head.sha patterns
+	".head.ref",  // Detects nested head.ref patterns
+	"head-sha",   // Detects kebab-case variants
+	"head-ref",   // Detects kebab-case variants
+}
+
+// Patterns that are explicitly safe to use with any trigger
+var safePatternsLower = []string{
+	"github.ref",
+	"github.sha",
+	"github.base_ref",
+	"github.event.repository.default_branch",
 }
 
 func isUnsafeTrigger(eventName string) bool {
@@ -49,17 +63,36 @@ func isUnsafeTrigger(eventName string) bool {
 
 // isUnsafeCheckoutRef checks if the ref input contains patterns that indicate
 // checking out untrusted PR code. Case-insensitive matching prevents bypass attempts.
+// This implements a conservative approach: with untrusted triggers, any ref expression
+// is considered unsafe unless it's explicitly known to be safe.
 func isUnsafeCheckoutRef(refValue string) bool {
 	if refValue == "" {
 		return false
 	}
 
 	lower := strings.ToLower(refValue)
+
+	// First, check for known unsafe patterns
 	for _, pattern := range unsafePatternsLower {
 		if strings.Contains(lower, pattern) {
 			return true
 		}
 	}
+
+	// Conservative approach: if the ref contains an expression (${{...}}),
+	// check if it's a known safe pattern
+	if strings.Contains(lower, "${{") {
+		// Check if it's explicitly safe
+		for _, safe := range safePatternsLower {
+			if strings.Contains(lower, safe) {
+				return false
+			}
+		}
+		// Unknown expression - could be unsafe (e.g., steps.*.outputs.*)
+		// We treat it as potentially unsafe to avoid false negatives
+		return true
+	}
+
 	return false
 }
 
@@ -140,7 +173,16 @@ func (rule *CachePoisoningRule) VisitStep(node *ast.Step) error {
 			if isUnsafeCheckoutRef(refInput.Value.Value) {
 				rule.checkoutUnsafeRef = true
 				rule.unsafeCheckoutStep = node
+			} else {
+				// Safe checkout resets the unsafe state
+				// This handles the case where an unsafe checkout is followed by a safe one
+				rule.checkoutUnsafeRef = false
+				rule.unsafeCheckoutStep = nil
 			}
+		} else {
+			// Checkout without ref (defaults to base branch) is safe
+			rule.checkoutUnsafeRef = false
+			rule.unsafeCheckoutStep = nil
 		}
 		return nil
 	}

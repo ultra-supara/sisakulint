@@ -69,6 +69,31 @@ func TestIsUnsafeCheckoutRef(t *testing.T) {
 			want:     true,
 		},
 		{
+			name:     "steps.*.outputs.head_sha is unsafe (CodeQL example)",
+			refValue: "${{ steps.comment-branch.outputs.head_sha }}",
+			want:     true,
+		},
+		{
+			name:     "steps.*.outputs.head_ref is unsafe",
+			refValue: "${{ steps.pr-info.outputs.head_ref }}",
+			want:     true,
+		},
+		{
+			name:     "kebab-case head-sha is unsafe",
+			refValue: "${{ steps.branch.outputs.head-sha }}",
+			want:     true,
+		},
+		{
+			name:     "nested head.sha is unsafe",
+			refValue: "${{ steps.data.outputs.head.sha }}",
+			want:     true,
+		},
+		{
+			name:     "unknown expression is unsafe (conservative)",
+			refValue: "${{ steps.unknown.outputs.something }}",
+			want:     true,
+		},
+		{
 			name:     "empty is safe",
 			refValue: "",
 			want:     false,
@@ -86,6 +111,16 @@ func TestIsUnsafeCheckoutRef(t *testing.T) {
 		{
 			name:     "github.sha is safe",
 			refValue: "${{ github.sha }}",
+			want:     false,
+		},
+		{
+			name:     "github.base_ref is safe",
+			refValue: "${{ github.base_ref }}",
+			want:     false,
+		},
+		{
+			name:     "default branch is safe",
+			refValue: "${{ github.event.repository.default_branch }}",
 			want:     false,
 		},
 	}
@@ -519,5 +554,114 @@ func TestCachePoisoningRule_AutoFixerRegisteredOnce(t *testing.T) {
 	autoFixers := rule.AutoFixers()
 	if len(autoFixers) != 1 {
 		t.Errorf("Expected 1 auto-fixer even with multiple cache actions, got %d", len(autoFixers))
+	}
+}
+
+func TestCachePoisoningRule_MultipleCheckouts(t *testing.T) {
+	rule := NewCachePoisoningRule()
+
+	workflow := &ast.Workflow{
+		On: []ast.Event{
+			&ast.WebhookEvent{Hook: &ast.String{Value: "pull_request_target"}},
+		},
+	}
+	_ = rule.VisitWorkflowPre(workflow)
+
+	job := &ast.Job{}
+	_ = rule.VisitJobPre(job)
+
+	// First: unsafe checkout
+	unsafeCheckoutStep := &ast.Step{
+		Pos: &ast.Position{Line: 10, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses: &ast.String{Value: "actions/checkout@v4"},
+			Inputs: map[string]*ast.Input{
+				"ref": {Value: &ast.String{Value: "${{ github.head_ref }}"}},
+			},
+		},
+	}
+	_ = rule.VisitStep(unsafeCheckoutStep)
+
+	// Second: safe checkout (resets unsafe state)
+	safeCheckoutStep := &ast.Step{
+		Pos: &ast.Position{Line: 15, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses:   &ast.String{Value: "actions/checkout@v4"},
+			Inputs: map[string]*ast.Input{},
+		},
+	}
+	_ = rule.VisitStep(safeCheckoutStep)
+
+	// Cache after safe checkout should NOT trigger warning
+	cacheStep := &ast.Step{
+		Pos: &ast.Position{Line: 20, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses:   &ast.String{Value: "actions/cache@v3"},
+			Inputs: map[string]*ast.Input{},
+		},
+	}
+	_ = rule.VisitStep(cacheStep)
+
+	errors := rule.Errors()
+	if len(errors) != 0 {
+		t.Errorf("Expected 0 errors after safe checkout, got %d", len(errors))
+	}
+}
+
+func TestCachePoisoningRule_CodeQLVulnerableExample(t *testing.T) {
+	rule := NewCachePoisoningRule()
+
+	// CodeQL example: issue_comment + steps.*.outputs.head_sha
+	workflow := &ast.Workflow{
+		On: []ast.Event{
+			&ast.WebhookEvent{Hook: &ast.String{Value: "issue_comment"}},
+		},
+	}
+	_ = rule.VisitWorkflowPre(workflow)
+
+	job := &ast.Job{}
+	_ = rule.VisitJobPre(job)
+
+	// Checkout with steps output (CodeQL vulnerable pattern)
+	checkoutStep := &ast.Step{
+		Pos: &ast.Position{Line: 10, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses: &ast.String{Value: "actions/checkout@v3"},
+			Inputs: map[string]*ast.Input{
+				"ref": {Value: &ast.String{Value: "${{ steps.comment-branch.outputs.head_sha }}"}},
+			},
+		},
+	}
+	_ = rule.VisitStep(checkoutStep)
+
+	// Setup Python (no cache input, so not a cache action)
+	setupPythonStep := &ast.Step{
+		Pos: &ast.Position{Line: 15, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses:   &ast.String{Value: "actions/setup-python@v5"},
+			Inputs: map[string]*ast.Input{},
+		},
+	}
+	_ = rule.VisitStep(setupPythonStep)
+
+	// Cache action
+	cacheStep := &ast.Step{
+		Pos: &ast.Position{Line: 20, Col: 1},
+		Exec: &ast.ExecAction{
+			Uses: &ast.String{Value: "actions/cache@v4"},
+			Inputs: map[string]*ast.Input{
+				"path": {Value: &ast.String{Value: "~/.cache/pip"}},
+			},
+		},
+	}
+	_ = rule.VisitStep(cacheStep)
+
+	errors := rule.Errors()
+	if len(errors) != 1 {
+		t.Fatalf("Expected 1 error for CodeQL vulnerable example, got %d", len(errors))
+	}
+
+	if errors[0].LineNumber != 20 {
+		t.Errorf("Error line = %d, want 20", errors[0].LineNumber)
 	}
 }
