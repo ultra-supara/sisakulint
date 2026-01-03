@@ -1,6 +1,12 @@
 ---
 title: "Cache Poisoning Rule"
 weight: 1
+# bookFlatSection: false
+# bookToc: true
+# bookHidden: false
+# bookCollapseSection: false
+# bookComments: false
+# bookSearchExclude: false
 ---
 
 ### Cache Poisoning Rule Overview
@@ -13,16 +19,7 @@ This rule detects potential cache poisoning vulnerabilities in GitHub Actions wo
 - **Multiple Trigger Detection**: Identifies `issue_comment`, `pull_request_target`, and `workflow_run` triggers
 - **Comprehensive Cache Detection**: Detects both `actions/cache` and setup-* actions with cache enabled
 - **Job Isolation**: Correctly scopes detection to individual jobs
-
-### Attack Mechanism
-
-Cache poisoning in GitHub Actions exploits the trust model between workflow triggers and cache scope:
-
-1. **Untrusted Triggers**: Events like `pull_request_target` and `issue_comment` run in the context of the default branch but can be triggered by external actors
-2. **Unsafe Checkout**: When `actions/checkout` checks out untrusted PR code (using `ref: ${{ github.head_ref }}`), malicious code gains execution
-3. **Cache Manipulation**: The malicious code can poison the cache, which is then restored in subsequent privileged workflows
-
-Since caches are scoped based on branch hierarchy, a cache created on the default branch is accessible to all feature branches, enabling lateral movement from low-privilege to high-privilege contexts.
+- **Auto-fix Support**: Removes unsafe `ref` input from checkout steps
 
 ### Detection Conditions
 
@@ -154,26 +151,13 @@ The auto-fix removes the `ref` input that checks out untrusted PR code, causing 
 **After fix:**
 ```yaml
 - uses: actions/checkout@v4
-# ref removed: now checks out base branch (safe)
 ```
 
 ### Mitigation Strategies
 
 1. **Validate Cached Content**: Verify integrity of restored cache before use
 2. **Scope Cache to PR**: Use PR-specific cache keys to isolate caches
-3. **Use Short-lived Keys**: Include timestamps or unique identifiers in cache keys
-4. **Sign Cache Values**: Cryptographically sign cache content and verify before use
-5. **Isolate Workflows**: Separate untrusted code execution from privileged operations
-
-### Example: PR-Scoped Cache Key
-
-```yaml
-- uses: actions/cache@v3
-  with:
-    path: ~/.npm
-    key: npm-${{ github.event.pull_request.number }}-${{ hashFiles('**/package-lock.json') }}
-    # PR-specific key prevents cross-PR cache poisoning
-```
+3. **Isolate Workflows**: Separate untrusted code execution from privileged operations
 
 ### OWASP CI/CD Security Risks
 
