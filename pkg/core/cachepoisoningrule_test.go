@@ -34,9 +34,9 @@ func TestIsUnsafeTrigger(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isUnsafeTrigger(tt.eventName)
+			got := IsUnsafeTrigger(tt.eventName)
 			if got != tt.want {
-				t.Errorf("isUnsafeTrigger(%q) = %v, want %v", tt.eventName, got, tt.want)
+				t.Errorf("IsUnsafeTrigger(%q) = %v, want %v", tt.eventName, got, tt.want)
 			}
 		})
 	}
@@ -127,9 +127,9 @@ func TestIsUnsafeCheckoutRef(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isUnsafeCheckoutRef(tt.refValue)
+			got := IsUnsafeCheckoutRef(tt.refValue)
 			if got != tt.want {
-				t.Errorf("isUnsafeCheckoutRef(%q) = %v, want %v", tt.refValue, got, tt.want)
+				t.Errorf("IsUnsafeCheckoutRef(%q) = %v, want %v", tt.refValue, got, tt.want)
 			}
 		})
 	}

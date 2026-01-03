@@ -161,7 +161,7 @@ func (rule *CachePoisoningPoisonableStepRule) VisitWorkflowPre(node *ast.Workflo
 	for _, event := range node.On {
 		switch e := event.(type) {
 		case *ast.WebhookEvent:
-			if e.Hook != nil && isUnsafeTrigger(e.Hook.Value) {
+			if e.Hook != nil && IsUnsafeTrigger(e.Hook.Value) {
 				rule.unsafeTriggers = append(rule.unsafeTriggers, e.Hook.Value)
 			}
 		}
@@ -200,7 +200,7 @@ func (rule *CachePoisoningPoisonableStepRule) VisitStep(node *ast.Step) error {
 
 		if actionName == "actions/checkout" {
 			if refInput, ok := action.Inputs["ref"]; ok && refInput != nil && refInput.Value != nil {
-				if isUnsafeCheckoutRef(refInput.Value.Value) {
+				if IsUnsafeCheckoutRef(refInput.Value.Value) {
 					rule.checkoutUnsafeRef = true
 					rule.unsafeCheckoutStep = node
 				}
