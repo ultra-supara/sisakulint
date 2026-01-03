@@ -107,6 +107,7 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - `pkg/core/exprrule.go` - **ExprRule**: GitHub Actions expression syntax validation
      - `pkg/core/conditionalrule.go` - **ConditionalRule**: Conditional expression validation
      - `pkg/core/issueinjection.go` - **IssueInjection**: Script injection and untrusted input detection
+     - `pkg/core/untrustedcheckout.go` - **UntrustedCheckoutRule**: Detects checkout of untrusted PR code in privileged workflow contexts (pull_request_target, issue_comment, workflow_run)
      - `pkg/core/duprecate_commands_pattern.go` - **RuleDeprecatedCommands**: Deprecated workflow commands detection
      - `pkg/core/actionlist.go` - **ActionList**: Action whitelist/blacklist enforcement
      - `pkg/core/rule_add_temp_normal.go` - **AddRule**: Template rule for adding new rules
