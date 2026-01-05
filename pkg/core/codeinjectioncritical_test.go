@@ -284,3 +284,91 @@ func TestCodeInjectionCritical_GitHubScript(t *testing.T) {
 		})
 	}
 }
+
+// TestCodeInjectionCritical_ComplexExpressions tests that complex expressions
+// using functions like format(), fromJSON(), join() are also detected
+func TestCodeInjectionCritical_ComplexExpressions(t *testing.T) {
+	tests := []struct {
+		name        string
+		runScript   string
+		wantErrors  int
+		description string
+	}{
+		{
+			name:        "format function with untrusted input",
+			runScript:   "echo ${{ format('{0}', github.event.pull_request.title) }}",
+			wantErrors:  1,
+			description: "format() should not bypass detection",
+		},
+		{
+			name:        "fromJSON with untrusted input",
+			runScript:   "echo ${{ fromJSON(github.event.pull_request.body).key }}",
+			wantErrors:  1,
+			description: "fromJSON() should not bypass detection",
+		},
+		{
+			name:        "join with untrusted input",
+			runScript:   "echo ${{ join(github.event.pull_request.labels.*.name, ', ') }}",
+			wantErrors:  0, // TODO: Currently not detected by expression semantics checker
+			description: "join() with array expansion - not yet detected",
+		},
+		{
+			name:        "toJSON with untrusted input",
+			runScript:   "echo ${{ toJSON(github.event.pull_request) }}",
+			wantErrors:  0, // TODO: Currently not detected when whole object is passed
+			description: "toJSON() with whole object - not yet detected",
+		},
+		{
+			name:        "nested expression with untrusted input",
+			runScript:   "echo ${{ format('Title: {0}', github.event.issue.title) }}",
+			wantErrors:  1,
+			description: "nested expressions should be detected",
+		},
+		{
+			name:        "contains with untrusted input",
+			runScript:   "echo ${{ contains(github.event.pull_request.title, 'feat') }}",
+			wantErrors:  1,
+			description: "contains() should detect untrusted input",
+		},
+		{
+			name:        "complex expression with trusted input",
+			runScript:   "echo ${{ format('{0}', github.sha) }}",
+			wantErrors:  0,
+			description: "trusted inputs should not trigger errors",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rule := CodeInjectionCriticalRule()
+
+			workflow := &ast.Workflow{
+				On: []ast.Event{
+					&ast.WebhookEvent{
+						Hook: &ast.String{Value: "pull_request_target"},
+					},
+				},
+			}
+
+			step := &ast.Step{
+				Exec: &ast.ExecRun{
+					Run: &ast.String{
+						Value: tt.runScript,
+						Pos:   &ast.Position{Line: 1, Col: 1},
+					},
+				},
+			}
+
+			job := &ast.Job{Steps: []*ast.Step{step}}
+
+			rule.VisitWorkflowPre(workflow)
+			rule.VisitJobPre(job)
+
+			gotErrors := len(rule.Errors())
+			if gotErrors != tt.wantErrors {
+				t.Errorf("%s: got %d errors, want %d. Errors: %v",
+					tt.description, gotErrors, tt.wantErrors, rule.Errors())
+			}
+		})
+	}
+}
