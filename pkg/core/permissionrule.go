@@ -7,12 +7,14 @@ import (
 
 var allPermissionScopes = map[string]struct{}{
 	"actions":             {},
+	"attestations":        {},
 	"checks":              {},
 	"contents":            {},
 	"deployments":         {},
+	"discussions":         {},
 	"id-token":            {},
 	"issues":              {},
-	"discussions":         {},
+	"models":              {},
 	"packages":            {},
 	"pages":               {},
 	"pull-requests":       {},

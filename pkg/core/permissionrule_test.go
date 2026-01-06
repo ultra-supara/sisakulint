@@ -100,3 +100,58 @@ func TestPermissionRule_checkPermissions(t *testing.T) {
 		})
 	}
 }
+
+func TestPermissionRule_ValidScopes(t *testing.T) {
+	// Test that all valid permission scopes are recognized
+	validScopes := []string{
+		"actions",
+		"attestations",
+		"checks",
+		"contents",
+		"deployments",
+		"discussions",
+		"id-token",
+		"issues",
+		"models",
+		"packages",
+		"pages",
+		"pull-requests",
+		"repository-projects",
+		"security-events",
+		"statuses",
+	}
+
+	for _, scope := range validScopes {
+		t.Run(scope, func(t *testing.T) {
+			rule := PermissionsRule()
+			permissions := &ast.Permissions{
+				Scopes: map[string]*ast.PermissionScope{
+					scope: {
+						Name:  &ast.String{Value: scope, Pos: &ast.Position{Line: 1, Col: 1}},
+						Value: &ast.String{Value: "read", Pos: &ast.Position{Line: 1, Col: 10}},
+					},
+				},
+			}
+			rule.checkPermissions(permissions)
+			if len(rule.Errors()) > 0 {
+				t.Errorf("scope %q should be valid, but got error: %v", scope, rule.Errors()[0])
+			}
+		})
+	}
+}
+
+func TestPermissionRule_InvalidScope(t *testing.T) {
+	rule := PermissionsRule()
+	permissions := &ast.Permissions{
+		Scopes: map[string]*ast.PermissionScope{
+			"invalid-scope": {
+				Name:  &ast.String{Value: "invalid-scope", Pos: &ast.Position{Line: 1, Col: 1}},
+				Value: &ast.String{Value: "read", Pos: &ast.Position{Line: 1, Col: 20}},
+			},
+		},
+	}
+	rule.checkPermissions(permissions)
+	if len(rule.Errors()) == 0 {
+		t.Error("expected error for invalid scope, but got none")
+	}
+}
