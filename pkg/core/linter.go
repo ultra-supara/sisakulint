@@ -511,7 +511,8 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		DeprecatedCommandsRule(),
 		NewConditionalRule(),
 		TimeoutMinuteRule(),
-		IssueInjectionRule(),
+		CodeInjectionCriticalRule(), // Detects untrusted input in privileged workflow triggers
+		CodeInjectionMediumRule(),   // Detects untrusted input in normal workflow triggers
 		CommitShaRule(),
 		ArtifactPoisoningRule(),
 		NewArtifactPoisoningMediumRule(),
