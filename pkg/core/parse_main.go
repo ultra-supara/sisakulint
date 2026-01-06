@@ -70,7 +70,7 @@ func (project *parser) parse(node *yaml.Node) *ast.Workflow {
 		case "run-name":
 			workflow.RunName = project.parseString(valueNode, false)
 		default:
-			allowedKeys := []string{"name", "on", "permissions", "env", "defaults", "jobs", "run-name"}
+			allowedKeys := []string{"name", "description", "on", "permissions", "env", "defaults", "concurrency", "jobs", "run-name"}
 			project.unexpectedKey(key, "workflow", allowedKeys)
 		}
 	}
