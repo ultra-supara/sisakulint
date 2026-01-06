@@ -75,6 +75,9 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - `pkg/core/codeinjection.go` - **CodeInjectionRule**: Shared implementation for code injection detection (with auto-fix)
        - `pkg/core/codeinjectioncritical.go` - **CodeInjectionCritical**: Detects untrusted input in privileged workflow triggers (pull_request_target, workflow_run, issue_comment)
        - `pkg/core/codeinjectionmedium.go` - **CodeInjectionMedium**: Detects untrusted input in normal workflow triggers (pull_request, push, schedule)
+     - `pkg/core/envvarinjection.go` - **EnvVarInjectionRule**: Shared implementation for environment variable injection detection (with auto-fix)
+       - `pkg/core/envvarinjectioncritical.go` - **EnvVarInjectionCritical**: Detects untrusted input written to $GITHUB_ENV in privileged triggers
+       - `pkg/core/envvarinjectionmedium.go` - **EnvVarInjectionMedium**: Detects untrusted input written to $GITHUB_ENV in normal triggers
      - `pkg/core/untrustedcheckout.go` - **UntrustedCheckoutRule**: Detects checkout of untrusted PR code in privileged workflow contexts (with auto-fix)
      - `pkg/core/duprecate_commands_pattern.go` - **RuleDeprecatedCommands**: Deprecated workflow commands detection
      - `pkg/core/actionlist.go` - **ActionList**: Action whitelist/blacklist enforcement
@@ -204,11 +207,13 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 10. **TimeoutMinuteRule** - Enforces timeout configurations (auto-fix supported)
 11. **CodeInjectionCriticalRule** - Detects code injection in privileged triggers (auto-fix supported)
 12. **CodeInjectionMediumRule** - Detects code injection in normal triggers (auto-fix supported)
-13. **CommitShaRule** - Validates action version pinning (auto-fix supported)
-14. **ArtifactPoisoningRule** - Detects artifact poisoning risks (auto-fix supported)
-15. **ActionListRule** - Validates allowed/blocked actions
-16. **CachePoisoningRule** - Detects cache poisoning vulnerabilities
-17. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
+13. **EnvVarInjectionCriticalRule** - Detects environment variable injection in privileged triggers (auto-fix supported)
+14. **EnvVarInjectionMediumRule** - Detects environment variable injection in normal triggers (auto-fix supported)
+15. **CommitShaRule** - Validates action version pinning (auto-fix supported)
+16. **ArtifactPoisoningRule** - Detects artifact poisoning risks (auto-fix supported)
+17. **ActionListRule** - Validates allowed/blocked actions
+18. **CachePoisoningRule** - Detects cache poisoning vulnerabilities
+19. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
 
 ## Key Files
 
@@ -311,8 +316,10 @@ See `pkg/core/permissionrule.go` for auto-fix example.
 1. **TimeoutMinutesRule** (`timeout_minutes.go`) - Adds default timeout-minutes: 5
 2. **CommitSHARule** (`commitsha.go`) - Converts action tags to commit SHAs with comment preservation
 3. **CredentialRule** (`credential.go`) - Removes hardcoded passwords from container configs
-4. **UntrustedCheckoutRule** (`untrustedcheckout.go`) - Adds explicit ref to checkout in privileged contexts
-5. **ArtifactPoisoningRule** (`artifactpoisoningcritical.go`) - Adds validation steps for artifact downloads
+4. **CodeInjectionRule** (`codeinjection.go`) - Moves untrusted expressions to environment variables
+5. **EnvVarInjectionRule** (`envvarinjection.go`) - Sanitizes untrusted input with `tr -d '\n'` before writing to $GITHUB_ENV
+6. **UntrustedCheckoutRule** (`untrustedcheckout.go`) - Adds explicit ref to checkout in privileged contexts
+7. **ArtifactPoisoningRule** (`artifactpoisoningcritical.go`) - Adds validation steps for artifact downloads
 
 ## Recent Security Enhancements
 
