@@ -252,6 +252,19 @@ Environment variable injection in normal workflows can lead to:
 - **[code-injection-medium]({{< ref "codeinjectionmedium.md" >}})**: Detects direct code injection in normal contexts
 - **[permissions]({{< ref "permissions.md" >}})**: Ensures workflows follow least-privilege principle
 
+### Rule Interactions
+
+You may see both `envvar-injection-medium` and `code-injection-medium` errors on the same line. This is intentional and provides defense in depth:
+
+- **code-injection-medium**: Detects untrusted input anywhere in run scripts and isolates it to environment variables
+- **envvar-injection-medium**: Specifically detects $GITHUB_ENV writes and adds newline sanitization
+
+Both auto-fixes work together. Apply both for complete protection:
+1. `code-injection` moves expressions to `env:` section
+2. `envvar-injection` adds `tr -d '\n'` to $GITHUB_ENV writes
+
+For detailed explanation of how these rules interact, see [envvar-injection-critical Rule Interactions]({{< ref "envvarinjectioncritical.md#rule-interactions" >}}).
+
 ### References
 
 - [CodeQL: Environment Variable Injection (Medium)](https://codeql.github.com/codeql-query-help/actions/actions-envvar-injection-medium/)

@@ -433,9 +433,10 @@ This rule addresses:
 Use these rules together for defense in depth:
 
 1. **code-injection-medium**: Detect same issues in normal triggers
-2. **permissions**: Limit workflow permissions to minimum necessary
-3. **timeout-minutes**: Prevent resource exhaustion attacks
-4. **commit-sha**: Pin actions to prevent supply chain attacks
+2. **envvar-injection-critical**: Adds specialized detection and mitigation for $GITHUB_ENV writes (see [Rule Interactions]({{< ref "envvarinjectioncritical.md#rule-interactions" >}}) for details)
+3. **permissions**: Limit workflow permissions to minimum necessary
+4. **timeout-minutes**: Prevent resource exhaustion attacks
+5. **commit-sha**: Pin actions to prevent supply chain attacks
 
 ### Performance Considerations
 

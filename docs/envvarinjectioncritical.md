@@ -225,6 +225,25 @@ Environment variable injection in privileged workflows can lead to:
 - **[code-injection-critical]({{< ref "codeinjectioncritical.md" >}})**: Detects direct code injection in privileged contexts
 - **[untrustedcheckout]({{< ref "untrustedcheckout.md" >}})**: Detects unsafe checkout of PR code
 
+### Rule Interactions
+
+You may see both `envvar-injection-critical` and `code-injection-critical` errors on the same line. This is intentional and provides defense in depth:
+
+- **code-injection-critical**: Detects untrusted input anywhere in run scripts and isolates it to environment variables
+- **envvar-injection-critical**: Specifically detects $GITHUB_ENV writes and adds newline sanitization
+
+Both auto-fixes work together. Apply both for complete protection:
+1. `code-injection` moves expressions to `env:` section
+2. `envvar-injection` adds `tr -d '\n'` to $GITHUB_ENV writes
+
+**Known Limitation**: The rule may not detect indirect injection through intermediate variables:
+```yaml
+run: |
+  TEMP=${{ github.event.pull_request.title }}  # code-injection detects
+  echo "X=$TEMP" >> "$GITHUB_ENV"              # envvar-injection may miss
+```
+Enable both rules (default) to catch these patterns.
+
 ### References
 
 - [CodeQL: Environment Variable Injection (Critical)](https://codeql.github.com/codeql-query-help/actions/actions-envvar-injection-critical/)
