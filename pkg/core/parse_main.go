@@ -39,6 +39,9 @@ func (project *parser) parse(node *yaml.Node) *ast.Workflow {
 		case MainName:
 			workflow.Name = project.parseString(valueNode, true)
 
+		case "description":
+			workflow.Description = project.parseString(valueNode, true)
+
 		//*https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
 		case "on":
 			workflow.On = project.parseEvents(key.Pos, valueNode)
