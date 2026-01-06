@@ -676,6 +676,8 @@ type Workflow struct {
 	// Name is name of the workflow. This field can be nil when user didn't specify the name explicitly.
 	// *https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#name
 	Name *String
+	// Description is description of the workflow.
+	Description *String
 	// RunName is the name of workflow runs. This field can be set dynamically using ${{ }}.
 	// *https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#run-name
 	RunName *String
