@@ -31,6 +31,8 @@ var safePatternsLower = []string{
 	"github.sha",
 	"github.base_ref",
 	"github.event.repository.default_branch",
+	"github.event.pull_request.base.ref",
+	"github.event.pull_request.base.sha",
 }
 
 // IsUnsafeTrigger checks if the trigger event is unsafe for cache poisoning detection.
