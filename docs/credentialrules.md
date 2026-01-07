@@ -1,33 +1,13 @@
 ---
 title: "Credentials Rule"
 weight: 1
-# bookFlatSection: false
-# bookToc: true
-# bookHidden: false
-# bookCollapseSection: false
-# bookComments: false
-# bookSearchExclude: false
 ---
 
-**Rule Overview:**
+### Credentials Rule Overview
 
-This rule is designed to analyze YAML configuration files for hardcoded credentials, specifically focusing on passwords within container and service definitions. It aims to enhance security by identifying instances where sensitive information is directly embedded in the code. The rule identifies errors in the following cases:
+This rule detects hardcoded credentials in GitHub Actions workflows, specifically focusing on passwords within container and service definitions. Hardcoding sensitive information like passwords directly in workflow files is a critical security risk that can lead to credential exposure.
 
-1. **Hardcoded Passwords in Container Section**:
-   - Checks for the presence of hardcoded passwords in the `credentials` section of a container definition.
-   - Triggers an error if a password is found, as hardcoding passwords can lead to security vulnerabilities. Instead, credentials should be managed securely using environment variables or secret management tools.
-
-2. **Hardcoded Passwords in Service Definitions**:
-   - Analyzes service definitions for hardcoded passwords in their respective `credentials` sections.
-   - Flags an error if a password is specified directly, emphasizing that sensitive information should not be hardcoded in service configurations.
-
-3. **General Credential Management Best Practices**:
-   - Encourages the use of secure methods for handling credentials, such as environment variables or secret management systems, to prevent accidental exposure of sensitive data.
-   - Raises awareness about the risks associated with hardcoding credentials in source code, promoting adherence to best practices in security.
-
-This rule helps enforce secure coding practices by identifying and flagging hardcoded credentials, thereby reducing the risk of security breaches and ensuring that sensitive information is handled appropriately.
-
-The test sample `credentials.yaml` file is below.
+**Vulnerable Example:**
 
 ```yaml
 on: push
@@ -38,199 +18,244 @@ jobs:
       image: "example.com/owner/image"
       credentials:
         username: user
-        password: "hardcodedPassword123"
+        password: "hardcodedPassword123"  # Hardcoded credential detected
     services:
       redis:
         image: redis
         credentials:
           username: user
-          password: "anotherHardcodedPassword456"
+          password: "anotherHardcodedPassword456"  # Hardcoded credential detected
     steps:
       - run: echo 'hello'
 ```
 
-result
+**Detection Output:**
 
 ```bash
 credentials.yaml:9:19: "Container" section: Password found in container section, do not paste password direct hardcode [credentials]
       9 👈|        password: "hardcodedPassword123"
-                        
+
 credentials.yaml:15:21: "Service" section for service redis: Password found in container section, do not paste password direct hardcode [credentials]
-       15 👈|          password: "anotherHardcodedPassword456"
+      15 👈|          password: "anotherHardcodedPassword456"
 ```
 
-The credential linting rule is a crucial component of the security measures implemented in the codebase. By identifying hardcoded passwords in configuration files, it helps developers adhere to best practices in credential management, thereby reducing the risk of security breaches.
+### Security Background
 
-## Technical detection mechanism
+#### Why is this dangerous?
 
-`sisakulint/pkg/core/credential.go` file
+Hardcoded credentials in workflow files pose significant security risks:
+
+1. **Version Control Exposure**: Credentials committed to version control are visible to anyone with repository access
+2. **Fork Exposure**: Forked repositories inherit hardcoded credentials
+3. **Log Exposure**: Hardcoded passwords may appear in CI/CD logs
+4. **Rotation Difficulty**: Changing hardcoded credentials requires code changes and redeployment
+
+#### Attack Scenario
+
+```
+1. Developer hardcodes password in workflow file
+   └── Password committed to repository
+
+2. Repository is forked or accessed by unauthorized user
+   └── Credentials are visible in workflow file
+
+3. Attacker uses credentials to access container registry
+   └── Pulls or pushes malicious container images
+
+4. Supply chain compromise
+   └── Malicious images used in CI/CD pipeline
+```
+
+#### OWASP and CWE Mapping
+
+- **CWE-798**: Use of Hard-coded Credentials
+- **CWE-259**: Use of Hard-coded Password
+- **OWASP CI/CD Security Risks**:
+  - **CICD-SEC-6**: Insufficient Credential Hygiene
+
+### Technical Detection Mechanism
+
+The rule analyzes YAML workflow files and checks container/service credential definitions:
 
 ```go
-package core
-
-import (
-	"fmt"
-	"regexp"
-
-	"github.com/ultra-supara/sisakulint/pkg/ast"
-)
-
-type CredentialRule struct {
-	BaseRule
-}
-
+// Detection pattern
 var isExpr = regexp.MustCompile(`^\$\{.+\}$`)
 
-func CredentialsRule() *CredentialRule {
-	return &CredentialRule{
-		BaseRule: BaseRule{
-			RuleName: "credentials",
-			RuleDesc: "This rule checks for credentials in the source code",
-		},
-	}
-}
-
-func (rule *CredentialRule) VisitJobPre(node *ast.Job) error {
-	if node.Container != nil {
-		rule.checkCredentials("\"Container\" section", node.Container)
-	}
-	for _, s := range node.Services {
-		rule.checkCredentials(fmt.Sprintf("\"Service\" section for service %s", s.Name.Value), s.Container)
-	}
-	return nil
-}
-
 func (rule *CredentialRule) checkCredentials(where string, node *ast.Container) {
-	if node.Credentials != nil && node.Credentials.Password != nil && !isExpr.MatchString(node.Credentials.Password.Value) {
-		rule.Errorf(node.Credentials.Password.Pos, "Password found in %s, do not paste password direct hardcode", where)
-		rule.AddAutoFixer(NewFuncFixer(rule.RuleName, func() error {
-			return rule.FixCredentials(node.Credentials)
-		}))
-	}
-}
-
-func (rule *CredentialRule) FixCredentials(node *ast.Credentials) error {
-	// remove password from container
-	for i := 0; i < len(node.BaseNode.Content); i += 2 {
-		if node.BaseNode.Content[i].Value == "password" {
-			node.BaseNode.Content = append(node.BaseNode.Content[:i], node.BaseNode.Content[i+2:]...)
-			break
-		}
-	}
-	return nil
+    if node.Credentials != nil &&
+       node.Credentials.Password != nil &&
+       !isExpr.MatchString(node.Credentials.Password.Value) {
+        // Password is hardcoded - not a GitHub Actions expression
+        rule.Errorf(node.Credentials.Password.Pos,
+            "Password found in %s, do not paste password direct hardcode", where)
+    }
 }
 ```
 
 ### Detection Logic Explanation
 
-The credential rule uses a simple regex-based approach to detect hardcoded passwords:
+#### What the Rule Checks
 
-1. **Pattern Matching**: The rule uses the regex pattern `^\$\{.+\}$` to identify GitHub Actions expressions (like `${{ secrets.PASSWORD }}`)
-2. **Validation**: If a password value exists and does NOT match this expression pattern, it's flagged as a hardcoded credential
-3. **Auto-fix Support**: When a hardcoded password is detected, the rule provides an auto-fixer that removes the password field from the YAML
+1. **Container Section**: Validates passwords in job container definitions
+2. **Service Definitions**: Validates passwords in service container credentials
+3. **Expression Detection**: Uses regex `^\$\{.+\}$` to identify GitHub Actions expressions
 
-### What's Considered Safe vs Hardcoded
+#### Safe vs Hardcoded Patterns
 
 **Safe (will NOT trigger an error):**
-- GitHub Actions expressions: `${{ secrets.PASSWORD }}`
-- Any value matching the pattern `${ ... }`
+```yaml
+credentials:
+  username: user
+  password: ${{ secrets.REGISTRY_PASSWORD }}  # Uses secrets - safe
+```
 
 **Hardcoded (will trigger an error):**
-- Plain text passwords: `"myPassword123"`
-- Quoted strings: `"hardcodedPassword"`
-- Any literal value that doesn't use the GitHub Actions expression syntax
-
-**Example:**
 ```yaml
-services:
-  redis:
-    image: redis
-    credentials:
-      username: user
-      password: "hardcoded123"  # ❌ ERROR: Hardcoded password
-
-  postgres:
-    image: postgres
-    credentials:
-      username: user
-      password: ${{ secrets.DB_PASSWORD }}  # ✅ OK: Uses GitHub Actions secrets
+credentials:
+  username: user
+  password: "myPassword123"  # Literal string - unsafe
+  password: myPassword123    # Unquoted literal - unsafe
 ```
 
-## Overview of Credential Detection Process
-The credential detection process is straightforward and involves the following components:
+### Safe Patterns
 
-```md
-+---------------------+
-|                     |
-| GitHub Actions YAML |
-|   (workflow file)   |
-|                     |
-+----------+----------+
-           |
-           v
-+----------+----------+
-|                     |
-|   Go Application    |
-|                     |
-|  - Parses YAML to   |
-|    AST              |
-|  - Visits Job Nodes |
-|                     |
-+----------+----------+
-           |
-           v
-+----------+----------+
-|                     |
-|  Credential Rule    |
-|                     |
-|  - Checks Container |
-|  - Checks Services  |
-|  - Applies Regex    |
-|                     |
-+----------+----------+
-           |
-           v
-+----------+----------+
-|                     |
-|   Pattern Match     |
-|                     |
-|  - Is it a GitHub   |
-|    Actions expr?    |
-|    (^\$\{.+\}$)     |
-|                     |
-+----------+----------+
-           |
-           v
-+----------+----------+
-|                     |
-|   Error Reporting   |
-|   & Auto-fix        |
-|                     |
-|  - Reports errors   |
-|  - Removes password |
-|    field (if --fix) |
-|                     |
-+---------------------+
+#### Pattern 1: Using GitHub Secrets (Recommended)
+
+```yaml
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: "example.com/owner/image"
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}  # Safe: Uses secrets
+    steps:
+      - run: echo 'hello'
 ```
 
-### Step-by-Step Explanation
+#### Pattern 2: Using Environment Variables
 
-1. **GitHub Actions Workflow File**:
-   - The process begins with a GitHub Actions workflow YAML file that may contain hardcoded credentials in container or service definitions.
+```yaml
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: "example.com/owner/image"
+      credentials:
+        username: ${{ vars.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}  # Safe
+    steps:
+      - run: echo 'hello'
+```
 
-2. **YAML Parsing to AST**:
-   - The Go application parses the YAML file into an Abstract Syntax Tree (AST), which allows structured traversal of the workflow configuration.
+### Auto-Fix Support
 
-3. **Job Node Visiting**:
-   - The `VisitJobPre` method is called for each job node in the workflow, checking both the job's container section and all service definitions.
+The credentials rule supports auto-fixing by removing the hardcoded password field:
 
-4. **Credential Checking**:
-   - For each container or service with credentials, the rule extracts the password value.
-   - The password is checked against the regex pattern `^\$\{.+\}$` to determine if it's a GitHub Actions expression (like `${{ secrets.PASSWORD }}`).
+```bash
+# Preview changes without applying
+sisakulint -fix dry-run
 
-5. **Error Detection**:
-   - If the password value exists and does NOT match the expression pattern, it's considered a hardcoded credential and flagged as an error.
-   - The error includes the exact position in the YAML file and a descriptive message.
+# Apply fixes
+sisakulint -fix on
+```
 
-6. **Auto-fix Capability**:
-   - When a hardcoded password is detected, an auto-fixer is registered that can remove the password field from the YAML when run with the `--fix` flag.
+**Before (Vulnerable):**
+```yaml
+container:
+  image: "example.com/image"
+  credentials:
+    username: user
+    password: "hardcodedPassword123"
+```
+
+**After Auto-Fix:**
+```yaml
+container:
+  image: "example.com/image"
+  credentials:
+    username: user
+    # password field removed - you must add secrets reference manually
+```
+
+**Note:** Auto-fix removes the password field entirely. You must manually add a proper secrets reference (`${{ secrets.PASSWORD }}`) after the fix.
+
+### Best Practices
+
+#### 1. Always Use GitHub Secrets
+
+Store sensitive credentials in GitHub Secrets and reference them using expressions:
+
+```yaml
+credentials:
+  password: ${{ secrets.MY_PASSWORD }}
+```
+
+#### 2. Use Organization-Level Secrets
+
+For credentials used across multiple repositories, use organization-level secrets:
+
+```yaml
+credentials:
+  password: ${{ secrets.ORG_REGISTRY_PASSWORD }}
+```
+
+#### 3. Rotate Credentials Regularly
+
+Even when using secrets, implement regular credential rotation policies.
+
+#### 4. Limit Secret Access
+
+Use environment-scoped secrets for production credentials:
+
+```yaml
+jobs:
+  deploy:
+    environment: production
+    steps:
+      - name: Deploy
+        env:
+          DEPLOY_TOKEN: ${{ secrets.PRODUCTION_DEPLOY_TOKEN }}
+```
+
+### Related Rules
+
+- **[permissions]({{< ref "permissions.md" >}})**: Ensures workflows follow least-privilege principle
+- **[commit-sha]({{< ref "commitsharule.md" >}})**: Pins actions to prevent supply chain attacks
+
+### References
+
+#### GitHub Documentation
+- [GitHub Docs: Encrypted Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+- [GitHub Docs: Using Secrets in GitHub Actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-secrets)
+
+#### Security Resources
+- [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+- [OWASP: Credential Management](https://owasp.org/www-community/attacks/Credential_stuffing)
+
+{{< popup_link2 href="https://docs.github.com/en/actions/security-guides/encrypted-secrets" >}}
+
+{{< popup_link2 href="https://cwe.mitre.org/data/definitions/798.html" >}}
+
+### Testing
+
+To test this rule:
+
+```bash
+# Detect hardcoded credentials
+sisakulint .github/workflows/*.yml
+
+# Apply auto-fix
+sisakulint -fix on .github/workflows/*.yml
+```
+
+### Configuration
+
+This rule is enabled by default. To disable it:
+
+```bash
+sisakulint -ignore credentials
+```
