@@ -1,11 +1,47 @@
 package core
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/sisaku-security/sisakulint/pkg/ast"
 	"github.com/sisaku-security/sisakulint/pkg/expressions"
 )
+
+// secretExposureFixer fixes bracket notation secret access (secrets['NAME'] → secrets.NAME)
+type secretExposureFixer struct {
+	step         *ast.Step   // The step containing the violation
+	targetString *ast.String // The string containing secrets['NAME']
+	oldExpr      string      // Old expression: "secrets['MY_SECRET']"
+	newExpr      string      // New expression: "secrets.MY_SECRET"
+	ruleName     string      // Rule name for reporting
+}
+
+// RuleNames returns the rule name for this fixer
+func (f *secretExposureFixer) RuleNames() string {
+	return f.ruleName
+}
+
+// FixStep performs the auto-fix by replacing bracket notation with dot notation
+func (f *secretExposureFixer) FixStep(node *ast.Step) error {
+	// Replace in ast.String.Value
+	oldPattern := fmt.Sprintf("${{ %s }}", f.oldExpr)
+	newPattern := fmt.Sprintf("${{ %s }}", f.newExpr)
+
+	f.targetString.Value = strings.ReplaceAll(
+		f.targetString.Value,
+		oldPattern,
+		newPattern,
+	)
+
+	// Update BaseNode YAML value to keep in sync
+	if f.targetString.BaseNode != nil {
+		f.targetString.BaseNode.Value = f.targetString.Value
+	}
+
+	return nil
+}
 
 // SecretExposureRule detects excessive secrets exposure patterns in GitHub Actions workflows.
 // This rule identifies two dangerous patterns:
@@ -15,6 +51,19 @@ import (
 // See: https://codeql.github.com/codeql-query-help/actions/actions-excessive-secrets-exposure/
 type SecretExposureRule struct {
 	BaseRule
+	currentStep   *ast.Step   // Track current step being visited (for auto-fix context)
+	currentString *ast.String // Track current string being checked (for auto-fix context)
+}
+
+// isValidSecretNameForDotNotation checks if a secret name is valid for dot notation access.
+// Valid names must start with a letter or underscore and contain only alphanumeric characters and underscores.
+// This follows GitHub Actions secret naming conventions.
+func isValidSecretNameForDotNotation(name string) bool {
+	// Remove any quotes that might be present
+	name = strings.Trim(name, "'\"")
+	// Must start with letter or underscore, contain only alphanumeric and underscores
+	matched, _ := regexp.MatchString(`^[A-Za-z_][A-Za-z0-9_]*$`, name)
+	return matched
 }
 
 // NewSecretExposureRule creates a new SecretExposureRule
@@ -52,6 +101,9 @@ func (rule *SecretExposureRule) VisitWorkflowPre(node *ast.Workflow) error {
 
 // checkStep checks a single step for secret exposure patterns
 func (rule *SecretExposureRule) checkStep(step *ast.Step) {
+	// Set current step context for auto-fix
+	rule.currentStep = step
+
 	// Check step-level env
 	if step.Env != nil {
 		rule.checkEnv(step.Env)
@@ -95,6 +147,9 @@ func (rule *SecretExposureRule) checkString(str *ast.String) {
 	if str == nil {
 		return
 	}
+
+	// Set current string context for auto-fix
+	rule.currentString = str
 
 	exprs := rule.extractAndParseExpressions(str)
 	for _, expr := range exprs {
@@ -241,6 +296,19 @@ func (rule *SecretExposureRule) checkSecretsDynamicAccess(indexAccess *expressio
 				"See https://codeql.github.com/codeql-query-help/actions/actions-excessive-secrets-exposure/",
 			secretName, normalizeSecretName(secretName),
 		)
+
+		// Add auto-fixer ONLY if secret name is valid for dot notation
+		// Invalid names (with hyphens, dots, etc.) will get error but no auto-fix
+		if isValidSecretNameForDotNotation(secretName) && rule.currentStep != nil && rule.currentString != nil {
+			fixer := &secretExposureFixer{
+				step:         rule.currentStep,
+				targetString: rule.currentString,
+				oldExpr:      expr.raw,
+				newExpr:      fmt.Sprintf("secrets.%s", secretName),
+				ruleName:     rule.RuleName,
+			}
+			rule.AddAutoFixer(NewStepFixer(rule.currentStep, fixer))
+		}
 	case *expressions.FuncCallNode:
 		// secrets[format(...)] - dynamic construction
 		rule.Errorf(

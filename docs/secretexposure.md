@@ -225,6 +225,37 @@ jobs:
 4. **Audit Usage**: Regularly review which secrets each workflow uses
 5. **Use Reusable Workflows**: Pass only required secrets to reusable workflows
 
+### Auto-fix Support
+
+The secret-exposure rule supports auto-fixing for bracket notation patterns by converting them to dot notation:
+
+```bash
+# Preview changes without applying
+sisakulint -fix dry-run
+
+# Apply fixes
+sisakulint -fix on
+```
+
+After auto-fix, bracket notation will be converted to dot notation:
+
+```yaml
+# Before
+env:
+  TOKEN: ${{ secrets['GITHUB_TOKEN'] }}
+  API_KEY: ${{ secrets['MY_API_KEY'] }}
+
+# After auto-fix
+env:
+  TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  API_KEY: ${{ secrets.MY_API_KEY }}
+```
+
+**Limitations:**
+- Only fixes bracket notation with string literals that are valid identifiers (letters, numbers, underscores)
+- Does not fix dynamic patterns like `secrets[format(...)]`, `secrets[variable]`, or `toJSON(secrets)`
+- Secret names with hyphens or dots cannot be auto-fixed (they are reported but require manual intervention)
+
 ### Comparison: Dynamic vs Explicit Access
 
 | Approach | Security | Auditability | Recommendation |
