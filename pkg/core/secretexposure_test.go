@@ -656,3 +656,137 @@ func TestIsValidSecretNameForDotNotation(t *testing.T) {
 		})
 	}
 }
+
+func TestSecretExposure_AutoFix_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name           string
+		envValue       string
+		wantFixers     int
+		wantFixedValue string
+		description    string
+	}{
+		{
+			name:           "Extra spaces after ${{",
+			envValue:       "${{  secrets['GITHUB_TOKEN'] }}",
+			wantFixers:     1,
+			wantFixedValue: "${{  secrets.GITHUB_TOKEN }}",
+			description:    "Should handle extra spaces after ${{",
+		},
+		{
+			name:           "Extra spaces before }}",
+			envValue:       "${{ secrets['GITHUB_TOKEN']  }}",
+			wantFixers:     1,
+			wantFixedValue: "${{ secrets.GITHUB_TOKEN  }}",
+			description:    "Should handle extra spaces before }}",
+		},
+		{
+			name:           "Extra spaces on both sides",
+			envValue:       "${{  secrets['GITHUB_TOKEN']  }}",
+			wantFixers:     1,
+			wantFixedValue: "${{  secrets.GITHUB_TOKEN  }}",
+			description:    "Should handle extra spaces on both sides",
+		},
+		{
+			name:           "Tab character after ${{",
+			envValue:       "${{ \tsecrets['GITHUB_TOKEN'] }}",
+			wantFixers:     1,
+			wantFixedValue: "${{ \tsecrets.GITHUB_TOKEN }}",
+			description:    "Should handle tab character",
+		},
+		{
+			name:           "Multiple spaces between tokens",
+			envValue:       "${{   secrets['GITHUB_TOKEN']   }}",
+			wantFixers:     1,
+			wantFixedValue: "${{   secrets.GITHUB_TOKEN   }}",
+			description:    "Should handle multiple spaces",
+		},
+		{
+			name:           "No spaces (compact)",
+			envValue:       "${{secrets['GITHUB_TOKEN']}}",
+			wantFixers:     1,
+			wantFixedValue: "${{secrets.GITHUB_TOKEN}}",
+			description:    "Should handle compact format without spaces",
+		},
+		{
+			name:           "Mixed spacing in multiple expressions",
+			envValue:       "${{ secrets['TOKEN1'] }} and ${{secrets['TOKEN2']}}",
+			wantFixers:     2,
+			wantFixedValue: "${{ secrets.TOKEN1 }} and ${{secrets.TOKEN2}}",
+			description:    "Should handle mixed spacing across multiple expressions",
+		},
+		{
+			name:           "Spaces in string with prefix and suffix",
+			envValue:       "prefix ${{  secrets['MY_KEY']  }} suffix",
+			wantFixers:     1,
+			wantFixedValue: "prefix ${{  secrets.MY_KEY  }} suffix",
+			description:    "Should preserve spacing in string with prefix/suffix",
+		},
+		{
+			name:           "Newline in expression (multiline)",
+			envValue:       "${{ \nsecrets['GITHUB_TOKEN']\n}}",
+			wantFixers:     1,
+			wantFixedValue: "${{ \nsecrets.GITHUB_TOKEN\n}}",
+			description:    "Should handle newlines in expression",
+		},
+		{
+			name:           "Extra spaces with invalid name",
+			envValue:       "${{  secrets['MY-SECRET']  }}",
+			wantFixers:     0,
+			wantFixedValue: "${{  secrets['MY-SECRET']  }}",
+			description:    "Should NOT auto-fix invalid names even with extra spaces",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rule := NewSecretExposureRule()
+
+			step := &ast.Step{
+				Env: &ast.Env{
+					Vars: map[string]*ast.EnvVar{
+						"my_token": {
+							Name: &ast.String{Value: "MY_TOKEN"},
+							Value: &ast.String{
+								Value: tt.envValue,
+								Pos:   &ast.Position{Line: 1, Col: 1},
+							},
+						},
+					},
+				},
+			}
+
+			job := &ast.Job{Steps: []*ast.Step{step}}
+			rule.VisitJobPre(job)
+
+			// Check number of fixers
+			fixers := rule.AutoFixers()
+			if len(fixers) != tt.wantFixers {
+				t.Errorf("%s: got %d fixers, want %d fixers",
+					tt.description, len(fixers), tt.wantFixers)
+			}
+
+			// Apply fixers if any
+			if len(fixers) > 0 {
+				for _, fixer := range fixers {
+					if err := fixer.Fix(); err != nil {
+						t.Errorf("%s: Fix() returned error: %v", tt.description, err)
+					}
+				}
+
+				// Check the fixed value
+				gotValue := step.Env.Vars["my_token"].Value.Value
+				if gotValue != tt.wantFixedValue {
+					t.Errorf("%s: After fix, got %q, want %q",
+						tt.description, gotValue, tt.wantFixedValue)
+				}
+			} else {
+				// No fixers - value should remain unchanged
+				gotValue := step.Env.Vars["my_token"].Value.Value
+				if gotValue != tt.wantFixedValue {
+					t.Errorf("%s: Without fix, got %q, want %q (unchanged)",
+						tt.description, gotValue, tt.wantFixedValue)
+				}
+			}
+		})
+	}
+}

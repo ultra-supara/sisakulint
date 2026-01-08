@@ -25,14 +25,12 @@ func (f *secretExposureFixer) RuleNames() string {
 
 // FixStep performs the auto-fix by replacing bracket notation with dot notation
 func (f *secretExposureFixer) FixStep(node *ast.Step) error {
-	// Replace in ast.String.Value
-	oldPattern := fmt.Sprintf("${{ %s }}", f.oldExpr)
-	newPattern := fmt.Sprintf("${{ %s }}", f.newExpr)
-
+	// Replace just the expression part (e.g., "secrets['KEY']" -> "secrets.KEY")
+	// This preserves any spacing variations like "${{  secrets['KEY']  }}"
 	f.targetString.Value = strings.ReplaceAll(
 		f.targetString.Value,
-		oldPattern,
-		newPattern,
+		f.oldExpr,
+		f.newExpr,
 	)
 
 	// Update BaseNode YAML value to keep in sync
