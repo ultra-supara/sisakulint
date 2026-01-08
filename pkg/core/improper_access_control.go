@@ -90,12 +90,19 @@ func (rule *ImproperAccessControlRule) VisitWorkflowPre(n *ast.Workflow) error {
 		rule.pullRequestTargetPos = webhookEvent.Pos
 		rule.webhookEvent = webhookEvent
 
-		// Check if 'synchronize' is in the types
-		for _, eventType := range webhookEvent.Types {
-			if eventType.Value == "synchronize" {
-				rule.hasSynchronizeType = true
-				rule.Debug("Found pull_request_target with 'synchronize' type at %s", webhookEvent.Pos)
-				break
+		// If 'types' is not specified, GitHub Actions defaults to [opened, synchronize, reopened]
+		// See: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
+		if len(webhookEvent.Types) == 0 {
+			rule.hasSynchronizeType = true
+			rule.Debug("Found pull_request_target with implicit 'synchronize' type (types unspecified) at %s", webhookEvent.Pos)
+		} else {
+			// Check if 'synchronize' is explicitly in the types
+			for _, eventType := range webhookEvent.Types {
+				if eventType.Value == "synchronize" {
+					rule.hasSynchronizeType = true
+					rule.Debug("Found pull_request_target with explicit 'synchronize' type at %s", webhookEvent.Pos)
+					break
+				}
 			}
 		}
 	}
@@ -287,6 +294,18 @@ func (f *improperAccessControlFixer) Fix() error {
 // fixWebhookEventTypes modifies the webhook event types to replace 'synchronize' with 'labeled'
 func (f *improperAccessControlFixer) fixWebhookEventTypes() {
 	if f.webhookEvent == nil {
+		return
+	}
+
+	// If 'types' is not specified, GitHub Actions defaults to [opened, synchronize, reopened]
+	// We need to add explicit 'types: [labeled]' to avoid implicit synchronize
+	if len(f.webhookEvent.Types) == 0 {
+		// Create new 'labeled' type entry
+		labeledType := &ast.String{
+			Value: "labeled",
+			Pos:   f.webhookEvent.Pos,
+		}
+		f.webhookEvent.Types = []*ast.String{labeledType}
 		return
 	}
 

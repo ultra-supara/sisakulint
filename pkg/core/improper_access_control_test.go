@@ -138,7 +138,7 @@ jobs:
 			wantErr: false,
 		},
 		{
-			name: "Safe: pull_request_target without types (no synchronize)",
+			name: "Vulnerable: pull_request_target without types (implicit synchronize)",
 			yaml: `
 name: Test
 on: pull_request_target
@@ -149,6 +149,39 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+`,
+			wantErr: true,
+			errMsg:  "improper access control",
+		},
+		{
+			name: "Vulnerable: pull_request_target without types with label condition",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        if: contains(github.event.pull_request.labels.*.name, 'safe to test')
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+`,
+			wantErr: true,
+			errMsg:  "improper access control",
+		},
+		{
+			name: "Safe: pull_request_target without types but with sha ref",
+			yaml: `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 `,
 			wantErr: false,
 		},
@@ -566,6 +599,87 @@ jobs:
 
 	if !hasLabeled {
 		t.Error("Expected 'labeled' to be added, but it was not found")
+	}
+}
+
+func TestImproperAccessControlFixWebhookEventTypesUnspecified(t *testing.T) {
+	// Test case: types is not specified (implicit synchronize)
+	yaml := `
+name: Test
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        if: contains(github.event.pull_request.labels.*.name, 'safe to test')
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+`
+
+	// Parse the workflow
+	workflow, errs := Parse([]byte(yaml))
+	if len(errs) > 0 {
+		t.Fatalf("Failed to parse workflow: %v", errs)
+	}
+
+	// Create rule instance
+	rule := NewImproperAccessControlRule()
+
+	// Create visitor and add rule
+	visitor := NewSyntaxTreeVisitor()
+	visitor.AddVisitor(rule)
+
+	// Visit the workflow to detect issues
+	if err := visitor.VisitTree(workflow); err != nil {
+		t.Fatalf("Failed to visit tree: %v", err)
+	}
+
+	// Verify that an error was detected
+	ruleErrs := rule.Errors()
+	if len(ruleErrs) == 0 {
+		t.Fatal("Expected error for types-unspecified pull_request_target but got none")
+	}
+
+	// Get auto-fixers
+	autoFixers := rule.AutoFixers()
+	if len(autoFixers) == 0 {
+		t.Fatal("No auto-fixer was added")
+	}
+
+	// Apply the fix
+	if err := autoFixers[0].Fix(); err != nil {
+		t.Fatalf("FixStep() unexpected error = %v", err)
+	}
+
+	// Verify the webhook event types were fixed
+	var webhookEvent *ast.WebhookEvent
+	for _, event := range workflow.On {
+		if we, ok := event.(*ast.WebhookEvent); ok && we.EventName() == "pull_request_target" {
+			webhookEvent = we
+			break
+		}
+	}
+
+	if webhookEvent == nil {
+		t.Fatal("No webhook event found")
+	}
+
+	// Check that 'labeled' was added (since types was empty, it should now have 'labeled')
+	if len(webhookEvent.Types) == 0 {
+		t.Error("Expected types to be populated with 'labeled', but types is still empty")
+	}
+
+	hasLabeled := false
+	for _, eventType := range webhookEvent.Types {
+		if eventType.Value == "labeled" {
+			hasLabeled = true
+			break
+		}
+	}
+
+	if !hasLabeled {
+		t.Error("Expected 'labeled' to be added when types was unspecified, but it was not found")
 	}
 }
 
