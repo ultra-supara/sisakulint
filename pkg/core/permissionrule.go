@@ -64,6 +64,8 @@ func (rule *PermissionRule) checkPermissions(p *ast.Permissions) {
 				"warning : The 'write-all' scope is too broad, covering all available scopes. Please specify 'write' or 'read' for each individual scope instead.Value: %s plaese see https://github.com/suzuki-shunsuke/ghalint/blob/main/docs/policies/003.md",
 				p.All.Value,
 			)
+		case "read-all":
+			// read-all is valid and secure - no warning needed
 		default:
 			rule.Errorf(p.All.Pos, "%q is invalid for permission for all the scopes.", p.All.Value)
 		}
