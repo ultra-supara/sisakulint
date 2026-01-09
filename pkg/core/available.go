@@ -17,7 +17,7 @@ func WorkflowKeyAvailability(key string) ([]string, []string) {
 	case KeyPathJobEnvironmentURL:
 		return []string{ContextEnv, ContextGithub, ContextInputs, ContextJob, ContextMatrix, ContextNeeds, ContextRunner, ContextSteps, ContextStrategy, ContextVars}, []string{}
 	case KeyPathJobStepsIf:
-		return []string{ContextEnv, ContextGithub, ContextInputs, ContextJob, ContextMatrix, ContextNeeds, ContextRunner, ContextSteps, ContextStrategy, ContextVars}, []string{FunctionAlways, FunctionCanceled, FunctionFailure, FunctionHashFiles, FunctionSuccess}
+		return []string{ContextEnv, ContextGithub, ContextInputs, ContextJob, ContextMatrix, ContextNeeds, ContextRunner, ContextSteps, ContextStrategy, ContextVars}, []string{FunctionAlways, FunctionCanceled, FunctionCancelled, FunctionFailure, FunctionHashFiles, FunctionSuccess}
 	case KeyPathJobContainerCredentials, KeyPathJobServicesCredentials:
 		return []string{ContextEnv, ContextGithub, ContextInputs, ContextMatrix, ContextNeeds, ContextSecrets, ContextStrategy, ContextVars}, []string{}
 	case KeyPathJobDefaultsRun:
@@ -31,7 +31,7 @@ func WorkflowKeyAvailability(key string) ([]string, []string) {
 	case KeyPathJobStrategy:
 		return []string{ContextGithub, ContextInputs, ContextNeeds, ContextVars}, []string{}
 	case KeyPathJobIf:
-		return []string{ContextGithub, ContextInputs, ContextNeeds, ContextVars}, []string{FunctionAlways, FunctionCanceled, FunctionFailure, FunctionSuccess}
+		return []string{ContextGithub, ContextInputs, ContextNeeds, ContextVars}, []string{FunctionAlways, FunctionCanceled, FunctionCancelled, FunctionFailure, FunctionSuccess}
 	case AvailableEnv:
 		return []string{ContextGithub, ContextInputs, ContextSecrets, ContextVars}, []string{}
 	case AvailableConcurrency, KeyPathOnWorkflowCallInputsDefault, KeyPathRunName:

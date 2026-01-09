@@ -91,6 +91,7 @@ const (
 	// Special function name constants for workflow key availability
 	FunctionAlways    = "always"
 	FunctionCanceled  = "canceled"
+	FunctionCancelled = "cancelled" // British English alias for canceled
 	FunctionFailure   = "failure"
 	FunctionHashFiles = "hashfiles"
 	FunctionSuccess   = "success"
