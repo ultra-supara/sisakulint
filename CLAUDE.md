@@ -83,6 +83,7 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - `pkg/core/actionlist.go` - **ActionList**: Action whitelist/blacklist enforcement
      - `pkg/core/artifactpoisoningcritical.go` - **ArtifactPoisoningRule**: Detects artifact poisoning and path traversal vulnerabilities (with auto-fix)
      - `pkg/core/cachepoisoningrule.go` - **CachePoisoningRule**: Detects cache poisoning with untrusted inputs
+     - `pkg/core/improper_access_control.go` - **ImproperAccessControlRule**: Detects improper access control with label-based approval and synchronize events (with auto-fix)
      - `pkg/core/rule_add_temp_normal.go` - **AddRule**: Template rule for adding new rules
 
 4. **AST Processing**:
@@ -115,7 +116,7 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - **StepFixer** interface - Fixes issues at the step level
      - **JobFixer** interface - Fixes issues at the job level
      - **funcFixer** - Generic function-based fixer
-   - Rules implementing auto-fix: TimeoutMinutesRule, CommitSHARule, CredentialRule, UntrustedCheckoutRule, ArtifactPoisoningRule
+   - Rules implementing auto-fix: TimeoutMinutesRule, CommitSHARule, CredentialRule, UntrustedCheckoutRule, ArtifactPoisoningRule, ImproperAccessControlRule
 
 8. **Remote Analysis**:
    - `pkg/remote/fetcher.go` - GitHub API integration for fetching workflows
@@ -214,6 +215,7 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 17. **ActionListRule** - Validates allowed/blocked actions
 18. **CachePoisoningRule** - Detects cache poisoning vulnerabilities
 19. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
+20. **ImproperAccessControlRule** - Detects improper access control with label-based approval and synchronize events (auto-fix supported)
 
 ## Key Files
 
