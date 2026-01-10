@@ -155,3 +155,39 @@ func TestPermissionRule_InvalidScope(t *testing.T) {
 		t.Error("expected error for invalid scope, but got none")
 	}
 }
+
+func TestPermissionRule_ReadAllPermission(t *testing.T) {
+	// Test that read-all is accepted as valid
+	rule := PermissionsRule()
+	permissions := &ast.Permissions{
+		All: &ast.String{Value: "read-all", Pos: &ast.Position{Line: 1, Col: 1}},
+	}
+	rule.checkPermissions(permissions)
+	if len(rule.Errors()) > 0 {
+		t.Errorf("read-all should be valid, but got error: %v", rule.Errors()[0])
+	}
+}
+
+func TestPermissionRule_WriteAllPermission(t *testing.T) {
+	// Test that write-all generates a warning
+	rule := PermissionsRule()
+	permissions := &ast.Permissions{
+		All: &ast.String{Value: "write-all", Pos: &ast.Position{Line: 1, Col: 1}},
+	}
+	rule.checkPermissions(permissions)
+	if len(rule.Errors()) == 0 {
+		t.Error("write-all should generate a warning, but got none")
+	}
+}
+
+func TestPermissionRule_InvalidAllPermission(t *testing.T) {
+	// Test that invalid all-scope permission generates an error
+	rule := PermissionsRule()
+	permissions := &ast.Permissions{
+		All: &ast.String{Value: "invalid-all", Pos: &ast.Position{Line: 1, Col: 1}},
+	}
+	rule.checkPermissions(permissions)
+	if len(rule.Errors()) == 0 {
+		t.Error("invalid-all should generate an error, but got none")
+	}
+}
