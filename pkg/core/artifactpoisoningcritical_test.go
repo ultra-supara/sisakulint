@@ -36,7 +36,6 @@ func TestIsUnsafePath(t *testing.T) {
 		{name: "parent relative path", path: "../artifacts", wantUnsafe: true},
 		{name: "github.workspace", path: "${{ github.workspace }}/artifacts", wantUnsafe: true},
 		{name: "GITHUB_WORKSPACE env", path: "$GITHUB_WORKSPACE/artifacts", wantUnsafe: true},
-		{name: "absolute path without runner.temp", path: "/tmp/artifacts", wantUnsafe: true},
 		{name: "simple directory name", path: "artifacts", wantUnsafe: true},
 		{name: "nested directory", path: "build/artifacts", wantUnsafe: true},
 
@@ -46,6 +45,9 @@ func TestIsUnsafePath(t *testing.T) {
 		{name: "RUNNER_TEMP env var", path: "$RUNNER_TEMP/artifacts", wantUnsafe: false},
 		{name: "RUNNER_TEMP nested", path: "$RUNNER_TEMP/build/artifacts", wantUnsafe: false},
 		{name: "runner.temp with spaces", path: "  ${{ runner.temp }}/artifacts  ", wantUnsafe: false},
+		{name: "/tmp absolute path", path: "/tmp/artifacts", wantUnsafe: false},
+		{name: "/tmp root", path: "/tmp", wantUnsafe: false},
+		{name: "/tmp with nested dirs", path: "/tmp/build/artifacts", wantUnsafe: false},
 	}
 
 	for _, tt := range tests {
@@ -225,7 +227,7 @@ func TestArtifactPoisoning_VisitStep(t *testing.T) {
 			wantErrors: 1,
 		},
 		{
-			name: "download-artifact with absolute path (no runner.temp) - should error",
+			name: "download-artifact with /tmp path - no error (safe absolute path)",
 			step: &ast.Step{
 				ID: &ast.String{Value: "download"},
 				Exec: &ast.ExecAction{
@@ -239,7 +241,7 @@ func TestArtifactPoisoning_VisitStep(t *testing.T) {
 				},
 				Pos: &ast.Position{Line: 10, Col: 5},
 			},
-			wantErrors: 1,
+			wantErrors: 0,
 		},
 		{
 			name: "download-artifact with RUNNER_TEMP env var - no error",

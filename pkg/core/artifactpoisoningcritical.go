@@ -21,6 +21,7 @@ func ArtifactPoisoningRule() *ArtifactPoisoning {
 
 // isUnsafePath checks if the provided path is unsafe for artifact extraction.
 // Safe paths must use runner.temp to isolate artifacts from the workspace.
+// Absolute paths outside the workspace (like /tmp on Linux) are also safe.
 func isUnsafePath(path string) bool {
 	if path == "" {
 		return true
@@ -49,15 +50,19 @@ func isUnsafePath(path string) bool {
 		return true
 	}
 
-	// Only runner.temp is considered safe
-	if !strings.Contains(path, "runner.temp") {
-		// Allow RUNNER_TEMP as well
-		if !strings.Contains(path, "RUNNER_TEMP") {
-			return true
-		}
+	// runner.temp is safe
+	if strings.Contains(path, "runner.temp") || strings.Contains(path, "RUNNER_TEMP") {
+		return false
 	}
 
-	return false
+	// Absolute paths starting with /tmp/ (Linux system temp) are safe
+	// These are outside the workspace and cannot overwrite source files
+	if strings.HasPrefix(path, "/tmp/") || path == "/tmp" {
+		return false
+	}
+
+	// All other paths are unsafe (including relative paths without explicit prefix)
+	return true
 }
 
 func (rule *ArtifactPoisoning) VisitStep(step *ast.Step) error {
