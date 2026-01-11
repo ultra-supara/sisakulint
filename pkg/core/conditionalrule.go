@@ -54,7 +54,7 @@ func (rule *ConditionalRule) checkcond(n *ast.String) bool {
 	// Skip if condition contains multiple ${{ }} blocks (e.g., "${{ a }} == ${{ b }}")
 	// These are valid comparison expressions that can evaluate to true or false
 	if strings.Count(n.Value, "${{") > 1 {
-		return
+		return false
 	}
 
 	// Skip if condition is a single ${{ }} block covering the entire condition
@@ -67,7 +67,7 @@ func (rule *ConditionalRule) checkcond(n *ast.String) bool {
 	// Remove all ${{ ... }} blocks and check if remaining text contains meaningful operators
 	remaining := removeExpressionBlocks(n.Value)
 	if containsOperator(remaining) {
-		return
+		return false
 	}
 
 	// Report error for invalid conditions that will always evaluate to true
