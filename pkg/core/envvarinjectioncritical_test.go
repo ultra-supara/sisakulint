@@ -44,9 +44,9 @@ func TestEnvVarInjectionCritical_PrivilegedTriggers(t *testing.T) {
 			description: "Should not detect for non-privileged trigger",
 		},
 		{
-			name:        "multiple GITHUB_ENV writes",
-			trigger:     "pull_request_target",
-			runScript:   `echo "TITLE=${{ github.event.pull_request.title }}" >> "$GITHUB_ENV"
+			name:    "multiple GITHUB_ENV writes",
+			trigger: "pull_request_target",
+			runScript: `echo "TITLE=${{ github.event.pull_request.title }}" >> "$GITHUB_ENV"
 echo "BODY=${{ github.event.pull_request.body }}" >> "$GITHUB_ENV"`,
 			wantErrors:  2,
 			description: "Should detect both envvar injections (one error per untrusted expression)",
@@ -59,9 +59,9 @@ echo "BODY=${{ github.event.pull_request.body }}" >> "$GITHUB_ENV"`,
 			description: "Should not detect for trusted input",
 		},
 		{
-			name:        "safe with heredoc syntax",
-			trigger:     "pull_request_target",
-			runScript:   `EOF=$(uuidgen)
+			name:    "safe with heredoc syntax",
+			trigger: "pull_request_target",
+			runScript: `EOF=$(uuidgen)
 echo "BODY<<EOF_$EOF" >> "$GITHUB_ENV"
 echo "${{ github.event.pull_request.body }}" >> "$GITHUB_ENV"
 echo "EOF_$EOF" >> "$GITHUB_ENV"`,

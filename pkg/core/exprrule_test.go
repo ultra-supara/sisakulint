@@ -255,7 +255,7 @@ func TestExprRule_checkIfCondition(t *testing.T) {
 		},
 		{
 			name:      "valid logical expression",
-			value:     "!cancelled()",
+			value:     "!canceled()",
 			wantError: false,
 		},
 		{

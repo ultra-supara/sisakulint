@@ -34,9 +34,9 @@ type untrustedExprInfo struct {
 
 // parsedExpression represents a parsed expression with its position and AST node
 type parsedExpression struct {
-	raw  string                // Original expression content
-	node expressions.ExprNode  // Parsed AST node
-	pos  *ast.Position         // Position in source
+	raw  string               // Original expression content
+	node expressions.ExprNode // Parsed AST node
+	pos  *ast.Position        // Position in source
 }
 
 // newCodeInjectionRule creates a new code injection rule with the specified severity level
@@ -225,8 +225,8 @@ func (rule *CodeInjectionRule) FixStep(step *ast.Step) error {
 	}
 
 	// Group expressions by their raw content to avoid duplicates
-	envVarMap := make(map[string]string)        // expr.raw -> env var name
-	envVarsForYAML := make(map[string]string)   // env var name -> env var value (for BaseNode)
+	envVarMap := make(map[string]string)      // expr.raw -> env var name
+	envVarsForYAML := make(map[string]string) // env var name -> env var value (for BaseNode)
 
 	for _, untrustedInfo := range stepInfo.untrustedExprs {
 		expr := untrustedInfo.expr
@@ -342,7 +342,7 @@ func (rule *CodeInjectionRule) generateEnvVarName(path string) string {
 
 	// Common patterns
 	if len(parts) >= 4 && parts[0] == "github" && parts[1] == "event" {
-		category := parts[2] // pull_request, issue, comment, etc.
+		category := parts[2]         // pull_request, issue, comment, etc.
 		field := parts[len(parts)-1] // title, body, etc.
 
 		// Convert to uppercase and join

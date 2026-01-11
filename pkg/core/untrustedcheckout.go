@@ -17,13 +17,14 @@ import (
 // and maps to CWE-829 (Inclusion of Functionality from Untrusted Control Sphere).
 //
 // Vulnerable pattern:
-//   on: pull_request_target
-//   jobs:
-//     build:
-//       steps:
-//         - uses: actions/checkout@v4
-//           with:
-//             ref: ${{ github.event.pull_request.head.sha }}
+//
+//	on: pull_request_target
+//	jobs:
+//	  build:
+//	    steps:
+//	      - uses: actions/checkout@v4
+//	        with:
+//	          ref: ${{ github.event.pull_request.head.sha }}
 //
 // Safe alternatives:
 // 1. Use 'pull_request' trigger instead (no secrets access)
@@ -177,9 +178,9 @@ func (rule *UntrustedCheckoutRule) isUntrustedPRRef(refValue *ast.String) bool {
 
 // refParsedExpression represents a parsed expression with its position and AST node
 type refParsedExpression struct {
-	raw  string             // Original expression content
+	raw  string               // Original expression content
 	node expressions.ExprNode // Parsed AST node
-	pos  *ast.Position      // Position in source
+	pos  *ast.Position        // Position in source
 }
 
 // extractAndParseRefExpressions extracts all expressions from a string and parses them
@@ -314,8 +315,9 @@ func (rule *UntrustedCheckoutRule) VisitJobPost(node *ast.Job) error {
 // but may change the workflow behavior if the literal prefix was meaningful.
 //
 // Example:
-//   Before: ref: pr-${{ github.event.pull_request.head.ref }}
-//   After:  ref: ${{ github.sha }}
+//
+//	Before: ref: pr-${{ github.event.pull_request.head.ref }}
+//	After:  ref: ${{ github.sha }}
 //
 // This is intentional - security takes priority over preserving custom ref formats.
 // Users can review and adjust the fix if needed, as auto-fix is opt-in with -fix flag.

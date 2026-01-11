@@ -625,10 +625,10 @@ jobs:
 // TestUntrustedCheckoutFixStep tests the FixStep method
 func TestUntrustedCheckoutFixStep(t *testing.T) {
 	tests := []struct {
-		name          string
-		yaml          string
-		expectedRef   string
-		expectError   bool
+		name        string
+		yaml        string
+		expectedRef string
+		expectError bool
 	}{
 		{
 			name: "Fix dangerous ref by replacing with github.sha",

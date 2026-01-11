@@ -51,9 +51,9 @@ func TestEnvVarInjectionMedium_NormalTriggers(t *testing.T) {
 			description: "Should not detect for privileged trigger (handled by critical rule)",
 		},
 		{
-			name:        "multiple GITHUB_ENV writes",
-			trigger:     "pull_request",
-			runScript:   `echo "TITLE=${{ github.event.pull_request.title }}" >> "$GITHUB_ENV"
+			name:    "multiple GITHUB_ENV writes",
+			trigger: "pull_request",
+			runScript: `echo "TITLE=${{ github.event.pull_request.title }}" >> "$GITHUB_ENV"
 echo "BODY=${{ github.event.pull_request.body }}" >> "$GITHUB_ENV"`,
 			wantErrors:  2,
 			description: "Should detect both envvar injections (one error per untrusted expression)",

@@ -522,7 +522,8 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		NewUntrustedCheckoutRule(),
 		NewCachePoisoningRule(),
 		NewCachePoisoningPoisonableStepRule(),
-		NewSecretExposureRule(), // Detects toJSON(secrets) and secrets[dynamic-access]
+		NewSecretExposureRule(),            // Detects toJSON(secrets) and secrets[dynamic-access]
+		NewImproperAccessControlRule(),     // Detects improper access control with label-based approval and synchronize events
 	}
 }
 

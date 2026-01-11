@@ -351,7 +351,7 @@ func TestRuleWorkflowCall_checkWorkflowCallUsesLocal(t *testing.T) {
 			call: &ast.WorkflowCall{
 				Uses: &ast.String{Value: "./test.yml", Pos: &ast.Position{Line: 1, Col: 1}},
 				Inputs: map[string]*ast.WorkflowCallInput{
-					"undefined_input": &ast.WorkflowCallInput{
+					"undefined_input": {
 						Name: &ast.String{Value: "undefined_input", Pos: &ast.Position{Line: 2, Col: 1}},
 					},
 				},
@@ -416,7 +416,7 @@ func TestRuleWorkflowCall_checkWorkflowCallUsesLocal(t *testing.T) {
 				Uses:   &ast.String{Value: "./test.yml", Pos: &ast.Position{Line: 1, Col: 1}},
 				Inputs: map[string]*ast.WorkflowCallInput{},
 				Secrets: map[string]*ast.WorkflowCallSecret{
-					"undefined_secret": &ast.WorkflowCallSecret{
+					"undefined_secret": {
 						Name: &ast.String{Value: "undefined_secret", Pos: &ast.Position{Line: 3, Col: 1}},
 					},
 				},
@@ -436,12 +436,12 @@ func TestRuleWorkflowCall_checkWorkflowCallUsesLocal(t *testing.T) {
 			call: &ast.WorkflowCall{
 				Uses: &ast.String{Value: "./test.yml", Pos: &ast.Position{Line: 1, Col: 1}},
 				Inputs: map[string]*ast.WorkflowCallInput{
-					"valid_input": &ast.WorkflowCallInput{
+					"valid_input": {
 						Name: &ast.String{Value: "valid_input", Pos: &ast.Position{Line: 2, Col: 1}},
 					},
 				},
 				Secrets: map[string]*ast.WorkflowCallSecret{
-					"valid_secret": &ast.WorkflowCallSecret{
+					"valid_secret": {
 						Name: &ast.String{Value: "valid_secret", Pos: &ast.Position{Line: 3, Col: 1}},
 					},
 				},

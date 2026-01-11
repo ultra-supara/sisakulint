@@ -61,43 +61,43 @@ func TestIsThirdPartyArtifactAction(t *testing.T) {
 // TestArtifactPoisoningMedium_VisitWorkflowPre tests trigger detection.
 func TestArtifactPoisoningMedium_VisitWorkflowPre(t *testing.T) {
 	tests := []struct {
-		name            string
-		triggers        []string
+		name               string
+		triggers           []string
 		wantUnsafeTriggers int
 	}{
 		{
-			name:            "workflow_run trigger",
-			triggers:        []string{"workflow_run"},
+			name:               "workflow_run trigger",
+			triggers:           []string{"workflow_run"},
 			wantUnsafeTriggers: 1,
 		},
 		{
-			name:            "pull_request_target trigger",
-			triggers:        []string{"pull_request_target"},
+			name:               "pull_request_target trigger",
+			triggers:           []string{"pull_request_target"},
 			wantUnsafeTriggers: 1,
 		},
 		{
-			name:            "issue_comment trigger",
-			triggers:        []string{"issue_comment"},
+			name:               "issue_comment trigger",
+			triggers:           []string{"issue_comment"},
 			wantUnsafeTriggers: 1,
 		},
 		{
-			name:            "multiple untrusted triggers",
-			triggers:        []string{"workflow_run", "pull_request_target"},
+			name:               "multiple untrusted triggers",
+			triggers:           []string{"workflow_run", "pull_request_target"},
 			wantUnsafeTriggers: 2,
 		},
 		{
-			name:            "safe trigger (pull_request)",
-			triggers:        []string{"pull_request"},
+			name:               "safe trigger (pull_request)",
+			triggers:           []string{"pull_request"},
 			wantUnsafeTriggers: 0,
 		},
 		{
-			name:            "safe trigger (push)",
-			triggers:        []string{"push"},
+			name:               "safe trigger (push)",
+			triggers:           []string{"push"},
 			wantUnsafeTriggers: 0,
 		},
 		{
-			name:            "mixed safe and unsafe triggers",
-			triggers:        []string{"push", "workflow_run"},
+			name:               "mixed safe and unsafe triggers",
+			triggers:           []string{"push", "workflow_run"},
 			wantUnsafeTriggers: 1,
 		},
 	}

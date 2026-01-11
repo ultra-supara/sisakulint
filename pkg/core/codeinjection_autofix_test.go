@@ -11,31 +11,31 @@ import (
 
 func TestCodeInjectionCritical_AutoFix_YAMLOutput(t *testing.T) {
 	tests := []struct {
-		name           string
-		trigger        string
-		stepName       string
-		runScript      string
-		wantEnvVar     string
-		wantEnvValue   string
-		wantRunScript  string
+		name          string
+		trigger       string
+		stepName      string
+		runScript     string
+		wantEnvVar    string
+		wantEnvValue  string
+		wantRunScript string
 	}{
 		{
-			name:           "PR title auto-fix in run script",
-			trigger:        "pull_request_target",
-			stepName:       "Test",
-			runScript:      `echo "${{ github.event.pull_request.title }}"`,
-			wantEnvVar:     "PR_TITLE",
-			wantEnvValue:   "${{ github.event.pull_request.title }}",
-			wantRunScript:  `echo "$PR_TITLE"`,
+			name:          "PR title auto-fix in run script",
+			trigger:       "pull_request_target",
+			stepName:      "Test",
+			runScript:     `echo "${{ github.event.pull_request.title }}"`,
+			wantEnvVar:    "PR_TITLE",
+			wantEnvValue:  "${{ github.event.pull_request.title }}",
+			wantRunScript: `echo "$PR_TITLE"`,
 		},
 		{
-			name:           "Comment body auto-fix in run script",
-			trigger:        "issue_comment",
-			stepName:       "Process",
-			runScript:      `echo "${{ github.event.comment.body }}"`,
-			wantEnvVar:     "COMMENT_BODY",
-			wantEnvValue:   "${{ github.event.comment.body }}",
-			wantRunScript:  `echo "$COMMENT_BODY"`,
+			name:          "Comment body auto-fix in run script",
+			trigger:       "issue_comment",
+			stepName:      "Process",
+			runScript:     `echo "${{ github.event.comment.body }}"`,
+			wantEnvVar:    "COMMENT_BODY",
+			wantEnvValue:  "${{ github.event.comment.body }}",
+			wantRunScript: `echo "$COMMENT_BODY"`,
 		},
 	}
 
@@ -127,22 +127,22 @@ func TestCodeInjectionCritical_AutoFix_YAMLOutput(t *testing.T) {
 
 func TestCodeInjectionMedium_AutoFix_YAMLOutput(t *testing.T) {
 	tests := []struct {
-		name           string
-		trigger        string
-		stepName       string
-		runScript      string
-		wantEnvVar     string
-		wantEnvValue   string
-		wantRunScript  string
+		name          string
+		trigger       string
+		stepName      string
+		runScript     string
+		wantEnvVar    string
+		wantEnvValue  string
+		wantRunScript string
 	}{
 		{
-			name:           "PR title auto-fix in normal trigger",
-			trigger:        "pull_request",
-			stepName:       "Test",
-			runScript:      `echo "${{ github.event.pull_request.title }}"`,
-			wantEnvVar:     "PR_TITLE",
-			wantEnvValue:   "${{ github.event.pull_request.title }}",
-			wantRunScript:  `echo "$PR_TITLE"`,
+			name:          "PR title auto-fix in normal trigger",
+			trigger:       "pull_request",
+			stepName:      "Test",
+			runScript:     `echo "${{ github.event.pull_request.title }}"`,
+			wantEnvVar:    "PR_TITLE",
+			wantEnvValue:  "${{ github.event.pull_request.title }}",
+			wantRunScript: `echo "$PR_TITLE"`,
 		},
 	}
 
