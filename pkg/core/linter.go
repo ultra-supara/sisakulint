@@ -515,6 +515,8 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		CodeInjectionMediumRule(),      // Detects untrusted input in normal workflow triggers
 		EnvVarInjectionCriticalRule(),  // Detects envvar injection in privileged workflow triggers
 		EnvVarInjectionMediumRule(),    // Detects envvar injection in normal workflow triggers
+		EnvPathInjectionCriticalRule(), // Detects PATH injection in privileged workflow triggers
+		EnvPathInjectionMediumRule(),   // Detects PATH injection in normal workflow triggers
 		CommitShaRule(),
 		ArtifactPoisoningRule(),
 		NewArtifactPoisoningMediumRule(),
@@ -522,8 +524,8 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		NewUntrustedCheckoutRule(),
 		NewCachePoisoningRule(),
 		NewCachePoisoningPoisonableStepRule(),
-		NewSecretExposureRule(),            // Detects toJSON(secrets) and secrets[dynamic-access]
-		NewImproperAccessControlRule(),     // Detects improper access control with label-based approval and synchronize events
+		NewSecretExposureRule(),        // Detects toJSON(secrets) and secrets[dynamic-access]
+		NewImproperAccessControlRule(), // Detects improper access control with label-based approval and synchronize events
 	}
 }
 
