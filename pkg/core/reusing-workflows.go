@@ -349,7 +349,7 @@ func parseReusableWorkflowMetadata(src []byte) (*ReusableWorkflowMetadata, error
 		// on:-workflow_call: ...
 		for i := 0; i < len(node.Content); i += 2 {
 			k := strings.ToLower(node.Content[i].Value)
-			if k == "workflow_call" {
+			if k == SubWorkflowCall {
 				var m ReusableWorkflowMetadata
 				if err := node.Content[i+1].Decode(&m); err != nil {
 					return nil, err
