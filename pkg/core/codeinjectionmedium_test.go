@@ -15,10 +15,10 @@ func TestCodeInjectionMediumRule(t *testing.T) {
 
 func TestCodeInjectionMedium_NormalTriggers(t *testing.T) {
 	tests := []struct {
-		name                string
-		trigger             string
-		shouldDetect        bool
-		description         string
+		name         string
+		trigger      string
+		shouldDetect bool
+		description  string
 	}{
 		{
 			name:         "pull_request is normal trigger",
@@ -146,8 +146,8 @@ func TestCodeInjectionMedium_RunScript(t *testing.T) {
 			description: "Should not detect when using env variable",
 		},
 		{
-			name:        "normal trigger + multiple untrusted inputs",
-			trigger:     "push",
+			name:    "normal trigger + multiple untrusted inputs",
+			trigger: "push",
 			runScript: `echo "${{ github.event.pull_request.title }}"
 echo "${{ github.event.pull_request.body }}"`,
 			wantErrors:  2,

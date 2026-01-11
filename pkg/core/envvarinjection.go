@@ -36,12 +36,14 @@ type envVarUntrustedExprInfo struct {
 
 // Pattern to detect writes to $GITHUB_ENV
 // Matches various formats of GITHUB_ENV redirects:
-//   >> $GITHUB_ENV          (standard format)
-//   >> "$GITHUB_ENV"        (double quoted)
-//   >> '$GITHUB_ENV'        (single quoted)
-//   >> ${GITHUB_ENV}        (with braces)
-//   >>$GITHUB_ENV           (no space after >>)
-//   >> "${GITHUB_ENV}"      (braces with quotes)
+//
+//	>> $GITHUB_ENV          (standard format)
+//	>> "$GITHUB_ENV"        (double quoted)
+//	>> '$GITHUB_ENV'        (single quoted)
+//	>> ${GITHUB_ENV}        (with braces)
+//	>>$GITHUB_ENV           (no space after >>)
+//	>> "${GITHUB_ENV}"      (braces with quotes)
+//
 // This helps catch all common patterns of environment variable writes
 var githubEnvPattern = regexp.MustCompile(`>>\s*["']?\$\{?GITHUB_ENV\}?["']?`)
 

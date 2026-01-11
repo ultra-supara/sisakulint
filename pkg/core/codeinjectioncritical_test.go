@@ -15,10 +15,10 @@ func TestCodeInjectionCriticalRule(t *testing.T) {
 
 func TestCodeInjectionCritical_PrivilegedTriggers(t *testing.T) {
 	tests := []struct {
-		name                string
-		trigger             string
-		shouldDetect        bool
-		description         string
+		name         string
+		trigger      string
+		shouldDetect bool
+		description  string
 	}{
 		{
 			name:         "pull_request_target is privileged",

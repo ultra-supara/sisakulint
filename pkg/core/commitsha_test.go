@@ -279,10 +279,10 @@ func TestCommitSha_VisitStep(t *testing.T) {
 // TestCommitSha_VisitStep_AutoFixer tests that auto-fixer is added when needed.
 func TestCommitSha_VisitStep_AutoFixer(t *testing.T) {
 	tests := []struct {
-		name              string
-		step              *ast.Step
-		expectAutoFixer   bool
-		autoFixerCount    int
+		name            string
+		step            *ast.Step
+		expectAutoFixer bool
+		autoFixerCount  int
 	}{
 		{
 			name: "auto-fixer added for non-SHA reference",

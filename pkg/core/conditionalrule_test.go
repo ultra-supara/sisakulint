@@ -123,17 +123,17 @@ func TestConditionalRule_checkcond(t *testing.T) {
 		},
 		{
 			name:      "expression block with external comparison and function",
-			condition: "${{ steps.disk.outputs.status }} == 'success' && !cancelled()",
+			condition: "${{ steps.disk.outputs.status }} == 'success' && !canceled()",
 			wantError: false,
 		},
 		{
 			name:      "expression block with external comparison",
-			condition: "${{ env.PACKAGED_STATUS }} == 'success' && !cancelled()",
+			condition: "${{ env.PACKAGED_STATUS }} == 'success' && !canceled()",
 			wantError: false,
 		},
 		{
-			name:      "parenthesized cancelled function",
-			condition: "(!cancelled())",
+			name:      "parenthesized canceled function",
+			condition: "(!canceled())",
 			wantError: false,
 		},
 		{
@@ -235,7 +235,7 @@ func TestContainsOperator(t *testing.T) {
 		},
 		{
 			name:  "contains &&",
-			input: " && !cancelled()",
+			input: " && !canceled()",
 			want:  true,
 		},
 		{
@@ -245,7 +245,7 @@ func TestContainsOperator(t *testing.T) {
 		},
 		{
 			name:  "contains !",
-			input: "!cancelled()",
+			input: "!canceled()",
 			want:  true,
 		},
 		{

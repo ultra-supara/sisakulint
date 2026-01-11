@@ -374,10 +374,10 @@ func TestArtifactPoisoning_VisitStep(t *testing.T) {
 
 func TestArtifactPoisoning_FixStep(t *testing.T) {
 	tests := []struct {
-		name       string
-		step       *ast.Step
-		wantPath   string
-		wantError  bool
+		name      string
+		step      *ast.Step
+		wantPath  string
+		wantError bool
 	}{
 		{
 			name: "fix step without inputs",

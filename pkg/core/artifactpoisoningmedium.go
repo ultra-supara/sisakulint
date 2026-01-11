@@ -10,9 +10,9 @@ import (
 // when third-party artifact download actions are used in workflows triggered by untrusted events.
 //
 // This rule differs from artifact-poisoning-critical:
-// - critical: Detects actions/download-artifact with unsafe extraction paths
-// - medium: Detects third-party artifact download actions (like dawidd6/action-download-artifact)
-//           used with untrusted triggers, which may download and extract artifacts unsafely by default
+//   - critical: Detects actions/download-artifact with unsafe extraction paths
+//   - medium: Detects third-party artifact download actions (like dawidd6/action-download-artifact)
+//     used with untrusted triggers, which may download and extract artifacts unsafely by default
 //
 // Detection conditions:
 // 1. Workflow is triggered by untrusted events (workflow_run, pull_request_target, issue_comment)
@@ -33,7 +33,6 @@ func NewArtifactPoisoningMediumRule() *ArtifactPoisoningMedium {
 		},
 	}
 }
-
 
 // knownThirdPartyArtifactActions lists known third-party actions that download artifacts.
 // These actions may have unsafe default behavior (e.g., overwriting existing files).
