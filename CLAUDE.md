@@ -78,6 +78,9 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - `pkg/core/envvarinjection.go` - **EnvVarInjectionRule**: Shared implementation for environment variable injection detection (with auto-fix)
        - `pkg/core/envvarinjectioncritical.go` - **EnvVarInjectionCritical**: Detects untrusted input written to $GITHUB_ENV in privileged triggers
        - `pkg/core/envvarinjectionmedium.go` - **EnvVarInjectionMedium**: Detects untrusted input written to $GITHUB_ENV in normal triggers
+     - `pkg/core/envpathinjection.go` - **EnvPathInjectionRule**: Shared implementation for PATH injection detection (with auto-fix)
+       - `pkg/core/envpathinjectioncritical.go` - **EnvPathInjectionCritical**: Detects untrusted input written to $GITHUB_PATH in privileged triggers
+       - `pkg/core/envpathinjectionmedium.go` - **EnvPathInjectionMedium**: Detects untrusted input written to $GITHUB_PATH in normal triggers
      - `pkg/core/untrustedcheckout.go` - **UntrustedCheckoutRule**: Detects checkout of untrusted PR code in privileged workflow contexts (with auto-fix)
      - `pkg/core/duprecate_commands_pattern.go` - **RuleDeprecatedCommands**: Deprecated workflow commands detection
      - `pkg/core/actionlist.go` - **ActionList**: Action whitelist/blacklist enforcement
@@ -210,12 +213,14 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 12. **CodeInjectionMediumRule** - Detects code injection in normal triggers (auto-fix supported)
 13. **EnvVarInjectionCriticalRule** - Detects environment variable injection in privileged triggers (auto-fix supported)
 14. **EnvVarInjectionMediumRule** - Detects environment variable injection in normal triggers (auto-fix supported)
-15. **CommitShaRule** - Validates action version pinning (auto-fix supported)
-16. **ArtifactPoisoningRule** - Detects artifact poisoning risks (auto-fix supported)
-17. **ActionListRule** - Validates allowed/blocked actions
-18. **CachePoisoningRule** - Detects cache poisoning vulnerabilities
-19. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
-20. **ImproperAccessControlRule** - Detects improper access control with label-based approval and synchronize events (auto-fix supported)
+15. **EnvPathInjectionCriticalRule** - Detects PATH injection in privileged triggers (auto-fix supported)
+16. **EnvPathInjectionMediumRule** - Detects PATH injection in normal triggers (auto-fix supported)
+17. **CommitShaRule** - Validates action version pinning (auto-fix supported)
+18. **ArtifactPoisoningRule** - Detects artifact poisoning risks (auto-fix supported)
+19. **ActionListRule** - Validates allowed/blocked actions
+20. **CachePoisoningRule** - Detects cache poisoning vulnerabilities
+21. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
+22. **ImproperAccessControlRule** - Detects improper access control with label-based approval and synchronize events (auto-fix supported)
 
 ## Key Files
 
@@ -320,8 +325,9 @@ See `pkg/core/permissionrule.go` for auto-fix example.
 3. **CredentialRule** (`credential.go`) - Removes hardcoded passwords from container configs
 4. **CodeInjectionRule** (`codeinjection.go`) - Moves untrusted expressions to environment variables
 5. **EnvVarInjectionRule** (`envvarinjection.go`) - Sanitizes untrusted input with `tr -d '\n'` before writing to $GITHUB_ENV
-6. **UntrustedCheckoutRule** (`untrustedcheckout.go`) - Adds explicit ref to checkout in privileged contexts
-7. **ArtifactPoisoningRule** (`artifactpoisoningcritical.go`) - Adds validation steps for artifact downloads
+6. **EnvPathInjectionRule** (`envpathinjection.go`) - Validates untrusted paths with `realpath` before writing to $GITHUB_PATH
+7. **UntrustedCheckoutRule** (`untrustedcheckout.go`) - Adds explicit ref to checkout in privileged contexts
+8. **ArtifactPoisoningRule** (`artifactpoisoningcritical.go`) - Adds validation steps for artifact downloads
 
 ## Recent Security Enhancements
 
