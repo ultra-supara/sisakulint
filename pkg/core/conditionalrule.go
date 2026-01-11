@@ -71,18 +71,9 @@ func (rule *ConditionalRule) RuleNames() string {
 // stripExpressionWrappers removes ${{ }} wrappers from a condition string
 func stripExpressionWrappers(value string) string {
 	// Remove all ${{ }} wrappers, keeping the content
-	result := value
-	for {
-		// Find and replace ${{ with nothing
-		before := result
-		result = strings.Replace(result, "${{", "", -1)
-		result = strings.Replace(result, "}}", "", -1)
-		result = strings.TrimSpace(result)
-		if result == before {
-			break
-		}
-	}
-	return result
+	result := strings.Replace(value, "${{", "", -1)
+	result = strings.Replace(result, "}}", "", -1)
+	return strings.TrimSpace(result)
 }
 
 // FixStep fixes the condition in a step
