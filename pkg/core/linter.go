@@ -529,6 +529,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		NewImproperAccessControlRule(),           // Detects improper access control with label-based approval and synchronize events
 		NewUntrustedCheckoutTOCTOUCriticalRule(), // Detects TOCTOU with labeled event type and mutable refs
 		NewUntrustedCheckoutTOCTOUHighRule(),     // Detects TOCTOU with deployment environment and mutable refs
+		NewSelfHostedRunnersRule(),               // Detects self-hosted runner usage which may be dangerous in public repos
 	}
 }
 
