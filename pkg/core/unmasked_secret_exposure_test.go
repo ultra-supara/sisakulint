@@ -429,6 +429,240 @@ func TestUnmaskedSecretExposure_AutoFix(t *testing.T) {
 	}
 }
 
+func TestUnmaskedSecretExposure_AutoFixEdgeCases(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Does not duplicate existing add-mask", func(t *testing.T) {
+		t.Parallel()
+
+		rule := NewUnmaskedSecretExposureRule()
+
+		step := &ast.Step{
+			Env: &ast.Env{
+				Vars: map[string]*ast.EnvVar{
+					"client_id": {
+						Name: &ast.String{Value: "CLIENT_ID"},
+						Value: &ast.String{
+							Value: "${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}",
+							Pos:   &ast.Position{Line: 1, Col: 1},
+						},
+					},
+				},
+			},
+			Exec: &ast.ExecRun{
+				Run: &ast.String{
+					Value: "echo \"::add-mask::$AZURE_CREDENTIALS_CLIENTID\"\necho using client id",
+					Pos:   &ast.Position{Line: 2, Col: 1},
+				},
+			},
+		}
+
+		job := &ast.Job{Steps: []*ast.Step{step}}
+		_ = rule.VisitJobPre(job)
+
+		fixers := rule.AutoFixers()
+		if len(fixers) != 1 {
+			t.Errorf("Expected 1 fixer, got %d", len(fixers))
+		}
+
+		// Apply fixer
+		if len(fixers) > 0 {
+			for _, fixer := range fixers {
+				if err := fixer.Fix(); err != nil {
+					t.Errorf("Fix() returned error: %v", err)
+				}
+			}
+
+			// Check that add-mask wasn't duplicated
+			if step.Exec != nil {
+				execRun, ok := step.Exec.(*ast.ExecRun)
+				if ok && execRun.Run != nil {
+					// Count occurrences of add-mask
+					count := strings.Count(execRun.Run.Value, "::add-mask::")
+					if count != 1 {
+						t.Errorf("Expected 1 occurrence of add-mask, got %d. Script:\n%s", count, execRun.Run.Value)
+					}
+				}
+			}
+		}
+	})
+
+	t.Run("Handles existing env var with same name", func(t *testing.T) {
+		t.Parallel()
+
+		rule := NewUnmaskedSecretExposureRule()
+
+		step := &ast.Step{
+			Env: &ast.Env{
+				Vars: map[string]*ast.EnvVar{
+					"azure_credentials_clientid": {
+						Name:  &ast.String{Value: "AZURE_CREDENTIALS_CLIENTID"},
+						Value: &ast.String{Value: "existing-value"},
+					},
+					"client_id": {
+						Name: &ast.String{Value: "CLIENT_ID"},
+						Value: &ast.String{
+							Value: "${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}",
+							Pos:   &ast.Position{Line: 1, Col: 1},
+						},
+					},
+				},
+			},
+			Exec: &ast.ExecRun{
+				Run: &ast.String{
+					Value: "echo using client id",
+					Pos:   &ast.Position{Line: 2, Col: 1},
+				},
+			},
+		}
+
+		job := &ast.Job{Steps: []*ast.Step{step}}
+		_ = rule.VisitJobPre(job)
+
+		fixers := rule.AutoFixers()
+		if len(fixers) != 1 {
+			t.Errorf("Expected 1 fixer, got %d", len(fixers))
+		}
+
+		// Apply fixer
+		if len(fixers) > 0 {
+			for _, fixer := range fixers {
+				if err := fixer.Fix(); err != nil {
+					t.Errorf("Fix() returned error: %v", err)
+				}
+			}
+
+			// Check that existing env var value is preserved
+			if step.Env.Vars["azure_credentials_clientid"].Value.Value != "existing-value" {
+				t.Errorf("Existing env var was overwritten, got: %s", step.Env.Vars["azure_credentials_clientid"].Value.Value)
+			}
+		}
+	})
+
+	t.Run("Handles multiple fromJson expressions in same step", func(t *testing.T) {
+		t.Parallel()
+
+		rule := NewUnmaskedSecretExposureRule()
+
+		step := &ast.Step{
+			Env: &ast.Env{
+				Vars: map[string]*ast.EnvVar{
+					"client_id": {
+						Name: &ast.String{Value: "CLIENT_ID"},
+						Value: &ast.String{
+							Value: "${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}",
+							Pos:   &ast.Position{Line: 1, Col: 1},
+						},
+					},
+					"client_secret": {
+						Name: &ast.String{Value: "CLIENT_SECRET"},
+						Value: &ast.String{
+							Value: "${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}",
+							Pos:   &ast.Position{Line: 2, Col: 1},
+						},
+					},
+				},
+			},
+			Exec: &ast.ExecRun{
+				Run: &ast.String{
+					Value: "echo using credentials",
+					Pos:   &ast.Position{Line: 3, Col: 1},
+				},
+			},
+		}
+
+		job := &ast.Job{Steps: []*ast.Step{step}}
+		_ = rule.VisitJobPre(job)
+
+		// Should detect 2 errors
+		errors := rule.Errors()
+		if len(errors) != 2 {
+			t.Errorf("Expected 2 errors, got %d", len(errors))
+		}
+
+		// Should have 2 fixers
+		fixers := rule.AutoFixers()
+		if len(fixers) != 2 {
+			t.Errorf("Expected 2 fixers, got %d", len(fixers))
+		}
+
+		// Apply all fixers
+		for _, fixer := range fixers {
+			if err := fixer.Fix(); err != nil {
+				t.Errorf("Fix() returned error: %v", err)
+			}
+		}
+
+		// Check that both add-mask commands were added
+		if step.Exec != nil {
+			execRun, ok := step.Exec.(*ast.ExecRun)
+			if ok && execRun.Run != nil {
+				count := strings.Count(execRun.Run.Value, "::add-mask::")
+				if count != 2 {
+					t.Errorf("Expected 2 add-mask commands, got %d. Script:\n%s", count, execRun.Run.Value)
+				}
+			}
+		}
+	})
+
+	t.Run("Handles complex run script with shebang", func(t *testing.T) {
+		t.Parallel()
+
+		rule := NewUnmaskedSecretExposureRule()
+
+		step := &ast.Step{
+			Env: &ast.Env{
+				Vars: map[string]*ast.EnvVar{
+					"client_id": {
+						Name: &ast.String{Value: "CLIENT_ID"},
+						Value: &ast.String{
+							Value: "${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}",
+							Pos:   &ast.Position{Line: 1, Col: 1},
+						},
+					},
+				},
+			},
+			Exec: &ast.ExecRun{
+				Run: &ast.String{
+					Value: "#!/bin/bash\nset -e\necho \"Starting...\"",
+					Pos:   &ast.Position{Line: 2, Col: 1},
+				},
+			},
+		}
+
+		job := &ast.Job{Steps: []*ast.Step{step}}
+		_ = rule.VisitJobPre(job)
+
+		fixers := rule.AutoFixers()
+		if len(fixers) != 1 {
+			t.Errorf("Expected 1 fixer, got %d", len(fixers))
+		}
+
+		// Apply fixer
+		if len(fixers) > 0 {
+			for _, fixer := range fixers {
+				if err := fixer.Fix(); err != nil {
+					t.Errorf("Fix() returned error: %v", err)
+				}
+			}
+
+			// Check that add-mask was added and script still works
+			if step.Exec != nil {
+				execRun, ok := step.Exec.(*ast.ExecRun)
+				if ok && execRun.Run != nil {
+					if !strings.Contains(execRun.Run.Value, "::add-mask::") {
+						t.Errorf("add-mask was not added")
+					}
+					// Shebang should still be present
+					if !strings.Contains(execRun.Run.Value, "#!/bin/bash") {
+						t.Errorf("Shebang was removed or corrupted")
+					}
+				}
+			}
+		}
+	})
+}
+
 func TestUnmaskedSecretExposure_ComplexPatterns(t *testing.T) {
 	t.Parallel()
 

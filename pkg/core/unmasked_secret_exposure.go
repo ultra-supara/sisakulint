@@ -354,8 +354,14 @@ func (f *unmaskedSecretExposureFixer) FixStep(node *ast.Step) error {
 	// Create add-mask command
 	addMaskCommand := fmt.Sprintf("echo \"::add-mask::$%s\"", envVarName)
 
-	// Prepend add-mask command to run script
+	// Check if add-mask for this variable already exists in the script
 	originalScript := execRun.Run.Value
+	if strings.Contains(originalScript, addMaskCommand) {
+		// Add-mask already exists, don't duplicate
+		return nil
+	}
+
+	// Prepend add-mask command to run script
 	execRun.Run.Value = addMaskCommand + "\n" + originalScript
 
 	// Ensure env exists
