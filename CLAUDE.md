@@ -222,6 +222,7 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 21. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
 22. **ImproperAccessControlRule** - Detects improper access control with label-based approval and synchronize events (auto-fix supported)
 23. **UnmaskedSecretExposureRule** - Detects unmasked secret exposure when secrets are derived using fromJson() (auto-fix supported)
+24. **ArtipackedRule** - Detects credential leakage via artifact upload when checkout persists credentials (auto-fix supported)
 
 ## Key Files
 
