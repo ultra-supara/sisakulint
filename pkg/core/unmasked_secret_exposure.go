@@ -361,8 +361,23 @@ func (f *unmaskedSecretExposureFixer) FixStep(node *ast.Step) error {
 		return nil
 	}
 
-	// Prepend add-mask command to run script
-	execRun.Run.Value = addMaskCommand + "\n" + originalScript
+	// Insert add-mask command, respecting shebang if present
+	if strings.HasPrefix(originalScript, "#!") {
+		// Find the end of the first line (shebang)
+		firstNewline := strings.Index(originalScript, "\n")
+		if firstNewline == -1 {
+			// Only shebang, no other content
+			execRun.Run.Value = originalScript + "\n" + addMaskCommand
+		} else {
+			// Insert add-mask after shebang
+			shebangLine := originalScript[:firstNewline]
+			restOfScript := originalScript[firstNewline+1:]
+			execRun.Run.Value = shebangLine + "\n" + addMaskCommand + "\n" + restOfScript
+		}
+	} else {
+		// No shebang, prepend add-mask command to run script
+		execRun.Run.Value = addMaskCommand + "\n" + originalScript
+	}
 
 	// Ensure env exists
 	if node.Env == nil {

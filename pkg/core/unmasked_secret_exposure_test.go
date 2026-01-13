@@ -653,9 +653,18 @@ func TestUnmaskedSecretExposure_AutoFixEdgeCases(t *testing.T) {
 					if !strings.Contains(execRun.Run.Value, "::add-mask::") {
 						t.Errorf("add-mask was not added")
 					}
-					// Shebang should still be present
-					if !strings.Contains(execRun.Run.Value, "#!/bin/bash") {
-						t.Errorf("Shebang was removed or corrupted")
+
+					// CRITICAL: Shebang must be on the first line
+					lines := strings.Split(execRun.Run.Value, "\n")
+					if len(lines) == 0 || !strings.HasPrefix(lines[0], "#!/bin/bash") {
+						t.Errorf("Shebang is not on the first line. First line: %q, Full script:\n%s",
+							lines[0], execRun.Run.Value)
+					}
+
+					// add-mask should be on the second line (after shebang)
+					if len(lines) < 2 || !strings.Contains(lines[1], "::add-mask::") {
+						t.Errorf("add-mask is not on the second line (after shebang). Second line: %q",
+							lines[1])
 					}
 				}
 			}
