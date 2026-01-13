@@ -527,6 +527,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		NewSecretExposureRule(),            // Detects toJSON(secrets) and secrets[dynamic-access]
 		NewUnmaskedSecretExposureRule(),    // Detects fromJson(secrets.XXX).yyy unmasked exposure
 		NewImproperAccessControlRule(),     // Detects improper access control with label-based approval and synchronize events
+		NewUnpinnedImagesRule(),            // Detects container images not pinned by SHA256 digest
 	}
 }
 
