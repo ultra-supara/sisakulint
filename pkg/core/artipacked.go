@@ -33,14 +33,11 @@ type ArtipackedRule struct {
 	currentJobID string
 }
 
-// checkoutInfo stores information about a checkout step for later analysis
 type checkoutInfo struct {
-	step      *ast.Step
-	version   int // 0 = unknown, 6+ = v6 or later
-	stepIndex int // index of the step in the job
+	step    *ast.Step
+	version int // 0 = unknown, 6+ = v6 or later
 }
 
-// NewArtipackedRule creates a new instance of the artipacked rule
 func NewArtipackedRule() *ArtipackedRule {
 	return &ArtipackedRule{
 		BaseRule: BaseRule{
@@ -50,21 +47,18 @@ func NewArtipackedRule() *ArtipackedRule {
 	}
 }
 
-// VisitWorkflowPre resets state for each workflow
 func (rule *ArtipackedRule) VisitWorkflowPre(n *ast.Workflow) error {
 	rule.checkoutSteps = nil
 	rule.currentJobID = ""
 	return nil
 }
 
-// VisitWorkflowPost resets state after workflow processing
 func (rule *ArtipackedRule) VisitWorkflowPost(n *ast.Workflow) error {
 	rule.checkoutSteps = nil
 	rule.currentJobID = ""
 	return nil
 }
 
-// VisitJobPre resets step tracking for each job
 func (rule *ArtipackedRule) VisitJobPre(node *ast.Job) error {
 	rule.checkoutSteps = nil
 	if node.ID != nil {
@@ -73,9 +67,7 @@ func (rule *ArtipackedRule) VisitJobPre(node *ast.Job) error {
 	return nil
 }
 
-// VisitJobPost checks for unpaired checkout steps and reports potential risks
 func (rule *ArtipackedRule) VisitJobPost(node *ast.Job) error {
-	// Report remaining checkout steps without dangerous upload as low severity
 	for _, info := range rule.checkoutSteps {
 		severity := "Medium"
 		if info.version >= 6 {
@@ -95,7 +87,6 @@ func (rule *ArtipackedRule) VisitJobPost(node *ast.Job) error {
 	return nil
 }
 
-// getCredentialLocation returns the location where credentials are stored based on checkout version
 func (rule *ArtipackedRule) getCredentialLocation(version int) string {
 	if version >= 6 {
 		return "$RUNNER_TEMP"
@@ -103,20 +94,17 @@ func (rule *ArtipackedRule) getCredentialLocation(version int) string {
 	return ".git/config"
 }
 
-// VisitStep analyzes checkout and upload-artifact steps
 func (rule *ArtipackedRule) VisitStep(step *ast.Step) error {
 	action, ok := step.Exec.(*ast.ExecAction)
 	if !ok {
 		return nil
 	}
 
-	// Track checkout steps
 	if rule.isCheckoutAction(action.Uses.Value) {
 		rule.handleCheckout(step, action)
 		return nil
 	}
 
-	// Check upload-artifact steps
 	if rule.isUploadArtifactAction(action.Uses.Value) {
 		rule.handleUploadArtifact(step, action)
 	}
@@ -124,110 +112,60 @@ func (rule *ArtipackedRule) VisitStep(step *ast.Step) error {
 	return nil
 }
 
-// isCheckoutAction checks if the action is actions/checkout
 func (rule *ArtipackedRule) isCheckoutAction(uses string) bool {
 	return strings.HasPrefix(uses, "actions/checkout@")
 }
 
-// isUploadArtifactAction checks if the action is actions/upload-artifact
 func (rule *ArtipackedRule) isUploadArtifactAction(uses string) bool {
 	return strings.HasPrefix(uses, "actions/upload-artifact@")
 }
 
-// handleCheckout processes a checkout action step
 func (rule *ArtipackedRule) handleCheckout(step *ast.Step, action *ast.ExecAction) {
-	// Check if persist-credentials is explicitly set to false
 	if action.Inputs != nil {
 		if persistCreds, exists := action.Inputs["persist-credentials"]; exists {
 			if persistCreds.Value != nil && strings.ToLower(persistCreds.Value.Value) == "false" {
-				// Safe: credentials will not be persisted
-				rule.Debug("Checkout at %s has persist-credentials: false, skipping", step.Pos)
 				return
 			}
 		}
 	}
 
-	// Get checkout version
 	version := rule.getCheckoutVersion(action.Uses.Value)
 
-	// Add to tracking list
-	stepIndex := len(rule.checkoutSteps)
 	rule.checkoutSteps = append(rule.checkoutSteps, &checkoutInfo{
-		step:      step,
-		version:   version,
-		stepIndex: stepIndex,
+		step:    step,
+		version: version,
 	})
-
-	rule.Debug("Found vulnerable checkout at %s, version=%d", step.Pos, version)
 }
 
-// getCheckoutVersion extracts the major version from checkout action reference
 func (rule *ArtipackedRule) getCheckoutVersion(uses string) int {
-	// Extract version from uses string (e.g., "actions/checkout@v4", "actions/checkout@v6.0.0")
 	parts := strings.Split(uses, "@")
 	if len(parts) != 2 {
-		return 0 // unknown
+		return 0
 	}
 
-	version := parts[1]
-
-	// Handle tag format (v1, v2, v4, v6, etc.)
 	versionPattern := regexp.MustCompile(`^v?(\d+)`)
-	matches := versionPattern.FindStringSubmatch(version)
+	matches := versionPattern.FindStringSubmatch(parts[1])
 	if len(matches) >= 2 {
 		var major int
-		_, err := parseVersion(matches[1], &major)
-		if err == nil {
-			return major
+		for _, c := range matches[1] {
+			major = major*10 + int(c-'0')
 		}
+		return major
 	}
 
-	// Handle commit SHA (40 hex characters) - treat as unknown
-	if len(version) == 40 && isHexString(version) {
-		return 0 // unknown, treat conservatively
-	}
-
-	return 0 // unknown
+	return 0
 }
 
-// parseVersion is a simple helper to parse version number
-func parseVersion(s string, v *int) (int, error) {
-	var n int
-	for _, c := range s {
-		if c >= '0' && c <= '9' {
-			n = n*10 + int(c-'0')
-		} else {
-			break
-		}
-	}
-	*v = n
-	return n, nil
-}
-
-// isHexString checks if a string is a valid hex string
-func isHexString(s string) bool {
-	for _, c := range s {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
-			return false
-		}
-	}
-	return true
-}
-
-// handleUploadArtifact processes an upload-artifact action step
 func (rule *ArtipackedRule) handleUploadArtifact(step *ast.Step, action *ast.ExecAction) {
-	// Check if the upload path is dangerous
 	pathValue := rule.getUploadPath(action)
 	if !rule.isDangerousUploadPath(pathValue) {
 		return
 	}
 
-	// Check if there are any preceding checkout steps with credential persistence
 	if len(rule.checkoutSteps) == 0 {
 		return
 	}
 
-	// Report error for each vulnerable checkout-upload pair
 	for _, checkoutInfo := range rule.checkoutSteps {
 		severity := "High"
 		if checkoutInfo.version >= 6 {
@@ -246,15 +184,12 @@ func (rule *ArtipackedRule) handleUploadArtifact(step *ast.Step, action *ast.Exe
 			rule.getCredentialLocation(checkoutInfo.version),
 		)
 
-		// Add auto-fixer for the checkout step
 		rule.AddAutoFixer(NewStepFixer(checkoutInfo.step, rule))
 	}
 
-	// Clear the checkout steps since we've reported them
 	rule.checkoutSteps = nil
 }
 
-// getUploadPath extracts the path input from upload-artifact action
 func (rule *ArtipackedRule) getUploadPath(action *ast.ExecAction) string {
 	if action.Inputs == nil {
 		return ""
@@ -268,7 +203,6 @@ func (rule *ArtipackedRule) getUploadPath(action *ast.ExecAction) string {
 	return pathInput.Value.Value
 }
 
-// isDangerousUploadPath checks if the upload path includes the workspace root
 func (rule *ArtipackedRule) isDangerousUploadPath(path string) bool {
 	if path == "" {
 		return false
@@ -276,47 +210,33 @@ func (rule *ArtipackedRule) isDangerousUploadPath(path string) bool {
 
 	path = strings.TrimSpace(path)
 
-	// Check for current directory patterns
 	if path == "." || path == "./" {
 		return true
 	}
-
-	// Check for parent directory patterns
 	if path == ".." || strings.HasPrefix(path, "../") {
 		return true
 	}
-
-	// Check for github.workspace reference
-	if strings.Contains(path, "github.workspace") {
-		return true
-	}
-
-	// Check for GITHUB_WORKSPACE environment variable
-	if strings.Contains(path, "GITHUB_WORKSPACE") {
+	if strings.Contains(path, "github.workspace") || strings.Contains(path, "GITHUB_WORKSPACE") {
 		return true
 	}
 
 	return false
 }
 
-// FixStep implements the StepFixer interface to add persist-credentials: false
 func (rule *ArtipackedRule) FixStep(step *ast.Step) error {
 	action, ok := step.Exec.(*ast.ExecAction)
 	if !ok {
 		return FormattedError(step.Pos, rule.RuleName, "step is not an action")
 	}
 
-	// Only fix checkout actions
 	if !rule.isCheckoutAction(action.Uses.Value) {
 		return FormattedError(step.Pos, rule.RuleName, "not a checkout action")
 	}
 
-	// Initialize Inputs if nil
 	if action.Inputs == nil {
 		action.Inputs = make(map[string]*ast.Input)
 	}
 
-	// Add persist-credentials: false
 	action.Inputs["persist-credentials"] = &ast.Input{
 		Name: &ast.String{
 			Value: "persist-credentials",
@@ -328,20 +248,15 @@ func (rule *ArtipackedRule) FixStep(step *ast.Step) error {
 		},
 	}
 
-	// Update YAML node
 	rule.addPersistCredentialsToWithSection(step.BaseNode)
-
-	rule.Debug("Fixed checkout at %s: added persist-credentials: false", step.Pos)
 	return nil
 }
 
-// addPersistCredentialsToWithSection adds persist-credentials: false to the with section
 func (rule *ArtipackedRule) addPersistCredentialsToWithSection(stepNode *yaml.Node) {
 	if stepNode == nil || stepNode.Kind != yaml.MappingNode {
 		return
 	}
 
-	// Find the 'with' section
 	withIndex := -1
 	for i := 0; i < len(stepNode.Content); i += 2 {
 		if stepNode.Content[i].Value == SBOMWith {
@@ -354,24 +269,19 @@ func (rule *ArtipackedRule) addPersistCredentialsToWithSection(stepNode *yaml.No
 	persistValue := &yaml.Node{Kind: yaml.ScalarNode, Value: "false"}
 
 	if withIndex >= 0 {
-		// 'with' section exists, add persist-credentials
 		withNode := stepNode.Content[withIndex+1]
 		if withNode.Kind == yaml.MappingNode {
-			// Check if persist-credentials already exists
 			for i := 0; i < len(withNode.Content); i += 2 {
 				if withNode.Content[i].Value == "persist-credentials" {
-					// Update existing value
 					withNode.Content[i+1] = persistValue
 					return
 				}
 			}
-			// Add new persist-credentials entry at the beginning
 			withNode.Content = append([]*yaml.Node{persistKey, persistValue}, withNode.Content...)
 		}
 		return
 	}
 
-	// 'with' section doesn't exist, create it after 'uses'
 	usesIndex := -1
 	for i := 0; i < len(stepNode.Content); i += 2 {
 		if stepNode.Content[i].Value == SBOMUses {
@@ -387,14 +297,12 @@ func (rule *ArtipackedRule) addPersistCredentialsToWithSection(stepNode *yaml.No
 	}
 
 	if usesIndex >= 0 {
-		// Insert 'with' section after 'uses'
 		insertIndex := usesIndex + 2
 		stepNode.Content = append(
 			stepNode.Content[:insertIndex],
 			append([]*yaml.Node{withKey, withValue}, stepNode.Content[insertIndex:]...)...,
 		)
 	} else {
-		// 'uses' not found, append at the end
 		stepNode.Content = append(stepNode.Content, withKey, withValue)
 	}
 }

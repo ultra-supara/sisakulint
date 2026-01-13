@@ -611,27 +611,3 @@ func TestArtipackedRule_MultipleCheckoutsAndUploads(t *testing.T) {
 	}
 }
 
-func TestIsHexString(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected bool
-	}{
-		{"valid hex lowercase", "abcdef0123456789", true},
-		{"valid hex uppercase", "ABCDEF0123456789", true},
-		{"valid hex mixed", "AbCdEf0123456789", true},
-		{"valid 40 char SHA", "abc123def456789012345678901234567890abcd", true},
-		{"invalid with letter g", "ghijk", false},
-		{"invalid with special char", "abc!def", false},
-		{"empty string", "", true}, // empty is technically valid hex
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := isHexString(tt.input)
-			if got != tt.expected {
-				t.Errorf("isHexString(%q) = %v, want %v", tt.input, got, tt.expected)
-			}
-		})
-	}
-}
