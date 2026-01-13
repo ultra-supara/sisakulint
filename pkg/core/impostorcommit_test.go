@@ -1,6 +1,7 @@
 package core
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sisaku-security/sisakulint/pkg/ast"
@@ -525,7 +526,6 @@ func TestImpostorCommitRule_ErrorMessage(t *testing.T) {
 
 	errMsg := rule.Errors()[0].Error()
 
-	// Check that error message contains expected elements
 	expectedSubstrings := []string{
 		"impostor-commit",
 		"impostor commit",
@@ -535,14 +535,7 @@ func TestImpostorCommitRule_ErrorMessage(t *testing.T) {
 	}
 
 	for _, substr := range expectedSubstrings {
-		found := false
-		for i := 0; i <= len(errMsg)-len(substr); i++ {
-			if errMsg[i:i+len(substr)] == substr {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !strings.Contains(errMsg, substr) {
 			t.Errorf("Error message should contain '%s', got: %s", substr, errMsg)
 		}
 	}
