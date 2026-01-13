@@ -494,34 +494,28 @@ func (rule *KnownVulnerableActionsRule) VisitStep(step *ast.Step) error {
 	return nil
 }
 
-// VisitJobPre is a no-op for this rule
 func (rule *KnownVulnerableActionsRule) VisitJobPre(node *ast.Job) error {
 	return nil
 }
 
-// VisitJobPost is a no-op for this rule
 func (rule *KnownVulnerableActionsRule) VisitJobPost(node *ast.Job) error {
 	return nil
 }
 
-// VisitWorkflowPre is a no-op for this rule
 func (rule *KnownVulnerableActionsRule) VisitWorkflowPre(node *ast.Workflow) error {
 	return nil
 }
 
-// VisitWorkflowPost is a no-op for this rule
 func (rule *KnownVulnerableActionsRule) VisitWorkflowPost(node *ast.Workflow) error {
 	return nil
 }
 
-// KnownVulnerableActionsFixer implements the auto-fix for vulnerable actions
 type KnownVulnerableActionsFixer struct {
 	step *ast.Step
 	rule *KnownVulnerableActionsRule
 	vuln *VulnerabilityInfo
 }
 
-// NewKnownVulnerableActionsFixer creates a new fixer instance
 func NewKnownVulnerableActionsFixer(step *ast.Step, rule *KnownVulnerableActionsRule, vuln *VulnerabilityInfo) *KnownVulnerableActionsFixer {
 	return &KnownVulnerableActionsFixer{
 		step: step,
@@ -530,12 +524,10 @@ func NewKnownVulnerableActionsFixer(step *ast.Step, rule *KnownVulnerableActions
 	}
 }
 
-// RuleNames returns the rule name
 func (f *KnownVulnerableActionsFixer) RuleNames() string {
 	return f.rule.RuleName
 }
 
-// FixStep applies the fix to upgrade to the patched version
 func (f *KnownVulnerableActionsFixer) FixStep(step *ast.Step) error {
 	if step != f.step {
 		return nil
@@ -557,19 +549,12 @@ func (f *KnownVulnerableActionsFixer) FixStep(step *ast.Step) error {
 		return nil
 	}
 
-	// Determine the new reference format
-	// If the original ref was a commit SHA, we need to resolve the patched version to a SHA
-	// Otherwise, use the version tag directly
-
 	if isFullLengthCommitSHA(originalRef) {
-		// Original was a commit SHA, try to get the SHA for the patched version
 		ctx := context.Background()
 		newSHA, err := f.rule.resolveSymbolicRef(ctx, owner, repo, "v"+patchedVersion)
 		if err != nil {
-			// Try without 'v' prefix
 			newSHA, err = f.rule.resolveSymbolicRef(ctx, owner, repo, patchedVersion)
 			if err != nil {
-				// Fallback to using the version tag directly
 				newRef := "v" + patchedVersion
 				action.Uses.BaseNode.Value = fmt.Sprintf("%s/%s@%s", owner, repo, newRef)
 				return nil
@@ -578,7 +563,6 @@ func (f *KnownVulnerableActionsFixer) FixStep(step *ast.Step) error {
 		action.Uses.BaseNode.Value = fmt.Sprintf("%s/%s@%s", owner, repo, newSHA)
 		action.Uses.BaseNode.LineComment = "v" + patchedVersion
 	} else {
-		// Original was a symbolic ref, maintain the same style
 		newRef := patchedVersion
 		if strings.HasPrefix(originalRef, "v") && !strings.HasPrefix(patchedVersion, "v") {
 			newRef = "v" + patchedVersion
