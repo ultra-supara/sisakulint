@@ -524,10 +524,18 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		NewUntrustedCheckoutRule(),
 		NewCachePoisoningRule(),
 		NewCachePoisoningPoisonableStepRule(),
+<<<<<<< HEAD
 		NewSecretExposureRule(),            // Detects toJSON(secrets) and secrets[dynamic-access]
 		NewUnmaskedSecretExposureRule(),    // Detects fromJson(secrets.XXX).yyy unmasked exposure
 		NewImproperAccessControlRule(),     // Detects improper access control with label-based approval and synchronize events
 		NewUnpinnedImagesRule(),            // Detects container images not pinned by SHA256 digest
+=======
+		NewSecretExposureRule(),                  // Detects toJSON(secrets) and secrets[dynamic-access]
+		NewUnmaskedSecretExposureRule(),          // Detects fromJson(secrets.XXX).yyy unmasked exposure
+		NewImproperAccessControlRule(),           // Detects improper access control with label-based approval and synchronize events
+		NewUntrustedCheckoutTOCTOUCriticalRule(), // Detects TOCTOU with labeled event type and mutable refs
+		NewUntrustedCheckoutTOCTOUHighRule(),     // Detects TOCTOU with deployment environment and mutable refs
+>>>>>>> origin/main
 	}
 }
 
