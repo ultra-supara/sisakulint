@@ -7,7 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TestRefConfusionRule tests the RefConfusionRule constructor function.
 func TestRefConfusionRule(t *testing.T) {
 	rule := RefConfusionRule()
 
@@ -25,7 +24,6 @@ func TestRefConfusionRule(t *testing.T) {
 	}
 }
 
-// TestIsSymbolicRef tests the isSymbolicRef function.
 func TestIsSymbolicRef(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -94,7 +92,6 @@ func TestIsSymbolicRef(t *testing.T) {
 	}
 }
 
-// TestParseActionRef tests the parseActionRef function.
 func TestParseActionRef(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -205,7 +202,6 @@ func TestParseActionRef(t *testing.T) {
 	}
 }
 
-// TestRefConfusion_VisitStep_SkipCases tests cases where VisitStep should skip processing.
 func TestRefConfusion_VisitStep_SkipCases(t *testing.T) {
 	tests := []struct {
 		name string
@@ -270,7 +266,6 @@ func TestRefConfusion_VisitStep_SkipCases(t *testing.T) {
 				t.Errorf("VisitStep() returned unexpected error: %v", err)
 			}
 
-			// No errors should be recorded for skip cases
 			if len(rule.Errors()) > 0 {
 				t.Errorf("Expected no errors for skip case, got %d", len(rule.Errors()))
 			}
@@ -278,7 +273,6 @@ func TestRefConfusion_VisitStep_SkipCases(t *testing.T) {
 	}
 }
 
-// TestRefConfusion_VisitStep_NilChecks tests behavior with nil values.
 func TestRefConfusion_VisitStep_NilChecks(t *testing.T) {
 	tests := []struct {
 		name string
@@ -297,7 +291,6 @@ func TestRefConfusion_VisitStep_NilChecks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rule := RefConfusionRule()
-			// Should not panic
 			err := rule.VisitStep(tt.step)
 			if err != nil {
 				t.Errorf("VisitStep() returned unexpected error: %v", err)
@@ -306,7 +299,6 @@ func TestRefConfusion_VisitStep_NilChecks(t *testing.T) {
 	}
 }
 
-// TestRefConfusion_FixStep_InvalidFormat tests FixStep with invalid action reference formats.
 func TestRefConfusion_FixStep_InvalidFormat(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -358,16 +350,13 @@ func TestRefConfusion_FixStep_InvalidFormat(t *testing.T) {
 	}
 }
 
-// TestRefConfusion_RefCache tests that the cache is working correctly.
 func TestRefConfusion_RefCache(t *testing.T) {
 	rule := RefConfusionRule()
 
-	// Manually set a cache entry
 	rule.refCacheMu.Lock()
 	rule.refCache["test/repo@v1"] = true
 	rule.refCacheMu.Unlock()
 
-	// Check if cache entry is retrieved
 	rule.refCacheMu.Lock()
 	result, ok := rule.refCache["test/repo@v1"]
 	rule.refCacheMu.Unlock()
@@ -380,11 +369,9 @@ func TestRefConfusion_RefCache(t *testing.T) {
 	}
 }
 
-// TestRefConfusion_VisitorInterface tests that all TreeVisitor interface methods are implemented.
 func TestRefConfusion_VisitorInterface(t *testing.T) {
 	rule := RefConfusionRule()
 
-	// These methods should not return errors
 	if err := rule.VisitJobPre(&ast.Job{}); err != nil {
 		t.Errorf("VisitJobPre() returned error: %v", err)
 	}
@@ -399,7 +386,6 @@ func TestRefConfusion_VisitorInterface(t *testing.T) {
 	}
 }
 
-// TestRefConfusion_GetGitHubClient tests that GitHub client is properly initialized.
 func TestRefConfusion_GetGitHubClient(t *testing.T) {
 	rule := RefConfusionRule()
 
@@ -408,20 +394,15 @@ func TestRefConfusion_GetGitHubClient(t *testing.T) {
 		t.Error("Expected GitHub client to be initialized")
 	}
 
-	// Call again to ensure singleton pattern works
 	client2 := rule.getGitHubClient()
 	if client != client2 {
 		t.Error("Expected same client instance (singleton)")
 	}
 }
 
-// TestRefConfusion_DetectsConfusableRef tests that confusable refs are detected via cache.
-// This test uses the cache mechanism to simulate confusable ref detection without making
-// actual API calls.
 func TestRefConfusion_DetectsConfusableRef(t *testing.T) {
 	rule := RefConfusionRule()
 
-	// Pre-populate cache with a confusable ref (simulates API response)
 	rule.refCacheMu.Lock()
 	rule.refCache["test/vulnerable-repo@v1.0.0"] = true
 	rule.refCacheMu.Unlock()
@@ -441,12 +422,10 @@ func TestRefConfusion_DetectsConfusableRef(t *testing.T) {
 		t.Errorf("VisitStep() returned unexpected error: %v", err)
 	}
 
-	// Should have 1 error for confusable ref
 	if len(rule.Errors()) != 1 {
 		t.Errorf("Expected 1 error for confusable ref, got %d", len(rule.Errors()))
 	}
 
-	// Check error message content
 	if len(rule.Errors()) > 0 {
 		errMsg := rule.Errors()[0].Error()
 		if !containsSubstring(errMsg, "ref-confusion") {
@@ -460,17 +439,14 @@ func TestRefConfusion_DetectsConfusableRef(t *testing.T) {
 		}
 	}
 
-	// Should have 1 auto-fixer added
 	if len(rule.AutoFixers()) != 1 {
 		t.Errorf("Expected 1 auto-fixer, got %d", len(rule.AutoFixers()))
 	}
 }
 
-// TestRefConfusion_NotConfusableRef tests that non-confusable refs do not trigger errors.
 func TestRefConfusion_NotConfusableRef(t *testing.T) {
 	rule := RefConfusionRule()
 
-	// Pre-populate cache with a non-confusable ref (simulates API response)
 	rule.refCacheMu.Lock()
 	rule.refCache["test/safe-repo@v2.0.0"] = false
 	rule.refCacheMu.Unlock()
@@ -490,22 +466,18 @@ func TestRefConfusion_NotConfusableRef(t *testing.T) {
 		t.Errorf("VisitStep() returned unexpected error: %v", err)
 	}
 
-	// Should have 0 errors for non-confusable ref
 	if len(rule.Errors()) != 0 {
 		t.Errorf("Expected 0 errors for non-confusable ref, got %d", len(rule.Errors()))
 	}
 
-	// Should have 0 auto-fixers
 	if len(rule.AutoFixers()) != 0 {
 		t.Errorf("Expected 0 auto-fixers, got %d", len(rule.AutoFixers()))
 	}
 }
 
-// TestRefConfusion_MultipleSteps tests processing multiple steps with mixed confusable refs.
 func TestRefConfusion_MultipleSteps(t *testing.T) {
 	rule := RefConfusionRule()
 
-	// Pre-populate cache
 	rule.refCacheMu.Lock()
 	rule.refCache["org/confusable@v1"] = true
 	rule.refCache["org/safe@v2"] = false
@@ -546,18 +518,15 @@ func TestRefConfusion_MultipleSteps(t *testing.T) {
 		_ = rule.VisitStep(step)
 	}
 
-	// Should have 1 error (only confusable ref)
 	if len(rule.Errors()) != 1 {
 		t.Errorf("Expected 1 error, got %d", len(rule.Errors()))
 	}
 
-	// Should have 1 auto-fixer
 	if len(rule.AutoFixers()) != 1 {
 		t.Errorf("Expected 1 auto-fixer, got %d", len(rule.AutoFixers()))
 	}
 }
 
-// Helper function for string contains check
 func containsSubstring(s, substr string) bool {
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {
