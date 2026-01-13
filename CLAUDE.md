@@ -87,6 +87,8 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - `pkg/core/artifactpoisoningcritical.go` - **ArtifactPoisoningRule**: Detects artifact poisoning and path traversal vulnerabilities (with auto-fix)
      - `pkg/core/cachepoisoningrule.go` - **CachePoisoningRule**: Detects cache poisoning with untrusted inputs
      - `pkg/core/improper_access_control.go` - **ImproperAccessControlRule**: Detects improper access control with label-based approval and synchronize events (with auto-fix)
+     - `pkg/core/untrustedcheckouttoctoucritical.go` - **UntrustedCheckoutTOCTOUCriticalRule**: Detects TOCTOU vulnerabilities with labeled event type and mutable refs (with auto-fix)
+     - `pkg/core/untrustedcheckouttoctouhigh.go` - **UntrustedCheckoutTOCTOUHighRule**: Detects TOCTOU vulnerabilities with deployment environment and mutable refs (with auto-fix)
      - `pkg/core/rule_add_temp_normal.go` - **AddRule**: Template rule for adding new rules
 
 4. **AST Processing**:
@@ -197,7 +199,7 @@ See `docs/RULES_GUIDE.md` for detailed guide.
 
 ## Implemented Rules
 
-sisakulint includes the following security rules (as of pkg/core/linter.go:500-519):
+sisakulint includes the following security rules (as of pkg/core/linter.go:500-531):
 
 1. **CredentialsRule** - Detects hardcoded credentials and tokens (auto-fix supported)
 2. **JobNeedsRule** - Validates job dependencies
@@ -221,6 +223,8 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 20. **CachePoisoningRule** - Detects cache poisoning vulnerabilities
 21. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
 22. **ImproperAccessControlRule** - Detects improper access control with label-based approval and synchronize events (auto-fix supported)
+23. **UntrustedCheckoutTOCTOUCriticalRule** - Detects TOCTOU vulnerabilities with labeled event type and mutable refs (auto-fix supported)
+24. **UntrustedCheckoutTOCTOUHighRule** - Detects TOCTOU vulnerabilities with deployment environment and mutable refs (auto-fix supported)
 
 ## Key Files
 
