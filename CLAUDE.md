@@ -87,6 +87,7 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - `pkg/core/artifactpoisoningcritical.go` - **ArtifactPoisoningRule**: Detects artifact poisoning and path traversal vulnerabilities (with auto-fix)
      - `pkg/core/cachepoisoningrule.go` - **CachePoisoningRule**: Detects cache poisoning with untrusted inputs
      - `pkg/core/improper_access_control.go` - **ImproperAccessControlRule**: Detects improper access control with label-based approval and synchronize events (with auto-fix)
+     - `pkg/core/impostorcommit.go` - **ImpostorCommitRule**: Detects impostor commits from fork network (with auto-fix)
      - `pkg/core/rule_add_temp_normal.go` - **AddRule**: Template rule for adding new rules
 
 4. **AST Processing**:
@@ -119,7 +120,7 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - **StepFixer** interface - Fixes issues at the step level
      - **JobFixer** interface - Fixes issues at the job level
      - **funcFixer** - Generic function-based fixer
-   - Rules implementing auto-fix: TimeoutMinutesRule, CommitSHARule, CredentialRule, UntrustedCheckoutRule, ArtifactPoisoningRule, ImproperAccessControlRule
+   - Rules implementing auto-fix: TimeoutMinutesRule, CommitSHARule, CredentialRule, UntrustedCheckoutRule, ArtifactPoisoningRule, ImproperAccessControlRule, ImpostorCommitRule
 
 8. **Remote Analysis**:
    - `pkg/remote/fetcher.go` - GitHub API integration for fetching workflows
@@ -222,6 +223,7 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 21. **UntrustedCheckoutRule** - Detects checkout of untrusted PR code in privileged contexts (auto-fix supported)
 22. **ImproperAccessControlRule** - Detects improper access control with label-based approval and synchronize events (auto-fix supported)
 23. **UnmaskedSecretExposureRule** - Detects unmasked secret exposure when secrets are derived using fromJson() (auto-fix supported)
+24. **ImpostorCommitRule** - Detects impostor commits from fork network that don't exist in official repository (auto-fix supported)
 
 ## Key Files
 
