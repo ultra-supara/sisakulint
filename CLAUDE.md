@@ -89,6 +89,7 @@ sisakulint is a static analysis tool for GitHub Actions workflow files (.github/
      - `pkg/core/improper_access_control.go` - **ImproperAccessControlRule**: Detects improper access control with label-based approval and synchronize events (with auto-fix)
      - `pkg/core/untrustedcheckouttoctoucritical.go` - **UntrustedCheckoutTOCTOUCriticalRule**: Detects TOCTOU vulnerabilities with labeled event type and mutable refs (with auto-fix)
      - `pkg/core/untrustedcheckouttoctouhigh.go` - **UntrustedCheckoutTOCTOUHighRule**: Detects TOCTOU vulnerabilities with deployment environment and mutable refs (with auto-fix)
+     - `pkg/core/botconditionsrule.go` - **BotConditionsRule**: Detects spoofable bot detection conditions using github.actor or similar contexts (with auto-fix)
      - `pkg/core/rule_add_temp_normal.go` - **AddRule**: Template rule for adding new rules
 
 4. **AST Processing**:
@@ -226,6 +227,7 @@ sisakulint includes the following security rules (as of pkg/core/linter.go:500-5
 23. **UnmaskedSecretExposureRule** - Detects unmasked secret exposure when secrets are derived using fromJson() (auto-fix supported)
 24. **UntrustedCheckoutTOCTOUCriticalRule** - Detects TOCTOU vulnerabilities with labeled event type and mutable refs (auto-fix supported)
 25. **UntrustedCheckoutTOCTOUHighRule** - Detects TOCTOU vulnerabilities with deployment environment and mutable refs (auto-fix supported)
+26. **BotConditionsRule** - Detects spoofable bot detection conditions using github.actor or similar contexts (auto-fix supported)
 
 ## Key Files
 

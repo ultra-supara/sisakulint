@@ -6,6 +6,8 @@ import (
 )
 
 func TestBotConditionsRule(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		workflow    string
@@ -153,6 +155,8 @@ jobs:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			rule := NewBotConditionsRule()
 			workflow, errs := Parse([]byte(tt.workflow))
 			if len(errs) > 0 {
@@ -192,6 +196,8 @@ jobs:
 }
 
 func TestBotConditionsRuleSafeReplacements(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name           string
 		triggerEvent   string
@@ -232,6 +238,8 @@ func TestBotConditionsRuleSafeReplacements(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			rule := NewBotConditionsRule()
 			rule.currentTriggerEvent = tt.triggerEvent
 
@@ -244,6 +252,8 @@ func TestBotConditionsRuleSafeReplacements(t *testing.T) {
 }
 
 func TestBotConditionsRuleDominantCondition(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		condition  string
@@ -278,6 +288,8 @@ func TestBotConditionsRuleDominantCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			rule := NewBotConditionsRule()
 			result := rule.isDominantCondition(tt.condition, tt.context)
 			if result != tt.isDominant {
@@ -288,6 +300,8 @@ func TestBotConditionsRuleDominantCondition(t *testing.T) {
 }
 
 func TestBotConditionsRuleAutoFix(t *testing.T) {
+	t.Parallel()
+
 	workflow := `
 on: pull_request_target
 jobs:
@@ -337,6 +351,8 @@ jobs:
 }
 
 func TestBotConditionsRuleAutoFixActorID(t *testing.T) {
+	t.Parallel()
+
 	workflow := `
 on: pull_request_target
 jobs:
@@ -386,6 +402,8 @@ jobs:
 }
 
 func TestBotConditionsRuleWorkflowRun(t *testing.T) {
+	t.Parallel()
+
 	workflow := `
 on: workflow_run
 jobs:
@@ -435,6 +453,8 @@ jobs:
 }
 
 func TestBotConditionsRuleIssueComment(t *testing.T) {
+	t.Parallel()
+
 	workflow := `
 on: issue_comment
 jobs:
