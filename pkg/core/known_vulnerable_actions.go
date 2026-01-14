@@ -16,21 +16,21 @@ import (
 
 // VulnerabilityInfo holds information about a detected vulnerability
 type VulnerabilityInfo struct {
-	GHSAID               string
-	Severity             string
-	Summary              string
-	FirstPatchedVersion  string
-	VulnerableRange      string
-	HTMLURL              string
+	GHSAID              string
+	Severity            string
+	Summary             string
+	FirstPatchedVersion string
+	VulnerableRange     string
+	HTMLURL             string
 }
 
 // KnownVulnerableActionsRule detects actions with known security vulnerabilities
 type KnownVulnerableActionsRule struct {
 	BaseRule
-	client       *github.Client
-	clientOnce   sync.Once
+	client        *github.Client
+	clientOnce    sync.Once
 	advisoryCache map[string][]*VulnerabilityInfo
-	cacheMu      sync.RWMutex
+	cacheMu       sync.RWMutex
 }
 
 // NewKnownVulnerableActionsRule creates a new instance of KnownVulnerableActionsRule
@@ -581,6 +581,7 @@ func (f *KnownVulnerableActionsFixer) FixStep(step *ast.Step) error {
 			newRef = "v" + patchedVersion
 		}
 		action.Uses.BaseNode.Value = fmt.Sprintf("%s/%s@%s", owner, repo, newRef)
+		action.Uses.BaseNode.LineComment = ""
 	}
 
 	return nil
