@@ -319,6 +319,39 @@ jobs:
 `,
 			wantPermission: true,
 		},
+		{
+			name: "adds permissions after on block when no name field",
+			input: `on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+`,
+			wantPermission: true,
+		},
+		{
+			name: "adds permissions after on block with run-name instead of name",
+			input: `run-name: Deploy by @${{ github.actor }}
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+`,
+			wantPermission: true,
+		},
+		{
+			name: "adds permissions at beginning when only jobs field exists",
+			input: `jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
+`,
+			wantPermission: true,
+		},
 	}
 
 	for _, tt := range tests {
