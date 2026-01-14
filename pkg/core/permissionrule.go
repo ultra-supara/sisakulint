@@ -34,7 +34,7 @@ type PermissionRule struct {
 	isReusableWorkflow bool
 }
 
-// PermissionsRuleは新しいPermissionRuleのインスタンスを作成します。
+// PermissionsRule creates a new PermissionRule instance.
 func PermissionsRule() *PermissionRule {
 	return &PermissionRule{
 		BaseRule: BaseRule{
@@ -69,7 +69,7 @@ func (rule *PermissionRule) VisitWorkflowPre(n *ast.Workflow) error {
 	// Skip this check for reusable workflows as they inherit permissions from caller
 	if n.Permissions == nil && !rule.isReusableWorkflow {
 		pos := &ast.Position{Line: 1, Col: 1}
-		if n.BaseNode != nil {
+		if n.BaseNode != nil && n.BaseNode.Line > 0 {
 			pos = &ast.Position{Line: n.BaseNode.Line, Col: n.BaseNode.Column}
 		}
 		rule.Errorf(pos,

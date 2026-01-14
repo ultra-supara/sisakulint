@@ -240,6 +240,9 @@ func TestPermissionRule_MissingPermissions(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			// When workflow_call is present with other triggers, it's treated as reusable.
+			// This is because the workflow can be called with inherited permissions,
+			// even if it also responds to other events.
 			name: "reusable workflow with other triggers - no error for workflow_call",
 			workflow: &ast.Workflow{
 				Name: &ast.String{Value: "reusable", Pos: &ast.Position{Line: 1, Col: 1}},
