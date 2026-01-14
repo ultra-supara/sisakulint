@@ -2,11 +2,18 @@ package core
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/sisaku-security/sisakulint/pkg/ast"
 	"gopkg.in/yaml.v3"
 )
+
+// checkoutVersionPattern is compiled once at package level for performance.
+var checkoutVersionPattern = regexp.MustCompile(`^v?(\d+)`)
+
+// persistCredentialsKey is the input key for persist-credentials in checkout action.
+const persistCredentialsKey = "persist-credentials"
 
 // ArtipackedRule detects credential persistence vulnerabilities in GitHub Actions workflows.
 // When actions/checkout retains credentials (persist-credentials: true, which is the default),
@@ -122,7 +129,7 @@ func (rule *ArtipackedRule) isUploadArtifactAction(uses string) bool {
 
 func (rule *ArtipackedRule) handleCheckout(step *ast.Step, action *ast.ExecAction) {
 	if action.Inputs != nil {
-		if persistCreds, exists := action.Inputs["persist-credentials"]; exists {
+		if persistCreds, exists := action.Inputs[persistCredentialsKey]; exists {
 			if persistCreds.Value != nil && strings.ToLower(persistCreds.Value.Value) == "false" {
 				return
 			}
@@ -143,12 +150,11 @@ func (rule *ArtipackedRule) getCheckoutVersion(uses string) int {
 		return 0
 	}
 
-	versionPattern := regexp.MustCompile(`^v?(\d+)`)
-	matches := versionPattern.FindStringSubmatch(parts[1])
+	matches := checkoutVersionPattern.FindStringSubmatch(parts[1])
 	if len(matches) >= 2 {
-		var major int
-		for _, c := range matches[1] {
-			major = major*10 + int(c-'0')
+		major, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return 0
 		}
 		return major
 	}
@@ -210,13 +216,20 @@ func (rule *ArtipackedRule) isDangerousUploadPath(path string) bool {
 
 	path = strings.TrimSpace(path)
 
+	// Current directory patterns
 	if path == "." || path == "./" {
 		return true
 	}
+	// Parent directory patterns
 	if path == ".." || strings.HasPrefix(path, "../") {
 		return true
 	}
+	// GitHub workspace variable patterns
 	if strings.Contains(path, "github.workspace") || strings.Contains(path, "GITHUB_WORKSPACE") {
+		return true
+	}
+	// Glob patterns that could match the entire workspace
+	if path == "*" || path == "**" || path == "**/*" || path == "./**" || path == "./**/*" {
 		return true
 	}
 
@@ -237,9 +250,9 @@ func (rule *ArtipackedRule) FixStep(step *ast.Step) error {
 		action.Inputs = make(map[string]*ast.Input)
 	}
 
-	action.Inputs["persist-credentials"] = &ast.Input{
+	action.Inputs[persistCredentialsKey] = &ast.Input{
 		Name: &ast.String{
-			Value: "persist-credentials",
+			Value: persistCredentialsKey,
 			Pos:   step.Pos,
 		},
 		Value: &ast.String{
@@ -265,14 +278,14 @@ func (rule *ArtipackedRule) addPersistCredentialsToWithSection(stepNode *yaml.No
 		}
 	}
 
-	persistKey := &yaml.Node{Kind: yaml.ScalarNode, Value: "persist-credentials"}
+	persistKey := &yaml.Node{Kind: yaml.ScalarNode, Value: persistCredentialsKey}
 	persistValue := &yaml.Node{Kind: yaml.ScalarNode, Value: "false"}
 
 	if withIndex >= 0 {
 		withNode := stepNode.Content[withIndex+1]
 		if withNode.Kind == yaml.MappingNode {
 			for i := 0; i < len(withNode.Content); i += 2 {
-				if withNode.Content[i].Value == "persist-credentials" {
+				if withNode.Content[i].Value == persistCredentialsKey {
 					withNode.Content[i+1] = persistValue
 					return
 				}

@@ -120,12 +120,19 @@ func TestArtipackedRule_isDangerousUploadPath(t *testing.T) {
 		{"github.workspace with subpath", "${{ github.workspace }}/build", true},
 		{"GITHUB_WORKSPACE", "$GITHUB_WORKSPACE", true},
 		{"GITHUB_WORKSPACE with subpath", "$GITHUB_WORKSPACE/build", true},
+		// Glob patterns
+		{"glob star", "*", true},
+		{"glob double star", "**", true},
+		{"glob double star slash star", "**/*", true},
+		{"glob dot double star", "./**", true},
+		{"glob dot double star slash star", "./**/*", true},
 
 		// Safe paths
 		{"empty path", "", false},
 		{"specific directory", "build/output", false},
 		{"dist folder", "dist", false},
 		{"runner.temp", "${{ runner.temp }}/artifacts", false},
+		{"specific glob pattern", "dist/**/*.js", false},
 	}
 
 	for _, tt := range tests {
@@ -153,8 +160,8 @@ func TestArtipackedRule_CheckoutWithPersistCredentialsFalse(t *testing.T) {
 						Exec: &ast.ExecAction{
 							Uses: &ast.String{Value: "actions/checkout@v4"},
 							Inputs: map[string]*ast.Input{
-								"persist-credentials": {
-									Name:  &ast.String{Value: "persist-credentials"},
+								persistCredentialsKey: {
+									Name:  &ast.String{Value: persistCredentialsKey},
 									Value: &ast.String{Value: "false"},
 								},
 							},
@@ -465,7 +472,7 @@ func TestArtipackedRule_AutoFix(t *testing.T) {
 
 	// Verify the AST was updated
 	action := step.Exec.(*ast.ExecAction)
-	persistCreds, exists := action.Inputs["persist-credentials"]
+	persistCreds, exists := action.Inputs[persistCredentialsKey]
 	if !exists {
 		t.Error("FixStep() did not add persist-credentials input")
 		return
@@ -480,7 +487,7 @@ func TestArtipackedRule_AutoFix(t *testing.T) {
 		if stepNode.Content[i].Value == "with" {
 			withNode := stepNode.Content[i+1]
 			for j := 0; j < len(withNode.Content); j += 2 {
-				if withNode.Content[j].Value == "persist-credentials" {
+				if withNode.Content[j].Value == persistCredentialsKey {
 					if withNode.Content[j+1].Value == "false" {
 						found = true
 					}
@@ -537,7 +544,7 @@ func TestArtipackedRule_AutoFixWithExistingWith(t *testing.T) {
 	withNode := stepNode.Content[3]
 	found := false
 	for i := 0; i < len(withNode.Content); i += 2 {
-		if withNode.Content[i].Value == "persist-credentials" {
+		if withNode.Content[i].Value == persistCredentialsKey {
 			if withNode.Content[i+1].Value == "false" {
 				found = true
 			}
@@ -611,3 +618,39 @@ func TestArtipackedRule_MultipleCheckoutsAndUploads(t *testing.T) {
 	}
 }
 
+func TestArtipackedRule_FixStep_ErrorCases(t *testing.T) {
+	t.Parallel()
+
+	rule := NewArtipackedRule()
+
+	t.Run("step is not an action", func(t *testing.T) {
+		t.Parallel()
+		step := &ast.Step{
+			ID:   &ast.String{Value: "run-step"},
+			Exec: &ast.ExecRun{Run: &ast.String{Value: "echo test"}},
+			Pos:  &ast.Position{Line: 10, Col: 5},
+		}
+
+		err := rule.FixStep(step)
+		if err == nil {
+			t.Error("FixStep() expected error for non-action step, got nil")
+		}
+	})
+
+	t.Run("step is not a checkout action", func(t *testing.T) {
+		t.Parallel()
+		step := &ast.Step{
+			ID: &ast.String{Value: "upload"},
+			Exec: &ast.ExecAction{
+				Uses:   &ast.String{Value: "actions/upload-artifact@v4"},
+				Inputs: map[string]*ast.Input{},
+			},
+			Pos: &ast.Position{Line: 10, Col: 5},
+		}
+
+		err := rule.FixStep(step)
+		if err == nil {
+			t.Error("FixStep() expected error for non-checkout action, got nil")
+		}
+	})
+}
