@@ -467,11 +467,20 @@ func (rule *KnownVulnerableActionsRule) VisitStep(step *ast.Step) error {
 		return nil
 	}
 
-	// Report vulnerabilities (prioritize by severity)
+	// Track the highest patched version required across all vulnerabilities
+	var highestPatchedVersion string
+
+	// Report vulnerabilities
 	for _, vuln := range vulns {
 		var fixAdvice string
 		if vuln.FirstPatchedVersion != "" {
 			fixAdvice = fmt.Sprintf(" Upgrade to version %s or later.", vuln.FirstPatchedVersion)
+
+			// Track the highest version requirement
+			if highestPatchedVersion == "" ||
+				compareVersions(vuln.FirstPatchedVersion, highestPatchedVersion) > 0 {
+				highestPatchedVersion = vuln.FirstPatchedVersion
+			}
 		}
 
 		rule.Errorf(step.Pos,
@@ -483,12 +492,16 @@ func (rule *KnownVulnerableActionsRule) VisitStep(step *ast.Step) error {
 			fixAdvice,
 			vuln.HTMLURL,
 		)
+	}
 
-		// Add auto-fixer if patched version is available
-		if vuln.FirstPatchedVersion != "" {
-			fixer := NewKnownVulnerableActionsFixer(step, rule, vuln)
-			rule.AddAutoFixer(NewStepFixer(step, fixer))
+	// Add a single auto-fixer with the highest required version
+	if highestPatchedVersion != "" {
+		// Create a virtual vulnerability info with the highest version
+		highestVuln := &VulnerabilityInfo{
+			FirstPatchedVersion: highestPatchedVersion,
 		}
+		fixer := NewKnownVulnerableActionsFixer(step, rule, highestVuln)
+		rule.AddAutoFixer(NewStepFixer(step, fixer))
 	}
 
 	return nil
