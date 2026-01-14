@@ -286,8 +286,9 @@ func (f *unsoundContainsStepFixer) replaceContainsPattern(value string) string {
 	escapedStringLit := regexp.QuoteMeta(f.stringLit)
 	escapedContextPath := regexp.QuoteMeta(f.contextPath)
 
-	patternSingle := fmt.Sprintf(`contains\s*\(\s*'%s'\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
-	patternDouble := fmt.Sprintf(`contains\s*\(\s*"%s"\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
+	// Use (?i) flag for case-insensitive matching since GitHub Actions function names are case-insensitive
+	patternSingle := fmt.Sprintf(`(?i)contains\s*\(\s*'%s'\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
+	patternDouble := fmt.Sprintf(`(?i)contains\s*\(\s*"%s"\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
 
 	newPattern := fmt.Sprintf("contains(fromJSON('%s'), %s)", f.rule.convertToJSONArray(f.stringLit), f.contextPath)
 
@@ -326,8 +327,9 @@ func (f *unsoundContainsJobFixer) replaceContainsPattern(value string) string {
 	escapedStringLit := regexp.QuoteMeta(f.stringLit)
 	escapedContextPath := regexp.QuoteMeta(f.contextPath)
 
-	patternSingle := fmt.Sprintf(`contains\s*\(\s*'%s'\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
-	patternDouble := fmt.Sprintf(`contains\s*\(\s*"%s"\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
+	// Use (?i) flag for case-insensitive matching since GitHub Actions function names are case-insensitive
+	patternSingle := fmt.Sprintf(`(?i)contains\s*\(\s*'%s'\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
+	patternDouble := fmt.Sprintf(`(?i)contains\s*\(\s*"%s"\s*,\s*%s\s*\)`, escapedStringLit, escapedContextPath)
 
 	newPattern := fmt.Sprintf("contains(fromJSON('%s'), %s)", f.rule.convertToJSONArray(f.stringLit), f.contextPath)
 

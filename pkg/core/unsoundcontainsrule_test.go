@@ -479,3 +479,106 @@ func TestUnsoundContainsRule_ComplexConditions(t *testing.T) {
 		})
 	}
 }
+
+// TestUnsoundContainsRule_EdgeCase_CaseInsensitiveDetection tests that CONTAINS and Contains are detected
+func TestUnsoundContainsRule_EdgeCase_CaseInsensitiveDetection(t *testing.T) {
+	tests := []struct {
+		name      string
+		condition string
+		wantError bool
+	}{
+		{
+			name:      "uppercase CONTAINS should be detected",
+			condition: "${{ CONTAINS('main develop', github.ref) }}",
+			wantError: true,
+		},
+		{
+			name:      "mixed case Contains should be detected",
+			condition: "${{ Contains('main develop', github.ref) }}",
+			wantError: true,
+		},
+		{
+			name:      "mixed case CoNtAiNs should be detected",
+			condition: "${{ CoNtAiNs('main develop', github.ref) }}",
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rule := NewUnsoundContainsRule()
+			cond := &ast.String{
+				Value: tt.condition,
+				Pos:   &ast.Position{Line: 1, Col: 1},
+			}
+
+			rule.checkCondition(cond, "test", nil, nil)
+
+			hasError := len(rule.Errors()) > 0
+			if hasError != tt.wantError {
+				if tt.wantError {
+					t.Errorf("checkCondition() expected error for condition %q but got none", tt.condition)
+				} else {
+					t.Errorf("checkCondition() unexpected error for condition %q: %v", tt.condition, rule.Errors())
+				}
+			}
+		})
+	}
+}
+
+// TestUnsoundContainsRule_EdgeCase_CaseInsensitiveAutoFix tests that auto-fixer handles CONTAINS and Contains
+func TestUnsoundContainsRule_EdgeCase_CaseInsensitiveAutoFix(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expectedFix string
+	}{
+		{
+			name:        "uppercase CONTAINS should be auto-fixed",
+			input:       "${{ CONTAINS('main develop', github.ref) }}",
+			expectedFix: `${{ contains(fromJSON('["main", "develop"]'), github.ref) }}`,
+		},
+		{
+			name:        "mixed case Contains should be auto-fixed",
+			input:       "${{ Contains('main develop', github.ref) }}",
+			expectedFix: `${{ contains(fromJSON('["main", "develop"]'), github.ref) }}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rule := NewUnsoundContainsRule()
+			baseNode := &yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: tt.input,
+			}
+			step := &ast.Step{
+				If: &ast.String{
+					BaseNode: baseNode,
+					Value:    tt.input,
+					Pos:      &ast.Position{Line: 1, Col: 1},
+				},
+			}
+
+			// Visit to detect the issue and create fixer
+			_ = rule.VisitStep(step)
+
+			// Check that fixers were created
+			fixers := rule.AutoFixers()
+			if len(fixers) == 0 {
+				t.Errorf("Expected auto-fixer to be created for %q", tt.input)
+				return
+			}
+
+			// Apply the fix
+			for _, fixer := range fixers {
+				_ = fixer.Fix()
+			}
+
+			if step.If.Value != tt.expectedFix {
+				t.Errorf("AutoFix result = %q, want %q", step.If.Value, tt.expectedFix)
+			}
+		})
+	}
+}
+
