@@ -1,6 +1,7 @@
 package core
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/sisaku-security/sisakulint/pkg/ast"
@@ -15,7 +16,6 @@ import (
 // - https://owasp.org/www-project-top-10-ci-cd-security-risks/
 type SelfHostedRunnersRule struct {
 	BaseRule
-	currentJob *ast.Job
 }
 
 // NewSelfHostedRunnersRule creates a new rule for detecting self-hosted runner usage.
@@ -29,7 +29,6 @@ func NewSelfHostedRunnersRule() *SelfHostedRunnersRule {
 }
 
 func (rule *SelfHostedRunnersRule) VisitJobPre(node *ast.Job) error {
-	rule.currentJob = node
 	if node.RunsOn == nil {
 		return nil
 	}
@@ -61,8 +60,7 @@ func (rule *SelfHostedRunnersRule) VisitJobPre(node *ast.Job) error {
 	return nil
 }
 
-func (rule *SelfHostedRunnersRule) VisitJobPost(node *ast.Job) error {
-	rule.currentJob = nil
+func (rule *SelfHostedRunnersRule) VisitJobPost(_ *ast.Job) error {
 	return nil
 }
 
@@ -107,17 +105,25 @@ func (rule *SelfHostedRunnersRule) isSelfHostedValue(val ast.RawYAMLValue) bool 
 	case *ast.RawYAMLString:
 		return strings.EqualFold(v.Value, "self-hosted")
 	case *ast.RawYAMLArray:
-		for _, elem := range v.Elems {
-			if rule.isSelfHostedValue(elem) {
-				return true
-			}
-		}
+		return slices.ContainsFunc(v.Elems, rule.isSelfHostedValue)
 	}
 	return false
 }
 
 func (rule *SelfHostedRunnersRule) reportSelfHostedUsage(job *ast.Job, context string) {
-	rule.reportSelfHostedUsageWithPos(job, job.RunsOn.Labels[0].Pos, context)
+	// Find the position of the self-hosted label to report accurate position
+	var pos *ast.Position
+	for _, label := range job.RunsOn.Labels {
+		if label != nil && strings.EqualFold(label.Value, "self-hosted") {
+			pos = label.Pos
+			break
+		}
+	}
+	// Fallback to first label position if self-hosted label position not found
+	if pos == nil && len(job.RunsOn.Labels) > 0 && job.RunsOn.Labels[0] != nil {
+		pos = job.RunsOn.Labels[0].Pos
+	}
+	rule.reportSelfHostedUsageWithPos(job, pos, context)
 }
 
 func (rule *SelfHostedRunnersRule) reportSelfHostedUsageWithPos(job *ast.Job, pos *ast.Position, context string) {

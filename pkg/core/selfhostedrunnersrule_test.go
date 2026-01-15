@@ -7,6 +7,7 @@ import (
 )
 
 func TestNewSelfHostedRunnersRule(t *testing.T) {
+	t.Parallel()
 	rule := NewSelfHostedRunnersRule()
 
 	if rule.RuleName != "self-hosted-runner" {
@@ -19,6 +20,7 @@ func TestNewSelfHostedRunnersRule(t *testing.T) {
 }
 
 func TestSelfHostedRunnersRule_VisitJobPre_DirectLabel(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		job        *ast.Job
@@ -117,6 +119,7 @@ func TestSelfHostedRunnersRule_VisitJobPre_DirectLabel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			rule := NewSelfHostedRunnersRule()
 			err := rule.VisitJobPre(tt.job)
 			if err != nil {
@@ -133,6 +136,7 @@ func TestSelfHostedRunnersRule_VisitJobPre_DirectLabel(t *testing.T) {
 }
 
 func TestSelfHostedRunnersRule_VisitJobPre_RunnerGroup(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		job        *ast.Job
@@ -181,6 +185,7 @@ func TestSelfHostedRunnersRule_VisitJobPre_RunnerGroup(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			rule := NewSelfHostedRunnersRule()
 			err := rule.VisitJobPre(tt.job)
 			if err != nil {
@@ -196,7 +201,8 @@ func TestSelfHostedRunnersRule_VisitJobPre_RunnerGroup(t *testing.T) {
 	}
 }
 
-func TestSelfHostedRunnersRule_VisitJobPost_MatrixExpansion(t *testing.T) {
+func TestSelfHostedRunnersRule_MatrixExpansion(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		job        *ast.Job
@@ -325,6 +331,7 @@ func TestSelfHostedRunnersRule_VisitJobPost_MatrixExpansion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			rule := NewSelfHostedRunnersRule()
 			// Visit pre to set up context
 			err := rule.VisitJobPre(tt.job)
@@ -347,6 +354,7 @@ func TestSelfHostedRunnersRule_VisitJobPost_MatrixExpansion(t *testing.T) {
 }
 
 func TestSelfHostedRunnersRule_hasSelfHostedLabel(t *testing.T) {
+	t.Parallel()
 	rule := NewSelfHostedRunnersRule()
 
 	tests := []struct {
@@ -397,6 +405,7 @@ func TestSelfHostedRunnersRule_hasSelfHostedLabel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := rule.hasSelfHostedLabel(tt.runner)
 			if got != tt.want {
 				t.Errorf("hasSelfHostedLabel() = %v, want %v", got, tt.want)
@@ -406,6 +415,7 @@ func TestSelfHostedRunnersRule_hasSelfHostedLabel(t *testing.T) {
 }
 
 func TestSelfHostedRunnersRule_isSelfHostedValue(t *testing.T) {
+	t.Parallel()
 	rule := NewSelfHostedRunnersRule()
 
 	tests := []struct {
@@ -451,6 +461,7 @@ func TestSelfHostedRunnersRule_isSelfHostedValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := rule.isSelfHostedValue(tt.val)
 			if got != tt.want {
 				t.Errorf("isSelfHostedValue() = %v, want %v", got, tt.want)
