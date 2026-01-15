@@ -22,8 +22,8 @@ type RefConfusion struct {
 	ghClientOnce sync.Once
 }
 
-// RefConfusionRule creates a new RefConfusion rule instance.
-func RefConfusionRule() *RefConfusion {
+// NewRefConfusionRule creates a new RefConfusion rule instance.
+func NewRefConfusionRule() *RefConfusion {
 	return &RefConfusion{
 		BaseRule: BaseRule{
 			RuleName: "ref-confusion",
@@ -33,13 +33,20 @@ func RefConfusionRule() *RefConfusion {
 	}
 }
 
+// shaPattern is a pre-compiled regex for 40-character lowercase hex SHA.
+var shaPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
+
 func isSymbolicRef(ref string) bool {
-	shaPattern := regexp.MustCompile(`^[0-9a-f]{40}$`)
 	return !shaPattern.MatchString(ref)
 }
 
 func parseActionRef(usesValue string) (owner, repo, ref string, ok bool) {
+	// Skip local actions
 	if strings.HasPrefix(usesValue, "./") {
+		return "", "", "", false
+	}
+	// Skip Docker references
+	if strings.HasPrefix(usesValue, "docker://") {
 		return "", "", "", false
 	}
 
@@ -194,7 +201,7 @@ func (rule *RefConfusion) FixStep(step *ast.Step) error {
 	}
 
 	client := rule.getGitHubClient()
-	sha, _, err := client.Repositories.GetCommitSHA1(context.TODO(), owner, repo, ref, "")
+	sha, _, err := client.Repositories.GetCommitSHA1(context.Background(), owner, repo, ref, "")
 	if err != nil {
 		return FormattedError(step.Pos, rule.RuleName, "failed to get commit SHA for %s/%s@%s: %s", owner, repo, ref, err.Error())
 	}

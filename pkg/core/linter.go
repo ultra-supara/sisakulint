@@ -529,7 +529,7 @@ func makeRules(filePath string, localActions *LocalActionsMetadataCache, localRe
 		NewImproperAccessControlRule(),           // Detects improper access control with label-based approval and synchronize events
 		NewUntrustedCheckoutTOCTOUCriticalRule(), // Detects TOCTOU with labeled event type and mutable refs
 		NewUntrustedCheckoutTOCTOUHighRule(),     // Detects TOCTOU with deployment environment and mutable refs
-		RefConfusionRule(),                       // Detects ref confusion attacks (same name branch and tag)
+		NewRefConfusionRule(),                    // Detects ref confusion attacks (same name branch and tag)
 	}
 }
 

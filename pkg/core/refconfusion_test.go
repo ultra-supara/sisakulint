@@ -1,6 +1,7 @@
 package core
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sisaku-security/sisakulint/pkg/ast"
@@ -8,7 +9,8 @@ import (
 )
 
 func TestRefConfusionRule(t *testing.T) {
-	rule := RefConfusionRule()
+	t.Parallel()
+	rule := NewRefConfusionRule()
 
 	if rule.RuleName != "ref-confusion" {
 		t.Errorf("Expected RuleName to be 'ref-confusion', got '%s'", rule.RuleName)
@@ -25,6 +27,7 @@ func TestRefConfusionRule(t *testing.T) {
 }
 
 func TestIsSymbolicRef(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		ref      string
@@ -84,6 +87,7 @@ func TestIsSymbolicRef(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := isSymbolicRef(tt.ref)
 			if result != tt.expected {
 				t.Errorf("isSymbolicRef(%q) = %v, want %v", tt.ref, result, tt.expected)
@@ -93,6 +97,7 @@ func TestIsSymbolicRef(t *testing.T) {
 }
 
 func TestParseActionRef(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		usesValue     string
@@ -185,6 +190,7 @@ func TestParseActionRef(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			owner, repo, ref, ok := parseActionRef(tt.usesValue)
 			if owner != tt.expectedOwner {
 				t.Errorf("parseActionRef(%q) owner = %q, want %q", tt.usesValue, owner, tt.expectedOwner)
@@ -203,6 +209,7 @@ func TestParseActionRef(t *testing.T) {
 }
 
 func TestRefConfusion_VisitStep_SkipCases(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		step *ast.Step
@@ -259,7 +266,8 @@ func TestRefConfusion_VisitStep_SkipCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rule := RefConfusionRule()
+			t.Parallel()
+			rule := NewRefConfusionRule()
 			err := rule.VisitStep(tt.step)
 
 			if err != nil {
@@ -274,6 +282,7 @@ func TestRefConfusion_VisitStep_SkipCases(t *testing.T) {
 }
 
 func TestRefConfusion_VisitStep_NilChecks(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		step *ast.Step
@@ -290,7 +299,8 @@ func TestRefConfusion_VisitStep_NilChecks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rule := RefConfusionRule()
+			t.Parallel()
+			rule := NewRefConfusionRule()
 			err := rule.VisitStep(tt.step)
 			if err != nil {
 				t.Errorf("VisitStep() returned unexpected error: %v", err)
@@ -300,6 +310,7 @@ func TestRefConfusion_VisitStep_NilChecks(t *testing.T) {
 }
 
 func TestRefConfusion_FixStep_InvalidFormat(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		step      *ast.Step
@@ -337,7 +348,8 @@ func TestRefConfusion_FixStep_InvalidFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rule := RefConfusionRule()
+			t.Parallel()
+			rule := NewRefConfusionRule()
 			err := rule.FixStep(tt.step)
 
 			if tt.wantError && err == nil {
@@ -351,7 +363,8 @@ func TestRefConfusion_FixStep_InvalidFormat(t *testing.T) {
 }
 
 func TestRefConfusion_RefCache(t *testing.T) {
-	rule := RefConfusionRule()
+	t.Parallel()
+	rule := NewRefConfusionRule()
 
 	rule.refCacheMu.Lock()
 	rule.refCache["test/repo@v1"] = true
@@ -370,7 +383,8 @@ func TestRefConfusion_RefCache(t *testing.T) {
 }
 
 func TestRefConfusion_VisitorInterface(t *testing.T) {
-	rule := RefConfusionRule()
+	t.Parallel()
+	rule := NewRefConfusionRule()
 
 	if err := rule.VisitJobPre(&ast.Job{}); err != nil {
 		t.Errorf("VisitJobPre() returned error: %v", err)
@@ -387,7 +401,8 @@ func TestRefConfusion_VisitorInterface(t *testing.T) {
 }
 
 func TestRefConfusion_GetGitHubClient(t *testing.T) {
-	rule := RefConfusionRule()
+	t.Parallel()
+	rule := NewRefConfusionRule()
 
 	client := rule.getGitHubClient()
 	if client == nil {
@@ -401,7 +416,8 @@ func TestRefConfusion_GetGitHubClient(t *testing.T) {
 }
 
 func TestRefConfusion_DetectsConfusableRef(t *testing.T) {
-	rule := RefConfusionRule()
+	t.Parallel()
+	rule := NewRefConfusionRule()
 
 	rule.refCacheMu.Lock()
 	rule.refCache["test/vulnerable-repo@v1.0.0"] = true
@@ -428,13 +444,13 @@ func TestRefConfusion_DetectsConfusableRef(t *testing.T) {
 
 	if len(rule.Errors()) > 0 {
 		errMsg := rule.Errors()[0].Error()
-		if !containsSubstring(errMsg, "ref-confusion") {
+		if !strings.Contains(errMsg, "ref-confusion") {
 			t.Error("Error message should contain rule name 'ref-confusion'")
 		}
-		if !containsSubstring(errMsg, "both a branch and a tag") {
+		if !strings.Contains(errMsg, "both a branch and a tag") {
 			t.Error("Error message should mention 'both a branch and a tag'")
 		}
-		if !containsSubstring(errMsg, "supply chain attacks") {
+		if !strings.Contains(errMsg, "supply chain attacks") {
 			t.Error("Error message should mention 'supply chain attacks'")
 		}
 	}
@@ -445,7 +461,8 @@ func TestRefConfusion_DetectsConfusableRef(t *testing.T) {
 }
 
 func TestRefConfusion_NotConfusableRef(t *testing.T) {
-	rule := RefConfusionRule()
+	t.Parallel()
+	rule := NewRefConfusionRule()
 
 	rule.refCacheMu.Lock()
 	rule.refCache["test/safe-repo@v2.0.0"] = false
@@ -476,7 +493,8 @@ func TestRefConfusion_NotConfusableRef(t *testing.T) {
 }
 
 func TestRefConfusion_MultipleSteps(t *testing.T) {
-	rule := RefConfusionRule()
+	t.Parallel()
+	rule := NewRefConfusionRule()
 
 	rule.refCacheMu.Lock()
 	rule.refCache["org/confusable@v1"] = true
@@ -525,13 +543,4 @@ func TestRefConfusion_MultipleSteps(t *testing.T) {
 	if len(rule.AutoFixers()) != 1 {
 		t.Errorf("Expected 1 auto-fixer, got %d", len(rule.AutoFixers()))
 	}
-}
-
-func containsSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
