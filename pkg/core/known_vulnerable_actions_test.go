@@ -269,7 +269,11 @@ func TestCompareVersions(t *testing.T) {
 		{"major version diff", "2.0.0", "1.0.0", 1},
 		{"minor version diff", "1.1.0", "1.0.0", 1},
 		{"two part vs three part", "1.0", "1.0.0", 0},
-		{"pre-release ignored", "1.0.0-beta.1", "1.0.0", 0},
+		{"pre-release less than release", "1.0.0-beta.1", "1.0.0", -1},
+		{"release greater than pre-release", "1.0.0", "1.0.0-beta.1", 1},
+		{"pre-release vs pre-release", "1.0.0-beta.1", "1.0.0-beta.2", -1},
+		{"equal pre-release", "1.0.0-beta.1", "1.0.0-beta.1", 0},
+		{"pre-release with different base", "1.0.0-beta.1", "1.0.1-beta.1", -1},
 	}
 
 	for _, tt := range tests {
@@ -347,7 +351,6 @@ func TestParseVersionParts(t *testing.T) {
 		{"three parts", "1.2.3", []int{1, 2, 3}},
 		{"two parts", "1.2", []int{1, 2}},
 		{"one part", "1", []int{1}},
-		{"with pre-release", "1.2.3-beta.1", []int{1, 2, 3}},
 		{"zeros", "0.0.0", []int{0, 0, 0}},
 		{"large numbers", "100.200.300", []int{100, 200, 300}},
 	}
@@ -363,6 +366,33 @@ func TestParseVersionParts(t *testing.T) {
 				if got[i] != tt.want[i] {
 					t.Errorf("parseVersionParts(%q)[%d] = %d, want %d", tt.version, i, got[i], tt.want[i])
 				}
+			}
+		})
+	}
+}
+
+func TestSplitPreRelease(t *testing.T) {
+	tests := []struct {
+		name           string
+		version        string
+		wantBase       string
+		wantPreRelease string
+	}{
+		{"no pre-release", "1.0.0", "1.0.0", ""},
+		{"with pre-release", "1.0.0-beta.1", "1.0.0", "beta.1"},
+		{"with rc", "2.3.4-rc.1", "2.3.4", "rc.1"},
+		{"with alpha", "1.0.0-alpha", "1.0.0", "alpha"},
+		{"empty", "", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotBase, gotPreRelease := splitPreRelease(tt.version)
+			if gotBase != tt.wantBase {
+				t.Errorf("splitPreRelease(%q) base = %q, want %q", tt.version, gotBase, tt.wantBase)
+			}
+			if gotPreRelease != tt.wantPreRelease {
+				t.Errorf("splitPreRelease(%q) preRelease = %q, want %q", tt.version, gotPreRelease, tt.wantPreRelease)
 			}
 		})
 	}

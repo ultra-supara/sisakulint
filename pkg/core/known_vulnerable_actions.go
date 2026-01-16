@@ -359,11 +359,16 @@ func checkCondition(version, condition string) bool {
 
 // compareVersions compares two semantic versions
 // Returns: -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2
+// Handles pre-release versions: 1.0.0-beta.1 < 1.0.0
 func compareVersions(v1, v2 string) int {
-	parts1 := parseVersionParts(v1)
-	parts2 := parseVersionParts(v2)
+	// Split version and pre-release
+	base1, pre1 := splitPreRelease(v1)
+	base2, pre2 := splitPreRelease(v2)
 
-	// Ensure both slices have the same length
+	parts1 := parseVersionParts(base1)
+	parts2 := parseVersionParts(base2)
+
+	// Compare base version numbers
 	maxLen := len(parts1)
 	if len(parts2) > maxLen {
 		maxLen = len(parts2)
@@ -385,16 +390,40 @@ func compareVersions(v1, v2 string) int {
 			return 1
 		}
 	}
+
+	// Base versions are equal, compare pre-release
+	// No pre-release (release version) > with pre-release
+	// 1.0.0 > 1.0.0-beta.1
+	if pre1 == "" && pre2 != "" {
+		return 1 // v1 is release, v2 is pre-release
+	}
+	if pre1 != "" && pre2 == "" {
+		return -1 // v1 is pre-release, v2 is release
+	}
+	if pre1 != "" && pre2 != "" {
+		// Both are pre-releases, compare lexicographically
+		if pre1 < pre2 {
+			return -1
+		}
+		if pre1 > pre2 {
+			return 1
+		}
+	}
+
 	return 0
+}
+
+// splitPreRelease splits version into base version and pre-release
+// e.g., "1.0.0-beta.1" -> ("1.0.0", "beta.1")
+func splitPreRelease(version string) (base, preRelease string) {
+	if idx := strings.Index(version, "-"); idx != -1 {
+		return version[:idx], version[idx+1:]
+	}
+	return version, ""
 }
 
 // parseVersionParts parses a version string into numeric parts
 func parseVersionParts(version string) []int {
-	// Remove any pre-release suffix (e.g., -beta.1)
-	if idx := strings.Index(version, "-"); idx != -1 {
-		version = version[:idx]
-	}
-
 	parts := strings.Split(version, ".")
 	result := make([]int, 0, len(parts))
 	for _, p := range parts {
@@ -445,8 +474,8 @@ func (rule *KnownVulnerableActionsRule) VisitStep(step *ast.Step) error {
 	// Resolve the version from the ref
 	version, err := rule.getVersionFromRef(ctx, owner, repo, ref)
 	if err != nil {
-		// If we can't resolve the version, skip this action
-		// (e.g., private repo, rate limiting, etc.)
+		// Log as debug and skip (similar to commitsha.go pattern)
+		// This can happen for private repos, rate limiting, network errors, etc.
 		rule.Debug("failed to resolve version for %s/%s@%s: %v", owner, repo, ref, err)
 		return nil
 	}
@@ -456,7 +485,8 @@ func (rule *KnownVulnerableActionsRule) VisitStep(step *ast.Step) error {
 	// Fetch and check for vulnerabilities
 	vulns, err := rule.fetchAdvisories(ctx, owner, repo, version)
 	if err != nil {
-		// If we can't fetch advisories, skip this action
+		// Log as debug and skip (similar to commitsha.go pattern)
+		// This can happen for rate limiting, network errors, etc.
 		rule.Debug("failed to fetch advisories for %s/%s: %v", owner, repo, err)
 		return nil
 	}
@@ -564,13 +594,15 @@ func (f *KnownVulnerableActionsFixer) FixStep(step *ast.Step) error {
 
 	if isFullLengthCommitSHA(originalRef) {
 		ctx := context.Background()
+		// Try with "v" prefix first
 		newSHA, err := f.rule.resolveSymbolicRef(ctx, owner, repo, "v"+patchedVersion)
 		if err != nil {
+			// Try without "v" prefix
 			newSHA, err = f.rule.resolveSymbolicRef(ctx, owner, repo, patchedVersion)
 			if err != nil {
-				newRef := "v" + patchedVersion
-				action.Uses.BaseNode.Value = fmt.Sprintf("%s/%s@%s", owner, repo, newRef)
-				return nil
+				// If both fail, return error (similar to commitsha.go pattern)
+				lintErr := FormattedError(step.Pos, f.rule.RuleName, "failed to resolve patched version %s to commit SHA: %s at step '%s'", patchedVersion, err.Error(), step.String())
+				return lintErr
 			}
 		}
 		action.Uses.BaseNode.Value = fmt.Sprintf("%s/%s@%s", owner, repo, newSHA)
