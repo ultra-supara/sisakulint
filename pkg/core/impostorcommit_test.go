@@ -9,6 +9,7 @@ import (
 
 // TestImpostorCommitRuleFactory tests the ImpostorCommitRuleFactory constructor.
 func TestImpostorCommitRuleFactory(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 
 	if rule.RuleName != "impostor-commit" {
@@ -33,6 +34,7 @@ func TestImpostorCommitRuleFactory(t *testing.T) {
 
 // TestIsFullSha tests the isFullSha function.
 func TestIsFullSha(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		ref      string
@@ -97,6 +99,7 @@ func TestIsFullSha(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := isFullSha(tt.ref)
 			if result != tt.expected {
 				t.Errorf("isFullSha(%q) = %v, want %v", tt.ref, result, tt.expected)
@@ -107,6 +110,7 @@ func TestIsFullSha(t *testing.T) {
 
 // TestParseActionRef tests the parseActionRef function.
 func TestParseActionRef(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		usesValue   string
@@ -191,6 +195,7 @@ func TestParseActionRef(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			owner, repo, ref, isLocal := parseActionRef(tt.usesValue)
 			if owner != tt.wantOwner {
 				t.Errorf("parseActionRef(%q) owner = %q, want %q", tt.usesValue, owner, tt.wantOwner)
@@ -210,6 +215,7 @@ func TestParseActionRef(t *testing.T) {
 
 // TestImpostorCommitRule_VisitStep_SkipsNonShaRefs tests that non-SHA refs are skipped.
 func TestImpostorCommitRule_VisitStep_SkipsNonShaRefs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		usesValue  string
@@ -244,6 +250,7 @@ func TestImpostorCommitRule_VisitStep_SkipsNonShaRefs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			rule := ImpostorCommitRuleFactory()
 			step := &ast.Step{
 				ID: &ast.String{Value: "test"},
@@ -271,6 +278,7 @@ func TestImpostorCommitRule_VisitStep_SkipsNonShaRefs(t *testing.T) {
 
 // TestImpostorCommitRule_VisitStep_RunCommand tests that run commands are skipped.
 func TestImpostorCommitRule_VisitStep_RunCommand(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 	step := &ast.Step{
 		ID: &ast.String{Value: "run-test"},
@@ -294,6 +302,7 @@ func TestImpostorCommitRule_VisitStep_RunCommand(t *testing.T) {
 
 // TestImpostorCommitRule_VisitStep_NilExec tests handling of nil Exec.
 func TestImpostorCommitRule_VisitStep_NilExec(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 	step := &ast.Step{
 		ID:   &ast.String{Value: "test"},
@@ -314,6 +323,7 @@ func TestImpostorCommitRule_VisitStep_NilExec(t *testing.T) {
 
 // TestImpostorCommitRule_GetGitHubClient tests that client is initialized once.
 func TestImpostorCommitRule_GetGitHubClient(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 
 	client1 := rule.getGitHubClient()
@@ -330,6 +340,7 @@ func TestImpostorCommitRule_GetGitHubClient(t *testing.T) {
 
 // TestImpostorCommitRule_CommitCaching tests that commit verification results are cached.
 func TestImpostorCommitRule_CommitCaching(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 
 	// Manually add a cached result
@@ -350,6 +361,7 @@ func TestImpostorCommitRule_CommitCaching(t *testing.T) {
 
 // TestCommitVerificationResult tests the commitVerificationResult struct.
 func TestCommitVerificationResult(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		result     *commitVerificationResult
@@ -390,6 +402,7 @@ func TestCommitVerificationResult(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if tt.result.isImpostor != tt.isImpostor {
 				t.Errorf("Expected isImpostor to be %v, got %v", tt.isImpostor, tt.result.isImpostor)
 			}
@@ -402,6 +415,7 @@ func TestCommitVerificationResult(t *testing.T) {
 
 // TestImpostorCommitFixer_RuleNames tests the fixer's RuleNames method.
 func TestImpostorCommitFixer_RuleNames(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 	fixer := &impostorCommitFixer{
 		rule:      rule,
@@ -417,6 +431,7 @@ func TestImpostorCommitFixer_RuleNames(t *testing.T) {
 
 // TestImpostorCommitRule_MultipleSteps tests processing multiple steps.
 func TestImpostorCommitRule_MultipleSteps(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 
 	// Pre-populate cache for testing
@@ -495,6 +510,7 @@ func TestImpostorCommitRule_MultipleSteps(t *testing.T) {
 
 // TestImpostorCommitRule_ErrorMessage tests that error messages contain expected content.
 func TestImpostorCommitRule_ErrorMessage(t *testing.T) {
+	t.Parallel()
 	rule := ImpostorCommitRuleFactory()
 
 	// Pre-populate cache

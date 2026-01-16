@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -11,19 +12,30 @@ import (
 
 	"github.com/google/go-github/v68/github"
 	"github.com/sisaku-security/sisakulint/pkg/ast"
+	"golang.org/x/oauth2"
+)
+
+// Pagination limits for GitHub API requests
+const (
+	// maxTagPages is the maximum number of pages to fetch for repository tags.
+	// With 100 items per page, this allows fetching up to 500 tags.
+	maxTagPages = 5
+	// maxBranchPages is the maximum number of pages to fetch for repository branches.
+	// With 100 items per page, this allows fetching up to 300 branches.
+	maxBranchPages = 3
 )
 
 type ImpostorCommitRule struct {
 	BaseRule
-	client          *github.Client
-	clientOnce      sync.Once
-	commitCache     map[string]*commitVerificationResult
-	commitCacheMu   sync.Mutex
-	tagCache        map[string][]*github.RepositoryTag
-	tagCacheMu      sync.Mutex
-	branchCache     map[string][]*github.Branch
-	branchCacheMu   sync.Mutex
-	latestTagCache  map[string]string
+	client           *github.Client
+	clientOnce       sync.Once
+	commitCache      map[string]*commitVerificationResult
+	commitCacheMu    sync.Mutex
+	tagCache         map[string][]*github.RepositoryTag
+	tagCacheMu       sync.Mutex
+	branchCache      map[string][]*github.Branch
+	branchCacheMu    sync.Mutex
+	latestTagCache   map[string]string
 	latestTagCacheMu sync.Mutex
 }
 
@@ -71,7 +83,17 @@ func parseActionRef(usesValue string) (owner, repo, ref string, isLocal bool) {
 
 func (rule *ImpostorCommitRule) getGitHubClient() *github.Client {
 	rule.clientOnce.Do(func() {
-		rule.client = github.NewClient(http.DefaultClient)
+		// Check for GITHUB_TOKEN environment variable for authenticated requests
+		// Authenticated requests have higher rate limits (5000/hour vs 60/hour)
+		if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+			ts := oauth2.StaticTokenSource(
+				&oauth2.Token{AccessToken: token},
+			)
+			tc := oauth2.NewClient(context.Background(), ts)
+			rule.client = github.NewClient(tc)
+		} else {
+			rule.client = github.NewClient(http.DefaultClient)
+		}
 	})
 	return rule.client
 }
@@ -90,8 +112,9 @@ func (rule *ImpostorCommitRule) VisitStep(step *ast.Step) error {
 
 	result := rule.verifyCommit(owner, repo, ref)
 	if result.err != nil {
+		// API errors should not fail the lint - just log and skip
 		rule.Debug("Error verifying commit %s/%s@%s: %v", owner, repo, ref, result.err)
-		return nil
+		return nil //nolint:nilerr // Intentional: API errors are logged but don't fail linting
 	}
 
 	if result.isImpostor {
@@ -118,6 +141,7 @@ func (rule *ImpostorCommitRule) VisitStep(step *ast.Step) error {
 func (rule *ImpostorCommitRule) verifyCommit(owner, repo, sha string) *commitVerificationResult {
 	cacheKey := fmt.Sprintf("%s/%s@%s", owner, repo, sha)
 
+	// First check without lock (fast path)
 	rule.commitCacheMu.Lock()
 	if result, ok := rule.commitCache[cacheKey]; ok {
 		rule.commitCacheMu.Unlock()
@@ -125,10 +149,16 @@ func (rule *ImpostorCommitRule) verifyCommit(owner, repo, sha string) *commitVer
 	}
 	rule.commitCacheMu.Unlock()
 
+	// Perform verification (potentially slow)
 	result := rule.doVerifyCommit(owner, repo, sha)
 
-	// Cache the result
+	// Double-checked locking: check again before caching to avoid duplicate work
 	rule.commitCacheMu.Lock()
+	if existingResult, ok := rule.commitCache[cacheKey]; ok {
+		// Another goroutine already cached the result
+		rule.commitCacheMu.Unlock()
+		return existingResult
+	}
 	rule.commitCache[cacheKey] = result
 	rule.commitCacheMu.Unlock()
 
@@ -178,7 +208,7 @@ func (rule *ImpostorCommitRule) doVerifyCommit(owner, repo, sha string) *commitV
 	if err == nil {
 		var branchList []*github.Branch
 		resp, err := client.Do(ctx, req, &branchList)
-		if err == nil && resp.StatusCode == 200 && len(branchList) > 0 {
+		if err == nil && resp.StatusCode == http.StatusOK && len(branchList) > 0 {
 			return &commitVerificationResult{isImpostor: false, latestTag: latestTag}
 		}
 	}
@@ -226,7 +256,7 @@ func (rule *ImpostorCommitRule) getTags(ctx context.Context, client *github.Clie
 	var allTags []*github.RepositoryTag
 	opts := &github.ListOptions{PerPage: 100}
 
-	for i := 0; i < 5; i++ {
+	for range maxTagPages {
 		tags, resp, err := client.Repositories.ListTags(ctx, owner, repo, opts)
 		if err != nil {
 			break
@@ -258,7 +288,7 @@ func (rule *ImpostorCommitRule) getBranches(ctx context.Context, client *github.
 	var allBranches []*github.Branch
 	opts := &github.BranchListOptions{ListOptions: github.ListOptions{PerPage: 100}}
 
-	for i := 0; i < 3; i++ {
+	for range maxBranchPages {
 		branches, resp, err := client.Repositories.ListBranches(ctx, owner, repo, opts)
 		if err != nil {
 			break
