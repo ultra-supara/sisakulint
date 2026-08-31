@@ -1,0 +1,66 @@
+version: "2"
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+linters:
+  default: none
+  enable:
+    - copyloopvar
+    - decorder
+    - errcheck
+    - errname
+    - errorlint
+    - goconst
+    - gosec
+    - govet
+    - ineffassign
+    - loggercheck
+    - makezero
+    - misspell
+    - nilerr
+    - noctx
+    - prealloc
+    - reassign
+    - staticcheck
+    - tparallel
+    - unconvert
+    - unused
+    - usestdlibvars
+    - usetesting
+    - whitespace
+  settings:
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      # G101: YAML key name strings containing "credentials" are not actual credentials
+      - linters:
+          - gosec
+        text: "G101"
+      # G703: Path traversal false positive - paths come from user-specified CLI arguments (files to analyze)
+      - linters:
+          - gosec
+        text: "G703"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

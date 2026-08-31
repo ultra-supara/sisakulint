@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions: {}
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          # v2.15.3 includes the log-redaction security fix and remains compatible
+          # with the legacy brews configuration. Migrate to homebrew_casks before
+          # upgrading to v2.16 or later.
+          version: v2.15.3
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+
+  after_release:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout tap repository
+        run: |
+          git clone https://github.com/ultra-supara/homebrew-sisakulint
+          git config --global url."https://x-oauth-basic:${{ secrets.TAP_GITHUB_TOKEN }}@github.com".insteadOf "https://github.com"
+      - name: Update formula
+        run: |
+          sed -i -e 's/# typed:/require_relative "strategy" # typed:/g' homebrew-sisakulint/sisakulint.rb
+          cat homebrew-sisakulint/sisakulint.rb
+      - name: Commit and push changes
+        run: |
+          cd homebrew-sisakulint
+          git config --global user.name "sisakulint-bot"
+          git config --global user.email "actions@github.com"
+          git add sisakulint.rb
+          git commit -m "Update sisakulint.rb"
+          git push origin HEAD:main

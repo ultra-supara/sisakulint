@@ -1,0 +1,41 @@
+version: 2
+
+release:
+  draft: false
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - <<: &build_defaults
+      main: ./cmd/sisakulint
+      ldflags: -s -w -X github.com/sisaku-security/sisakulint/pkg/core.versionInfo={{.Version}}
+      env:
+        - CGO_ENABLED=0
+    id: macos
+    goos: [darwin]
+    goarch: [amd64, arm64]
+
+  - <<: *build_defaults
+    id: linux
+    goos: [linux]
+    goarch: [arm, amd64, arm64]
+
+brews:
+  - name: sisakulint
+    url_template: "https://github.com/sisaku-security/sisakulint/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    commit_author:
+      name: "github-actions[bot]"
+      email: "41898282+github-actions[bot]@users.noreply.github.com"
+    homepage: https://github.com/sisaku-security/sisakulint
+    description: Support tools for GitHub Actions workflow files
+    download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
+    install: |
+      bin.install "sisakulint"
+    test: |
+      system "#{bin}/sisakulint -version"
+    repository:
+      owner: sisaku-security # Homebrew Taps 用のリポジトリのオーナー名
+      name: homebrew-sisakulint # Homebrew Taps 用のリポジトリ名
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}" # `TAP_GITHUB_TOKEN` 環境変数をトークンとして使うようにする
