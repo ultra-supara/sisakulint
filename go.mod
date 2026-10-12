@@ -1,6 +1,7 @@
 module github.com/sisaku-security/sisakulint
 
-go 1.26.0
+go 1.26.9
+
 
 require (
 	github.com/fatih/color v1.19.0
@@ -9,9 +10,9 @@ require (
 	github.com/mattn/go-colorable v0.1.15
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sync v0.22.0
-	golang.org/x/sys v0.47.0
+	golang.org/x/sys v0.48.0
 	gopkg.in/yaml.v3 v3.0.1
-	mvdan.cc/sh/v3 v3.13.1
+	mvdan.cc/sh/v3 v3.14.1
 )
 
 require (
