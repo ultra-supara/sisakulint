@@ -2,7 +2,6 @@ module github.com/sisaku-security/sisakulint
 
 go 1.26.9
 
-
 require (
 	github.com/fatih/color v1.19.0
 	github.com/google/go-github/v68 v68.0.0
