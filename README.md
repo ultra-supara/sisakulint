@@ -139,7 +139,7 @@ brew install sisakulint
 go install github.com/sisaku-security/sisakulint/cmd/sisakulint@latest
 ```
 
-Requires Go 1.25 or newer.
+Requires Go 1.26 or newer.
 
 ### Pre-built binary (Linux / Windows)
 
